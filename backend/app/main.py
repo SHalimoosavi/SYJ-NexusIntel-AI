@@ -15,6 +15,9 @@ from app.routers.technology import router as technology_router
 from app.routers.business_discovery import (
     router as business_discovery_router
 )
+from app.routers.lead_qualification import (
+    router as lead_qualification_router
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -30,6 +33,7 @@ app.include_router(osint_router)
 app.include_router(intelligence_router)
 app.include_router(technology_router)
 app.include_router(business_discovery_router)
+app.include_router(lead_qualification_router)
 
 
 @app.get("/")
