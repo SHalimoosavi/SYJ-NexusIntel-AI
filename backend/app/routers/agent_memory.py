@@ -1,0 +1,52 @@
+from fastapi import APIRouter
+from fastapi import Depends
+
+from sqlalchemy.orm import Session
+
+from app.database.database import (
+    get_db
+)
+
+from app.services.agent_memory_service import (
+    save_memory,
+    get_history,
+    get_latest
+)
+
+router = APIRouter(
+    prefix="/agent-memory",
+    tags=["Agent Memory"]
+)
+
+
+@router.post("/save")
+def create_memory(
+    payload: dict,
+    db: Session = Depends(get_db)
+):
+    return save_memory(
+        db,
+        payload
+    )
+
+
+@router.get("/history/{domain}")
+def history(
+    domain: str,
+    db: Session = Depends(get_db)
+):
+    return get_history(
+        db,
+        domain
+    )
+
+
+@router.get("/latest/{domain}")
+def latest(
+    domain: str,
+    db: Session = Depends(get_db)
+):
+    return get_latest(
+        db,
+        domain
+    )

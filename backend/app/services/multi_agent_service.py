@@ -10,6 +10,10 @@ from app.services.sales_agent_service import (
     generate_pitch
 )
 
+from app.services.agent_memory_service import (
+    save_memory
+)
+
 
 def generate_executive_summary(
     intelligence,
@@ -51,7 +55,8 @@ def generate_executive_summary(
 
 
 def run_multi_agent_analysis(
-    domain: str
+    domain: str,
+    db
 ):
 
     intelligence = (
@@ -84,6 +89,50 @@ def run_multi_agent_analysis(
         )
     )
 
+    memory_payload = {
+
+        "domain":
+        domain,
+
+        "overall_score":
+        intelligence.get(
+            "overall_score",
+            0
+        ),
+
+        "priority":
+        sales.get(
+            "priority",
+            "UNKNOWN"
+        ),
+
+        "estimated_value":
+        opportunity.get(
+            "estimated_project_value",
+            ""
+        ),
+
+        "analysis_data":
+        str({
+            "research_agent":
+            intelligence,
+
+            "opportunity_agent":
+            opportunity,
+
+            "sales_agent":
+            sales,
+
+            "executive_agent":
+            executive
+        })
+    }
+
+    save_memory(
+        db,
+        memory_payload
+    )
+
     return {
 
         "research_agent":
@@ -96,6 +145,8 @@ def run_multi_agent_analysis(
         sales,
 
         "executive_agent":
-        executive
+        executive,
 
+        "memory_saved":
+        True
     }
