@@ -7,28 +7,41 @@ import { login } from "@/lib/auth";
 export default function LoginPage() {
   const router = useRouter();
 
-  const [email,setEmail] =
-    useState("");
-
-  const [password,setPassword] =
-    useState("");
-
-  const [loading,setLoading] =
-    useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   async function handleLogin(
-    e: React.FormEvent
+    e: React.FormEvent<HTMLFormElement>
   ) {
     e.preventDefault();
 
     setLoading(true);
 
     try {
-      const result =
-        await login(
-          email,
-          password
+      const result = await login(
+        email,
+        password
+      );
+
+      console.log(
+        "LOGIN RESULT:",
+        result
+      );
+
+      alert(
+        JSON.stringify(
+          result,
+          null,
+          2
+        )
+      );
+
+      if (!result?.access_token) {
+        throw new Error(
+          "No access token returned"
         );
+      }
 
       localStorage.setItem(
         "token",
@@ -38,13 +51,18 @@ export default function LoginPage() {
       router.push(
         "/dashboard"
       );
-    } catch {
-      alert(
-        "Invalid login"
+    } catch (error) {
+      console.error(
+        "LOGIN ERROR:",
+        error
       );
-    }
 
-    setLoading(false);
+      alert(
+        "LOGIN ERROR"
+      );
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -62,11 +80,12 @@ export default function LoginPage() {
           placeholder="Email"
           className="w-full p-3 rounded-xl bg-black/20 mb-4"
           value={email}
-          onChange={(e)=>
+          onChange={(e) =>
             setEmail(
               e.target.value
             )
           }
+          required
         />
 
         <input
@@ -74,22 +93,22 @@ export default function LoginPage() {
           placeholder="Password"
           className="w-full p-3 rounded-xl bg-black/20 mb-6"
           value={password}
-          onChange={(e)=>
+          onChange={(e) =>
             setPassword(
               e.target.value
             )
           }
+          required
         />
 
         <button
+          type="submit"
           disabled={loading}
           className="w-full bg-emerald-500 text-black py-3 rounded-xl font-bold"
         >
-          {
-            loading
+          {loading
             ? "Logging in..."
-            : "Login"
-          }
+            : "Login"}
         </button>
       </form>
     </main>
