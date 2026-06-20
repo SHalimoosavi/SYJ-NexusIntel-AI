@@ -1,8 +1,7 @@
 const API_BASE =
-  "http://127.0.0.1:8000";
+  "http://127.0.0.1:8001";
 
 export async function getLeads() {
-
   const response =
     await fetch(
       `${API_BASE}/leads/`,
@@ -19,3 +18,5 @@ export async function getLeads() {
 
   return response.json();
 }
+
+export { API_BASE };

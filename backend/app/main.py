@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.database.database import Base
 from app.database.database import engine
@@ -28,6 +29,15 @@ app = FastAPI(
     title="SYJ NexusIntel AI",
     description="AI Powered Business Intelligence, Lead Discovery and OSINT Platform",
     version="1.0.0"
+)
+
+# CORS FIX
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 app.include_router(auth_router)
