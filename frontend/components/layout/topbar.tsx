@@ -3,6 +3,11 @@
 import { motion } from "framer-motion";
 
 export default function Topbar() {
+  function handleLogout() {
+    localStorage.removeItem("token");
+    window.location.href = "/login";
+  }
+
   return (
     <motion.div
       initial={{
@@ -48,27 +53,50 @@ export default function Topbar() {
         className="
           flex
           items-center
-          gap-2
+          gap-4
         "
       >
         <div
           className="
-            h-3
-            w-3
-            rounded-full
-            bg-emerald-500
-            animate-pulse
-          "
-        />
-
-        <span
-          className="
-            text-emerald-400
+            flex
+            items-center
+            gap-2
           "
         >
-          Online
-        </span>
+          <div
+            className="
+              h-3
+              w-3
+              rounded-full
+              bg-emerald-500
+              animate-pulse
+            "
+          />
 
+          <span
+            className="
+              text-emerald-400
+            "
+          >
+            Online
+          </span>
+        </div>
+
+        <button
+          onClick={handleLogout}
+          className="
+            px-4
+            py-2
+            rounded-xl
+            bg-red-500
+            text-white
+            font-semibold
+            hover:bg-red-600
+            transition
+          "
+        >
+          Logout
+        </button>
       </div>
     </motion.div>
   );
