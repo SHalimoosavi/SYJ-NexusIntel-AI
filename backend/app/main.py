@@ -22,6 +22,9 @@ from app.routers.lead_qualification import (
 from app.routers.report import (
     router as report_router
 )
+from app.routers.opportunity import (
+    router as opportunity_router
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -31,7 +34,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS FIX
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -48,6 +50,7 @@ app.include_router(technology_router)
 app.include_router(business_discovery_router)
 app.include_router(lead_qualification_router)
 app.include_router(report_router)
+app.include_router(opportunity_router)
 
 
 @app.get("/")
