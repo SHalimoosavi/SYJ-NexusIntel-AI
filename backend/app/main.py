@@ -18,6 +18,9 @@ from app.routers.business_discovery import (
 from app.routers.lead_qualification import (
     router as lead_qualification_router
 )
+from app.routers.report import (
+    router as report_router
+)
 
 Base.metadata.create_all(bind=engine)
 
@@ -34,6 +37,7 @@ app.include_router(intelligence_router)
 app.include_router(technology_router)
 app.include_router(business_discovery_router)
 app.include_router(lead_qualification_router)
+app.include_router(report_router)
 
 
 @app.get("/")
