@@ -8,14 +8,18 @@ from app.database.database import get_db
 
 from app.schemas.lead import (
     LeadCreate,
-    LeadUpdate
+    LeadUpdate,
 )
 
 from app.services.lead_service import (
     create_lead,
     get_all_leads,
     update_lead_pipeline,
-    delete_lead
+    delete_lead,
+)
+
+from app.core.dependencies import (
+    get_current_user,
 )
 
 router = APIRouter(
@@ -27,7 +31,10 @@ router = APIRouter(
 @router.post("/")
 def add_lead(
     lead: LeadCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
     return create_lead(
         db,
@@ -37,7 +44,10 @@ def add_lead(
 
 @router.get("/")
 def list_leads(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
     return get_all_leads(db)
 
@@ -46,9 +56,11 @@ def list_leads(
 def update_pipeline(
     lead_id: int,
     data: LeadUpdate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
-
     lead = update_lead_pipeline(
         db,
         lead_id,
@@ -67,9 +79,11 @@ def update_pipeline(
 @router.delete("/{lead_id}")
 def remove_lead(
     lead_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    )
 ):
-
     deleted = delete_lead(
         db,
         lead_id
