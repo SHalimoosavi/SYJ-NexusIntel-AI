@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { login } from "@/lib/auth";
+
+const API_BASE =
+  "https://syj-nexusintel-ai-production.up.railway.app";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,57 +14,66 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   async function handleLogin(
-    e: React.FormEvent<HTMLFormElement>
+    e: React.FormEvent
   ) {
     e.preventDefault();
 
     setLoading(true);
 
     try {
-      const result = await login(
-        email,
-        password
+      const response = await fetch(
+        `${API_BASE}/auth/login`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            password,
+          }),
+        }
       );
 
-      console.log(
-        "LOGIN RESULT:",
-        result
-      );
+      const data =
+        await response.json();
 
       alert(
         JSON.stringify(
-          result,
+          data,
           null,
           2
         )
       );
 
-      if (!result?.access_token) {
+      if (
+        !response.ok ||
+        !data.access_token
+      ) {
         throw new Error(
-          "No access token returned"
+          "Login failed"
         );
       }
 
       localStorage.setItem(
         "token",
-        result.access_token
+        data.access_token
       );
 
       router.push(
         "/dashboard"
       );
-    } catch (error) {
-      console.error(
-        "LOGIN ERROR:",
-        error
+    } catch (error: any) {
+      alert(
+        "ERROR:\n\n" +
+          error?.message
       );
 
-      alert(
-        "LOGIN ERROR"
-      );
-    } finally {
-      setLoading(false);
+      console.error(error);
     }
+
+    setLoading(false);
   }
 
   return (
@@ -85,7 +96,6 @@ export default function LoginPage() {
               e.target.value
             )
           }
-          required
         />
 
         <input
@@ -98,11 +108,9 @@ export default function LoginPage() {
               e.target.value
             )
           }
-          required
         />
 
         <button
-          type="submit"
           disabled={loading}
           className="w-full bg-emerald-500 text-black py-3 rounded-xl font-bold"
         >
