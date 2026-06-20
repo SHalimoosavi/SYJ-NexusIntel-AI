@@ -26,6 +26,35 @@ export interface CRMPipeline {
   lost: number;
 }
 
+export interface ExecutiveBriefing {
+  pipeline_value: number;
+  forecast_revenue: number;
+  annual_projection: number;
+  close_rate: number;
+  executive_summary: string;
+  risk_summary: string;
+  recommendation: string;
+}
+
+export interface SalesPriority {
+  id: number;
+  business_name: string;
+  estimated_value: number;
+  pipeline_stage: string;
+  score: number;
+  priority: string;
+  next_followup: string | null;
+}
+
+export interface AgentMemory {
+  id: number;
+  domain: string;
+  overall_score: number;
+  priority: string;
+  estimated_value: string;
+  created_at: string;
+}
+
 export async function getLeads() {
   const response =
     await fetch(
@@ -99,3 +128,114 @@ export async function getCRMPipeline(): Promise<CRMPipeline> {
 }
 
 export { API_BASE };
+
+export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
+
+  const response =
+    await fetch(
+      `${API_BASE}/executive-intelligence/briefing`,
+      {
+        cache: "no-store",
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch executive briefing"
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function getSalesPriorities(): Promise<SalesPriority[]> {
+
+  const response =
+    await fetch(
+      `${API_BASE}/sales-agent/priorities`,
+      {
+        cache: "no-store",
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch sales priorities"
+    );
+  }
+
+  return response.json();
+}
+
+
+export async function getMemoryHistory(
+  domain: string
+): Promise<AgentMemory[]> {
+
+  const response =
+    await fetch(
+      `${API_BASE}/agent-memory/history/${domain}`,
+      {
+        cache: "no-store",
+      }
+    );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch memory history"
+    );
+  }
+
+  return response.json();
+}
+
+export async function getExecutiveOpportunities() {
+
+  const response =
+    await fetch(
+      `${API_BASE}/executive-intelligence/opportunities`,
+      {
+        cache: "no-store",
+      }
+    );
+
+  return response.json();
+}
+
+export async function getExecutiveRisks() {
+
+  const response =
+    await fetch(
+      `${API_BASE}/executive-intelligence/risks`,
+      {
+        cache: "no-store",
+      }
+    );
+
+  return response.json();
+}
+
+export async function getIntelligenceReport() {
+
+  const response =
+    await fetch(
+      `${API_BASE}/intelligence/report`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type":
+            "application/json",
+        },
+
+        body: JSON.stringify({
+          domain: "google.com",
+        }),
+
+        cache: "no-store",
+      }
+    );
+
+  return response.json();
+}

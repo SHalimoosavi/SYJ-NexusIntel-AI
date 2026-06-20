@@ -5,7 +5,9 @@ import {
   BarChart,
   Bar,
   XAxis,
+  YAxis,
   Tooltip,
+  CartesianGrid,
 } from "recharts";
 
 type Props = {
@@ -28,7 +30,7 @@ export default function PipelineChart({
       count: pipeline.new,
     },
     {
-      stage: "CONTACTED",
+      stage: "CONTACT",
       count: pipeline.contacted,
     },
     {
@@ -52,31 +54,52 @@ export default function PipelineChart({
   return (
     <div
       className="
-        glass
         rounded-3xl
+        border
+        border-white/10
+        bg-slate-900/60
+        backdrop-blur-xl
         p-6
-        h-[350px]
       "
     >
-      <h2 className="text-xl font-bold mb-6">
+      <h2
+        className="
+          text-xl
+          font-black
+          mb-6
+        "
+      >
         CRM Pipeline
       </h2>
 
-      <ResponsiveContainer
-        width="100%"
-        height="100%"
-      >
-        <BarChart data={data}>
-          <XAxis dataKey="stage" />
+      <div className="h-[300px] w-full min-w-0">
 
-          <Tooltip />
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
+          <BarChart data={data}>
+            <CartesianGrid
+              strokeDasharray="3 3"
+            />
 
-          <Bar
-            dataKey="count"
-            fill="#10b981"
-          />
-        </BarChart>
-      </ResponsiveContainer>
+            <XAxis
+              dataKey="stage"
+            />
+
+            <YAxis />
+
+            <Tooltip />
+
+            <Bar
+              dataKey="count"
+              radius={[8, 8, 0, 0]}
+              fill="#10b981"
+            />
+          </BarChart>
+        </ResponsiveContainer>
+
+      </div>
     </div>
   );
 }
