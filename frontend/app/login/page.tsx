@@ -39,21 +39,24 @@ export default function LoginPage() {
       const data =
         await response.json();
 
-      alert(
-        JSON.stringify(
-          data,
-          null,
-          2
-        )
+      console.log(
+        "LOGIN RESPONSE:",
+        data
       );
 
       if (
         !response.ok ||
         !data.access_token
       ) {
-        throw new Error(
-          "Login failed"
+        alert(
+          JSON.stringify(
+            data,
+            null,
+            2
+          )
         );
+
+        return;
       }
 
       localStorage.setItem(
@@ -61,16 +64,14 @@ export default function LoginPage() {
         data.access_token
       );
 
-      router.push(
-        "/dashboard"
-      );
-    } catch (error: any) {
-      alert(
-        "ERROR:\n\n" +
-          error?.message
-      );
-
+      window.location.href =
+        "/dashboard";
+    } catch (error) {
       console.error(error);
+
+      alert(
+        "Unable to connect to API"
+      );
     }
 
     setLoading(false);
@@ -82,35 +83,36 @@ export default function LoginPage() {
         onSubmit={handleLogin}
         className="glass p-8 rounded-3xl w-full max-w-md"
       >
-        <h1 className="text-3xl font-bold mb-6">
+        <h1 className="text-4xl font-bold mb-6">
           Login
         </h1>
 
         <input
           type="email"
           placeholder="Email"
-          className="w-full p-3 rounded-xl bg-black/20 mb-4"
           value={email}
           onChange={(e) =>
             setEmail(
               e.target.value
             )
           }
+          className="w-full p-3 rounded-xl bg-black/20 mb-4"
         />
 
         <input
           type="password"
           placeholder="Password"
-          className="w-full p-3 rounded-xl bg-black/20 mb-6"
           value={password}
           onChange={(e) =>
             setPassword(
               e.target.value
             )
           }
+          className="w-full p-3 rounded-xl bg-black/20 mb-6"
         />
 
         <button
+          type="submit"
           disabled={loading}
           className="w-full bg-emerald-500 text-black py-3 rounded-xl font-bold"
         >
