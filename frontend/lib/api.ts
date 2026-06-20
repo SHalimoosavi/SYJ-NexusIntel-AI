@@ -1,5 +1,5 @@
 const API_BASE =
-  "http://127.0.0.1:8001";
+  "https://syj-nexusintel-ai-production.up.railway.app";
 
 export interface CRMStats {
   total_leads: number;
