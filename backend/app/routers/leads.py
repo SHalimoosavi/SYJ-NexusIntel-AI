@@ -6,11 +6,17 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead import LeadCreate
+from app.schemas.lead import (
+    LeadCreate,
+    LeadUpdate
+)
 
-from app.services.lead_service import create_lead
-from app.services.lead_service import get_all_leads
-from app.services.lead_service import delete_lead
+from app.services.lead_service import (
+    create_lead,
+    get_all_leads,
+    update_lead_pipeline,
+    delete_lead
+)
 
 router = APIRouter(
     prefix="/leads",
@@ -34,6 +40,28 @@ def list_leads(
     db: Session = Depends(get_db)
 ):
     return get_all_leads(db)
+
+
+@router.put("/{lead_id}")
+def update_pipeline(
+    lead_id: int,
+    data: LeadUpdate,
+    db: Session = Depends(get_db)
+):
+
+    lead = update_lead_pipeline(
+        db,
+        lead_id,
+        data
+    )
+
+    if not lead:
+        raise HTTPException(
+            status_code=404,
+            detail="Lead not found"
+        )
+
+    return lead
 
 
 @router.delete("/{lead_id}")

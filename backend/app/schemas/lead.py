@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 class LeadCreate(BaseModel):
     business_name: str
+
     contact_person: str | None = None
     email: str | None = None
     phone: str | None = None
@@ -12,8 +13,29 @@ class LeadCreate(BaseModel):
     notes: str | None = None
     source: str | None = None
 
+    status: str = "NEW"
+    pipeline_stage: str = "NEW"
+    estimated_value: int = 0
+
+    last_contacted: str | None = None
+    next_followup: str | None = None
+
+
+class LeadUpdate(BaseModel):
+
+    status: str
+
+    pipeline_stage: str
+
+    estimated_value: int
+
+    last_contacted: str | None = None
+
+    next_followup: str | None = None
+
 
 class LeadResponse(LeadCreate):
+
     id: int
 
     model_config = {

@@ -62,6 +62,31 @@ class Lead(Base):
         nullable=True
     )
 
+    status = Column(
+        String,
+        default="NEW"
+    )
+
+    pipeline_stage = Column(
+        String,
+        default="NEW"
+    )
+
+    estimated_value = Column(
+        Integer,
+        default=0
+    )
+
+    last_contacted = Column(
+        String,
+        nullable=True
+    )
+
+    next_followup = Column(
+        String,
+        nullable=True
+    )
+
     created_at = Column(
         DateTime,
         default=datetime.utcnow
