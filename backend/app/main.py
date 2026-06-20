@@ -16,6 +16,12 @@ from app.routers.technology import router as technology_router
 from app.routers.business_discovery import (
     router as business_discovery_router
 )
+from app.routers.executive_intelligence import (
+    router as executive_intelligence_router
+)
+from app.routers.revenue_forecast import (
+    router as revenue_forecast_router
+)
 from app.routers.crm import (
     router as crm_router
 )
@@ -55,6 +61,12 @@ app.include_router(lead_qualification_router)
 app.include_router(report_router)
 app.include_router(opportunity_router)
 app.include_router(crm_router)
+app.include_router(
+    revenue_forecast_router
+)
+app.include_router(
+    executive_intelligence_router
+)
 
 @app.get("/")
 def root():
