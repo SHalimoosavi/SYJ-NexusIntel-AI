@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { authHeaders } from "@/lib/auth";
 
 const API_BASE =
   "https://syj-nexusintel-ai-production.up.railway.app";
@@ -9,18 +10,17 @@ export default function CreateLeadForm() {
   const [loading, setLoading] =
     useState(false);
 
-  const [form, setForm] =
-    useState({
-      business_name: "",
-      contact_person: "",
-      email: "",
-      phone: "",
-      website: "",
-      city: "",
-      category: "",
-      source: "Manual",
-      notes: "",
-    });
+  const [form, setForm] = useState({
+    business_name: "",
+    contact_person: "",
+    email: "",
+    phone: "",
+    website: "",
+    city: "",
+    category: "",
+    source: "Manual",
+    notes: "",
+  });
 
   async function submitLead(
     e: React.FormEvent
@@ -30,32 +30,31 @@ export default function CreateLeadForm() {
     setLoading(true);
 
     try {
-      const response =
-        await fetch(
-          `${API_BASE}/leads/`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify(form),
-          }
-        );
+      const response = await fetch(
+        `${API_BASE}/leads/`,
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: JSON.stringify(form),
+        }
+      );
 
       if (!response.ok) {
         const error =
           await response.text();
 
-        console.error(error);
-
         alert(error);
+
+        setLoading(false);
 
         return;
       }
 
-      window.location.reload();
+      alert(
+        "Lead created successfully"
+      );
 
+      window.location.reload();
     } catch (error) {
       console.error(error);
 
@@ -82,7 +81,6 @@ export default function CreateLeadForm() {
       </h2>
 
       <div className="grid md:grid-cols-2 gap-4">
-
         <input
           placeholder="Business Name"
           className="p-3 rounded-xl bg-black/20"
@@ -173,7 +171,6 @@ export default function CreateLeadForm() {
             })
           }
         />
-
       </div>
 
       <button

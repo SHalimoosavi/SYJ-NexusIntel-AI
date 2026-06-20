@@ -1,6 +1,29 @@
 const API_BASE =
   "https://syj-nexusintel-ai-production.up.railway.app";
 
+export function getToken() {
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const match = document.cookie.match(
+    /(^| )token=([^;]+)/
+  );
+
+  return match
+    ? match[2]
+    : null;
+}
+
+export function authHeaders() {
+  const token = getToken();
+
+  return {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  };
+}
+
 export async function login(
   email: string,
   password: string
