@@ -52,6 +52,16 @@ class Lead(Base):
         nullable=True
     )
 
+    industry = Column(
+        String,
+        nullable=True
+    )
+
+    company_size = Column(
+        String,
+        nullable=True
+    )
+
     notes = Column(
         String,
         nullable=True
@@ -73,6 +83,26 @@ class Lead(Base):
     )
 
     estimated_value = Column(
+        Integer,
+        default=0
+    )
+
+    lead_score = Column(
+        Integer,
+        default=0
+    )
+
+    priority = Column(
+        String,
+        default="COLD"
+    )
+
+    probability = Column(
+        Integer,
+        default=10
+    )
+
+    actual_revenue = Column(
         Integer,
         default=0
     )
