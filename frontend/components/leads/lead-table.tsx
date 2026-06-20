@@ -16,22 +16,24 @@ export default function LeadTable({
   async function deleteLead(
     id: number
   ) {
-    const confirmed = window.confirm(
-      "Delete this lead?"
-    );
+    const confirmed =
+      window.confirm(
+        "Delete this lead?"
+      );
 
     if (!confirmed) {
       return;
     }
 
     try {
-      const response = await fetch(
-        `${API_BASE}/leads/${id}`,
-        {
-          method: "DELETE",
-          headers: authHeaders(),
-        }
-      );
+      const response =
+        await fetch(
+          `${API_BASE}/leads/${id}`,
+          {
+            method: "DELETE",
+            headers: authHeaders(),
+          }
+        );
 
       if (!response.ok) {
         alert(
@@ -50,10 +52,46 @@ export default function LeadTable({
     }
   }
 
+  async function updateStage(
+    id: number,
+    stage: string
+  ) {
+    try {
+      const response =
+        await fetch(
+          `${API_BASE}/leads/${id}`,
+          {
+            method: "PUT",
+            headers: authHeaders(),
+            body: JSON.stringify({
+              status: stage,
+              pipeline_stage: stage,
+              estimated_value: 0,
+            }),
+          }
+        );
+
+      if (!response.ok) {
+        alert(
+          "Failed to update lead"
+        );
+        return;
+      }
+
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        "Failed to update lead"
+      );
+    }
+  }
+
   return (
     <div className="glass rounded-3xl p-6 overflow-auto">
       <h2 className="text-2xl font-bold mb-6">
-        Leads
+        Lead Management
       </h2>
 
       <table className="w-full">
@@ -73,6 +111,10 @@ export default function LeadTable({
 
             <th className="p-3">
               Contact
+            </th>
+
+            <th className="p-3">
+              Stage
             </th>
 
             <th className="p-3">
@@ -101,6 +143,54 @@ export default function LeadTable({
 
               <td className="p-3">
                 {lead.contact_person}
+              </td>
+
+              <td className="p-3">
+                <select
+                  defaultValue={
+                    (lead as any)
+                      .pipeline_stage ||
+                    "NEW"
+                  }
+                  onChange={(e) =>
+                    updateStage(
+                      lead.id,
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-slate-900
+                    border
+                    border-white/10
+                    rounded-lg
+                    px-3
+                    py-2
+                  "
+                >
+                  <option value="NEW">
+                    NEW
+                  </option>
+
+                  <option value="CONTACTED">
+                    CONTACTED
+                  </option>
+
+                  <option value="MEETING">
+                    MEETING
+                  </option>
+
+                  <option value="PROPOSAL">
+                    PROPOSAL
+                  </option>
+
+                  <option value="WON">
+                    WON
+                  </option>
+
+                  <option value="LOST">
+                    LOST
+                  </option>
+                </select>
               </td>
 
               <td className="p-3">
