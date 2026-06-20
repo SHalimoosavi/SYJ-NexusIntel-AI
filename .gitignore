@@ -1,0 +1,47 @@
+# Python
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environment
+
+venv/
+backend/venv/
+
+# Database
+
+*.db
+*.sqlite3
+
+# Environment
+
+.env
+
+# Logs
+
+*.log
+
+# OS
+
+.DS_Store
+
+# Node
+
+node_modules/
+
+# Next.js
+
+.next/
+out/
+
+# Coverage
+
+coverage/
+htmlcov/
+
+# IDE
+
+.vscode/
+.idea/
