@@ -13,6 +13,9 @@ from app.routers.leads import router as leads_router
 from app.routers.osint import router as osint_router
 from app.routers.intelligence import router as intelligence_router
 from app.routers.technology import router as technology_router
+from app.routers.multi_agent import (
+    router as multi_agent_router
+)
 from app.routers.sales_agent import (
     router as sales_agent_router
 )
@@ -72,6 +75,9 @@ app.include_router(
 )
 app.include_router(
     sales_agent_router
+)
+app.include_router(
+    multi_agent_router
 )
 
 @app.get("/")
