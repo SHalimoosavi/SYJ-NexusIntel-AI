@@ -4,31 +4,41 @@ import CRMKPICards from "@/components/leads/crm-kpi-cards";
 import CRMPipelineBoard from "@/components/leads/crm-pipeline-board";
 import CRMExecutiveSummary from "@/components/leads/crm-executive-summary";
 import FollowupCenter from "@/components/leads/followup-center";
+import ActivityTimeline from "@/components/leads/activity-timeline";
 
 import {
   getLeads,
   getCRMRevenue,
+  getLeadActivities,
 } from "@/lib/api";
 
 export default async function LeadsPage() {
   const leads = await getLeads();
 
-  const revenue =
-    await getCRMRevenue();
+  const revenue = await getCRMRevenue();
+
+  let activities: any[] = [];
+
+  if (leads.length > 0) {
+    try {
+      activities = await getLeadActivities(
+        leads[0].id
+      );
+    } catch {
+      activities = [];
+    }
+  }
 
   const hotLeads = leads.filter(
-    (l: any) =>
-      l.priority === "HOT"
+    (l: any) => l.priority === "HOT"
   ).length;
 
   const warmLeads = leads.filter(
-    (l: any) =>
-      l.priority === "WARM"
+    (l: any) => l.priority === "WARM"
   ).length;
 
   const coldLeads = leads.filter(
-    (l: any) =>
-      l.priority === "COLD"
+    (l: any) => l.priority === "COLD"
   ).length;
 
   const avgLeadScore =
@@ -49,14 +59,13 @@ export default async function LeadsPage() {
   const forecastRevenue =
     revenue.forecast_revenue;
 
-  const pipelineHealth =
-    Math.min(
-      100,
-      Math.round(
-        avgLeadScore * 0.7 +
-          warmLeads * 2
-      )
-    );
+  const pipelineHealth = Math.min(
+    100,
+    Math.round(
+      avgLeadScore * 0.7 +
+        warmLeads * 2
+    )
+  );
 
   return (
     <main className="gradient-bg min-h-screen p-8">
@@ -119,6 +128,12 @@ export default async function LeadsPage() {
       <LeadTable
         leads={leads}
       />
+
+      <div className="mt-8">
+        <ActivityTimeline
+          activities={activities}
+        />
+      </div>
 
       <div className="grid md:grid-cols-2 gap-6 mt-8">
         <div className="glass rounded-3xl p-6">
