@@ -3,6 +3,7 @@ import LeadTable from "@/components/leads/lead-table";
 import CRMKPICards from "@/components/leads/crm-kpi-cards";
 import CRMPipelineBoard from "@/components/leads/crm-pipeline-board";
 import CRMExecutiveSummary from "@/components/leads/crm-executive-summary";
+import ExecutiveCommandCenter from "@/components/leads/executive-command-center";
 import FollowupCenter from "@/components/leads/followup-center";
 import RelationshipIntelligence from "@/components/leads/relationship-intelligence";
 import ActivityTimeline from "@/components/leads/activity-timeline";
@@ -62,6 +63,19 @@ export default async function LeadsPage() {
       )
     );
 
+  const overdueFollowups =
+    leads.filter((lead: any) => {
+      if (!lead.next_followup) {
+        return false;
+      }
+
+      return (
+        new Date(
+          lead.next_followup
+        ) < new Date()
+      );
+    }).length;
+
   const selectedLead =
     leads.length > 0
       ? leads[0]
@@ -72,6 +86,28 @@ export default async function LeadsPage() {
       <h1 className="text-4xl font-bold mb-8">
         Sales CRM
       </h1>
+
+      <ExecutiveCommandCenter
+        pipelineValue={
+          revenue.pipeline_value
+        }
+        forecastRevenue={
+          revenue.forecast_revenue
+        }
+        annualProjection={
+          revenue.annual_projection
+        }
+        pipelineHealth={
+          pipelineHealth
+        }
+        hotLeads={hotLeads}
+        overdueFollowups={
+          overdueFollowups
+        }
+        engagementScore={
+          relationship.engagement_score
+        }
+      />
 
       <CRMExecutiveSummary
         totalLeads={
