@@ -21,6 +21,14 @@ export interface Lead {
   created_at: string;
 }
 
+export interface RelationshipIntelligence {
+  total_leads: number;
+  healthy_relationships: number;
+  overdue_followups: number;
+  engagement_score: number;
+  recommendations: string[];
+}
+
 export interface Activity {
   id: number;
   lead_id: number;
@@ -106,6 +114,23 @@ export async function getLeads() {
 
   if (!response.ok) {
     throw new Error("Failed to fetch leads");
+  }
+
+  return response.json();
+}
+
+export async function getRelationshipIntelligence(): Promise<RelationshipIntelligence> {
+  const response = await fetch(
+    `${API_BASE}/relationship-intelligence`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch relationship intelligence"
+    );
   }
 
   return response.json();
