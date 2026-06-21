@@ -8,15 +8,27 @@ def get_crm_stats(db: Session):
     total_leads = len(leads)
 
     hot_leads = len(
-        [x for x in leads if x.priority == "HOT"]
+        [
+            x
+            for x in leads
+            if x.priority == "HOT"
+        ]
     )
 
     warm_leads = len(
-        [x for x in leads if x.priority == "WARM"]
+        [
+            x
+            for x in leads
+            if x.priority == "WARM"
+        ]
     )
 
     cold_leads = len(
-        [x for x in leads if x.priority == "COLD"]
+        [
+            x
+            for x in leads
+            if x.priority == "COLD"
+        ]
     )
 
     average_lead_score = 0
@@ -95,27 +107,57 @@ def get_revenue_metrics(db: Session):
         if lead.pipeline_stage == "WON"
     )
 
-    average_deal_size = 0
+    won_deals = len(
+        [
+            x
+            for x in leads
+            if x.pipeline_stage == "WON"
+        ]
+    )
 
-    if leads:
-        average_deal_size = int(
-            pipeline_value / len(leads)
-        )
+    total_deals = len(leads)
 
-    sales_velocity = 0
+    win_rate = 0
 
-    if leads:
-        sales_velocity = round(
-            forecast_revenue / len(leads),
+    if total_deals > 0:
+        win_rate = round(
+            (won_deals / total_deals) * 100,
             2,
         )
+
+    average_deal_size = 0
+
+    if total_deals > 0:
+        average_deal_size = int(
+            pipeline_value / total_deals
+        )
+
+    sales_velocity = int(
+        (
+            total_deals
+            * average_deal_size
+            * (win_rate / 100)
+        )
+        / 30
+    )
+
+    quarterly_projection = (
+        forecast_revenue * 3
+    )
+
+    annual_projection = (
+        forecast_revenue * 12
+    )
 
     return {
         "pipeline_value": pipeline_value,
         "forecast_revenue": forecast_revenue,
         "won_revenue": won_revenue,
+        "win_rate": win_rate,
         "average_deal_size": average_deal_size,
         "sales_velocity": sales_velocity,
+        "quarterly_projection": quarterly_projection,
+        "annual_projection": annual_projection,
     }
 
 
