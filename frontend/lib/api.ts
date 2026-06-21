@@ -123,6 +123,7 @@ export async function getRelationshipIntelligence(): Promise<RelationshipIntelli
   const response = await fetch(
     `${API_BASE}/relationship-intelligence`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -201,6 +202,7 @@ export async function getCRMStats(): Promise<CRMStats> {
   const response = await fetch(
     `${API_BASE}/crm/stats`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -216,6 +218,7 @@ export async function getCRMRevenue(): Promise<CRMRevenue> {
   const response = await fetch(
     `${API_BASE}/crm/revenue`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -231,6 +234,7 @@ export async function getCRMPipeline(): Promise<CRMPipeline> {
   const response = await fetch(
     `${API_BASE}/crm/pipeline`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -246,6 +250,7 @@ export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
   const response = await fetch(
     `${API_BASE}/executive-intelligence/briefing`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -261,6 +266,7 @@ export async function getExecutiveOpportunities() {
   const response = await fetch(
     `${API_BASE}/executive-intelligence/opportunities`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -272,6 +278,7 @@ export async function getExecutiveRisks() {
   const response = await fetch(
     `${API_BASE}/executive-intelligence/risks`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -285,6 +292,7 @@ export async function getMemoryHistory(
   const response = await fetch(
     `${API_BASE}/agent-memory/history/${domain}`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -300,6 +308,7 @@ export async function getSalesPriorities(): Promise<SalesPriority[]> {
   const response = await fetch(
     `${API_BASE}/sales-agent/priorities`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );
@@ -316,9 +325,7 @@ export async function getIntelligenceReport() {
     `${API_BASE}/intelligence/report`,
     {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers: authHeaders(),
       body: JSON.stringify({
         domain: "google.com",
       }),
@@ -341,6 +348,7 @@ export async function getLeadActivities(
   const response = await fetch(
     `${API_BASE}/activities/${leadId}`,
     {
+      headers: authHeaders(),
       cache: "no-store",
     }
   );

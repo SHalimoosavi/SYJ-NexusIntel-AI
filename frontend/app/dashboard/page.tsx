@@ -1,86 +1,131 @@
-import CommandLayout from "@/components/layout/command-layout";
+"use client";
 
+import { useEffect, useState } from "react";
+
+import CommandLayout from "@/components/layout/command-layout";
 import ExecutiveDashboard from "@/components/dashboard/executive-dashboard";
 
 import {
-  getCRMStats,
-  getCRMRevenue,
-  getCRMPipeline,
-  getExecutiveBriefing,
-  getMemoryHistory,
-  getExecutiveOpportunities,
-  getExecutiveRisks,
-  getIntelligenceReport,
+getCRMStats,
+getCRMRevenue,
+getCRMPipeline,
+getExecutiveBriefing,
+getMemoryHistory,
+getExecutiveOpportunities,
+getExecutiveRisks,
+getIntelligenceReport,
 } from "@/lib/api";
 
-export default async function DashboardPage() {
+export default function DashboardPage() {
+const [data, setData] = useState<any>(null);
+const [loading, setLoading] = useState(true);
+const [error, setError] = useState("");
 
-  const stats =
-    await getCRMStats();
+useEffect(() => {
+async function loadDashboard() {
+try {
+const [
+stats,
+revenue,
+pipeline,
+briefing,
+memories,
+opportunities,
+risks,
+intelligenceReport,
+] = await Promise.all([
+getCRMStats(),
+getCRMRevenue(),
+getCRMPipeline(),
+getExecutiveBriefing(),
+getMemoryHistory("google.com"),
+getExecutiveOpportunities(),
+getExecutiveRisks(),
+getIntelligenceReport(),
+]);
 
-  const revenue =
-    await getCRMRevenue();
-
-  const pipeline =
-    await getCRMPipeline();
-
-  const briefing =
-    await getExecutiveBriefing();
-
-  const memories =
-    await getMemoryHistory(
-      "google.com"
+    setData({
+      stats,
+      revenue,
+      pipeline,
+      briefing,
+      memories,
+      opportunities,
+      risks,
+      intelligenceReport,
+    });
+  } catch (err: any) {
+    console.error(err);
+    setError(
+      err?.message ||
+      "Failed to load dashboard"
     );
+  } finally {
+    setLoading(false);
+  }
+}
 
-  const opportunities =
-    await getExecutiveOpportunities();
+loadDashboard();
 
-  const risks =
-    await getExecutiveRisks();
+}, []);
 
-  const intelligenceReport =
-    await getIntelligenceReport();
+if (loading) {
+return (
+<CommandLayout>
+<div className="p-8">
+Loading Dashboard...
+</div>
+</CommandLayout>
+);
+}
 
-  return (
-    <CommandLayout>
+if (error) {
+return (
+<CommandLayout>
+<div className="p-8 text-red-500">
+{error}
+</div>
+</CommandLayout>
+);
+}
 
-      <div className="mb-8">
+return (
+<CommandLayout>
+<div className="mb-8">
+<h1
+className="
+text-5xl
+font-black
+tracking-tight
+"
+>
+Executive Dashboard
+</h1>
 
-        <h1
-          className="
-            text-5xl
-            font-black
-            tracking-tight
-          "
-        >
-          Executive Dashboard
-        </h1>
+    <p
+      className="
+        text-slate-400
+        mt-2
+      "
+    >
+      Revenue Intelligence,
+      CRM Analytics,
+      Opportunity Tracking
+      and Forecasting.
+    </p>
+  </div>
 
-        <p
-          className="
-            text-slate-400
-            mt-2
-          "
-        >
-          Revenue Intelligence,
-          CRM Analytics,
-          Opportunity Tracking
-          and Forecasting.
-        </p>
+  <ExecutiveDashboard
+    stats={data.stats}
+    revenue={data.revenue}
+    pipeline={data.pipeline}
+    briefing={data.briefing}
+    memories={data.memories}
+    opportunities={data.opportunities}
+    intelligenceReport={data.intelligenceReport}
+    risks={data.risks}
+  />
+</CommandLayout>
 
-      </div>
-
-      <ExecutiveDashboard
-        stats={stats}
-        revenue={revenue}
-        pipeline={pipeline}
-        briefing={briefing}
-        memories={memories}
-        opportunities={opportunities}
-        intelligenceReport={intelligenceReport}
-        risks={risks}
-      />
-
-    </CommandLayout>
-  );
+);
 }
