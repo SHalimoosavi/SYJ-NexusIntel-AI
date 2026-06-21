@@ -4,6 +4,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.database.database import Base
 from app.database.database import engine
 
+from app.routers.opportunity import (
+    router as opportunity_router
+)
+from app.routers.activity import (
+    router as activity_router
+)
+
 from app.models.user import User
 from app.models.lead import Lead
 from app.models.osint_report import OSINTReport
@@ -14,6 +21,7 @@ from app.routers.osint import router as osint_router
 from app.routers.intelligence import router as intelligence_router
 from app.routers.technology import router as technology_router
 from app.models.agent_memory import AgentMemory
+from app.models.activity import Activity
 from app.routers.agent_memory import (
     router as agent_memory_router
 )
@@ -70,6 +78,7 @@ app.include_router(business_discovery_router)
 app.include_router(lead_qualification_router)
 app.include_router(report_router)
 app.include_router(opportunity_router)
+app.include_router(activity_router)
 app.include_router(crm_router)
 app.include_router(
     revenue_forecast_router

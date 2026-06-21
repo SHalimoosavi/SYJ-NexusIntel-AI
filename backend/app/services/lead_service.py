@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
+from app.models.activity import Activity
 
 
 def calculate_lead_score(
@@ -9,8 +10,6 @@ def calculate_lead_score(
     estimated_value: int,
 ):
     score = 0
-
-    # Industry Scoring
 
     high_value_industries = [
         "Healthcare",
@@ -34,8 +33,6 @@ def calculate_lead_score(
     else:
         score += 10
 
-    # Company Size
-
     if company_size == "ENTERPRISE":
         score += 30
 
@@ -44,8 +41,6 @@ def calculate_lead_score(
 
     elif company_size == "SMALL":
         score += 10
-
-    # Deal Value
 
     if estimated_value >= 1000000:
         score += 40
@@ -60,8 +55,6 @@ def calculate_lead_score(
         score += 10
 
     score = min(score, 100)
-
-    # Priority
 
     if score >= 80:
         priority = "HOT"
@@ -82,6 +75,24 @@ def calculate_lead_score(
     }
 
 
+def create_activity_log(
+    db: Session,
+    lead_id: int,
+    activity_type: str,
+    description: str,
+):
+    activity = Activity(
+        lead_id=lead_id,
+        activity_type=activity_type,
+        description=description,
+    )
+
+    db.add(activity)
+    db.commit()
+
+    return activity
+
+
 def create_lead(
     db: Session,
     lead_data,
@@ -100,10 +111,15 @@ def create_lead(
     )
 
     db.add(lead)
-
     db.commit()
-
     db.refresh(lead)
+
+    create_activity_log(
+        db,
+        lead.id,
+        "LEAD_CREATED",
+        f"Lead created: {lead.business_name}",
+    )
 
     return lead
 
@@ -140,6 +156,8 @@ def update_lead_pipeline(
     if not lead:
         return None
 
+    previous_stage = lead.pipeline_stage
+
     lead.status = data.status
     lead.pipeline_stage = data.pipeline_stage
     lead.estimated_value = data.estimated_value
@@ -149,8 +167,15 @@ def update_lead_pipeline(
     lead.next_followup = data.next_followup
 
     db.commit()
-
     db.refresh(lead)
+
+    if previous_stage != lead.pipeline_stage:
+        create_activity_log(
+            db,
+            lead.id,
+            "STAGE_CHANGED",
+            f"{previous_stage} → {lead.pipeline_stage}",
+        )
 
     return lead
 
@@ -167,8 +192,14 @@ def delete_lead(
     if not lead:
         return False
 
-    db.delete(lead)
+    create_activity_log(
+        db,
+        lead.id,
+        "LEAD_DELETED",
+        f"Lead deleted: {lead.business_name}",
+    )
 
+    db.delete(lead)
     db.commit()
 
     return True
