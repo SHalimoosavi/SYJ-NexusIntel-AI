@@ -3,8 +3,13 @@ type Props = {
   hotLeads: number;
   warmLeads: number;
   coldLeads: number;
+
   pipelineValue: number;
+
   forecastRevenue: number;
+
+  averageDealSize: number;
+
   salesVelocity: number;
 };
 
@@ -15,6 +20,7 @@ export default function CRMKPICards({
   coldLeads,
   pipelineValue,
   forecastRevenue,
+  averageDealSize,
   salesVelocity,
 }: Props) {
   const cards = [
@@ -35,21 +41,27 @@ export default function CRMKPICards({
       value: coldLeads,
     },
     {
-      title: "Pipeline",
+      title: "Pipeline Value",
       value: `₹${pipelineValue.toLocaleString()}`,
     },
     {
-      title: "Forecast",
+      title: "Forecast Revenue",
       value: `₹${forecastRevenue.toLocaleString()}`,
     },
     {
+      title: "Average Deal",
+      value: `₹${averageDealSize.toLocaleString()}`,
+    },
+    {
       title: "Sales Velocity",
-      value: `₹${salesVelocity.toLocaleString()}`,
+      value: `₹${Math.round(
+        salesVelocity
+      ).toLocaleString()}`,
     },
   ];
 
   return (
-    <div className="grid md:grid-cols-4 xl:grid-cols-7 gap-4 mb-8">
+    <div className="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
       {cards.map((card) => (
         <div
           key={card.title}
@@ -59,7 +71,7 @@ export default function CRMKPICards({
             {card.title}
           </p>
 
-          <h3 className="text-2xl font-black mt-2">
+          <h3 className="text-3xl font-black mt-2">
             {card.value}
           </h3>
         </div>

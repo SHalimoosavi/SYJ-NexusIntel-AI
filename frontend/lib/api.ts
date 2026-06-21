@@ -34,10 +34,15 @@ export interface CRMStats {
 
 export interface CRMRevenue {
   pipeline_value: number;
-  won_revenue: number;
   forecast_revenue: number;
+  won_revenue: number;
+
+  win_rate: number;
   average_deal_size: number;
   sales_velocity: number;
+
+  quarterly_projection: number;
+  annual_projection: number;
 }
 
 export interface CRMPipeline {
