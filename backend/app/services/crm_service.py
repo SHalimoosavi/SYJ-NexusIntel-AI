@@ -1,5 +1,4 @@
 from sqlalchemy.orm import Session
-
 from app.models.lead import Lead
 
 
@@ -9,33 +8,21 @@ def get_crm_stats(db: Session):
     total_leads = len(leads)
 
     hot_leads = len(
-        [
-            x
-            for x in leads
-            if x.priority == "HOT"
-        ]
+        [x for x in leads if x.priority == "HOT"]
     )
 
     warm_leads = len(
-        [
-            x
-            for x in leads
-            if x.priority == "WARM"
-        ]
+        [x for x in leads if x.priority == "WARM"]
     )
 
     cold_leads = len(
-        [
-            x
-            for x in leads
-            if x.priority == "COLD"
-        ]
+        [x for x in leads if x.priority == "COLD"]
     )
 
     average_lead_score = 0
 
     if total_leads:
-        average_lead_score = round(
+        average_lead_score = int(
             sum(
                 lead.lead_score or 0
                 for lead in leads
@@ -43,15 +30,33 @@ def get_crm_stats(db: Session):
             / total_leads
         )
 
-    pipeline_health = round(
-        (
-            average_lead_score * 0.7
-        )
-        +
-        (
-            warm_leads * 2
-        )
+    won_deals = len(
+        [
+            x
+            for x in leads
+            if x.pipeline_stage == "WON"
+        ]
     )
+
+    lost_deals = len(
+        [
+            x
+            for x in leads
+            if x.pipeline_stage == "LOST"
+        ]
+    )
+
+    close_rate = 0
+
+    if won_deals + lost_deals > 0:
+        close_rate = round(
+            (
+                won_deals
+                / (won_deals + lost_deals)
+            )
+            * 100,
+            2,
+        )
 
     return {
         "total_leads": total_leads,
@@ -59,21 +64,9 @@ def get_crm_stats(db: Session):
         "warm_leads": warm_leads,
         "cold_leads": cold_leads,
         "average_lead_score": average_lead_score,
-        "pipeline_health": pipeline_health,
-        "won_deals": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "WON"
-            ]
-        ),
-        "lost_deals": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "LOST"
-            ]
-        ),
+        "won_deals": won_deals,
+        "lost_deals": lost_deals,
+        "close_rate": close_rate,
     }
 
 
@@ -86,15 +79,12 @@ def get_revenue_metrics(db: Session):
     )
 
     forecast_revenue = sum(
-        round(
-            (
-                lead.estimated_value or 0
+        int(
+            (lead.estimated_value or 0)
+            * (
+                (lead.probability or 0)
+                / 100
             )
-            *
-            (
-                lead.probability or 0
-            )
-            / 100
         )
         for lead in leads
     )
@@ -105,17 +95,26 @@ def get_revenue_metrics(db: Session):
         if lead.pipeline_stage == "WON"
     )
 
+    average_deal_size = 0
+
+    if leads:
+        average_deal_size = int(
+            pipeline_value / len(leads)
+        )
+
     sales_velocity = 0
 
     if leads:
         sales_velocity = round(
-            pipeline_value / len(leads)
+            forecast_revenue / len(leads),
+            2,
         )
 
     return {
         "pipeline_value": pipeline_value,
         "forecast_revenue": forecast_revenue,
         "won_revenue": won_revenue,
+        "average_deal_size": average_deal_size,
         "sales_velocity": sales_velocity,
     }
 
@@ -174,29 +173,3 @@ def get_pipeline_metrics(db: Session):
             ]
         ),
     }
-
-
-def get_followup_queue(db: Session):
-    leads = db.query(Lead).all()
-
-    queue = []
-
-    for lead in leads:
-
-        if (
-            lead.pipeline_stage == "CONTACTED"
-            or lead.pipeline_stage == "MEETING"
-            or lead.next_followup
-        ):
-            queue.append(
-                {
-                    "id": lead.id,
-                    "business_name": lead.business_name,
-                    "contact_person": lead.contact_person,
-                    "lead_score": lead.lead_score,
-                    "priority": lead.priority,
-                    "next_followup": lead.next_followup,
-                }
-            )
-
-    return queue
