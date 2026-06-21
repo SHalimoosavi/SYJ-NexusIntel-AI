@@ -23,18 +23,21 @@ export interface Lead {
 
 export interface CRMStats {
   total_leads: number;
-  new_leads: number;
-  contacted_leads: number;
-  meeting_leads: number;
-  proposal_leads: number;
+  hot_leads: number;
+  warm_leads: number;
+  cold_leads: number;
+  average_lead_score: number;
   won_deals: number;
   lost_deals: number;
+  close_rate: number;
 }
 
 export interface CRMRevenue {
   pipeline_value: number;
   won_revenue: number;
   forecast_revenue: number;
+  average_deal_size: number;
+  sales_velocity: number;
 }
 
 export interface CRMPipeline {

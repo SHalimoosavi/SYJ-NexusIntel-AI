@@ -20,14 +20,14 @@ export interface Lead {
   last_contacted: string | null;
   next_followup: string | null;
 
-  industry?: string;
-  company_size?: string;
+  industry: string;
+  company_size: string;
 
-  lead_score?: number;
-  priority?: string;
-  probability?: number;
+  lead_score: number;
+  priority: string;
+  probability: number;
 
-  actual_revenue?: number;
+  actual_revenue: number;
 
   created_at: string;
 }

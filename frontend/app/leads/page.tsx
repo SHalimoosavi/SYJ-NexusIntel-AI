@@ -39,8 +39,7 @@ export default async function LeadsPage() {
               lead: any
             ) =>
               sum +
-              (lead.lead_score ||
-                0),
+              (lead.lead_score || 0),
             0
           ) / leads.length
         )
@@ -54,11 +53,10 @@ export default async function LeadsPage() {
       ) =>
         sum +
         Math.round(
-          ((lead.estimated_value ||
-            0) *
-            (lead.probability ||
-              0)) /
-            100
+          (
+            (lead.estimated_value || 0) *
+            (lead.probability || 0)
+          ) / 100
         ),
       0
     );
@@ -68,7 +66,16 @@ export default async function LeadsPage() {
       100,
       Math.round(
         avgLeadScore * 0.7 +
-          warmLeads * 2
+        warmLeads * 2
+      )
+    );
+
+  const salesVelocity =
+    Math.round(
+      forecastRevenue /
+      Math.max(
+        leads.length,
+        1
       )
     );
 
@@ -102,6 +109,12 @@ export default async function LeadsPage() {
         coldLeads={coldLeads}
         pipelineValue={
           revenue.pipeline_value
+        }
+        forecastRevenue={
+          forecastRevenue
+        }
+        salesVelocity={
+          salesVelocity
         }
       />
 
