@@ -48,12 +48,18 @@ def tenant_filter(
     )
 
 
+from fastapi import HTTPException
+
+
 def validate_tenant_access(
     record,
     organization_id: int,
 ):
     if not record:
-        return False
+        raise HTTPException(
+            status_code=404,
+            detail="Record not found",
+        )
 
     if (
         record.organization_id
@@ -61,9 +67,7 @@ def validate_tenant_access(
     ):
         raise HTTPException(
             status_code=403,
-            detail=(
-                "Tenant access denied"
-            ),
+            detail="Tenant access denied",
         )
 
     return True

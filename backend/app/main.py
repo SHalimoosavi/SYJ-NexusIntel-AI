@@ -33,6 +33,18 @@ from app.routers.osint import router as osint_router
 from app.routers.intelligence import router as intelligence_router
 from app.routers.technology import router as technology_router
 
+from app.routers.organization_dashboard import (
+    router as organization_dashboard_router
+)
+
+from app.routers.dashboard import (
+    router as dashboard_router
+)
+
+from app.routers.audit import (
+    router as audit_router
+)
+
 from app.routers.relationship_intelligence import (
     router as relationship_intelligence_router
 )
@@ -97,6 +109,10 @@ from app.routers.invitation import (
     router as invitation_router
 )
 
+from app.routers.users import (
+    router as users_router
+)
+
 Base.metadata.create_all(bind=engine)
 
 db = SessionLocal()
@@ -126,6 +142,18 @@ app.include_router(leads_router)
 app.include_router(osint_router)
 app.include_router(intelligence_router)
 app.include_router(technology_router)
+
+app.include_router(
+    organization_dashboard_router
+)
+
+app.include_router(
+    audit_router
+)
+
+app.include_router(
+    dashboard_router
+)
 
 app.include_router(
     business_discovery_router
@@ -165,6 +193,10 @@ app.include_router(
 
 app.include_router(
     invitation_router
+)
+
+app.include_router(
+    users_router
 )
 
 app.include_router(
