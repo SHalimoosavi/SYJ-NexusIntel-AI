@@ -24,32 +24,40 @@ from app.core.dependencies import (
 
 router = APIRouter(
     prefix="/leads",
-    tags=["Lead Management"]
+    tags=["Lead Management"],
 )
 
 
-@router.post("/")
+@router.post("")
 def add_lead(
     lead: LeadCreate,
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
-    )
+    ),
 ):
     return create_lead(
         db,
-        lead
+        lead,
+        current_user[
+            "organization_id"
+        ],
     )
 
 
-@router.get("/")
+@router.get("")
 def list_leads(
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
-    )
+    ),
 ):
-    return get_all_leads(db)
+    return get_all_leads(
+        db,
+        current_user[
+            "organization_id"
+        ],
+    )
 
 
 @router.put("/{lead_id}")
@@ -59,18 +67,21 @@ def update_pipeline(
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
-    )
+    ),
 ):
     lead = update_lead_pipeline(
         db,
         lead_id,
-        data
+        data,
+        current_user[
+            "organization_id"
+        ],
     )
 
     if not lead:
         raise HTTPException(
             status_code=404,
-            detail="Lead not found"
+            detail="Lead not found",
         )
 
     return lead
@@ -82,17 +93,20 @@ def remove_lead(
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
-    )
+    ),
 ):
     deleted = delete_lead(
         db,
-        lead_id
+        lead_id,
+        current_user[
+            "organization_id"
+        ],
     )
 
     if not deleted:
         raise HTTPException(
             status_code=404,
-            detail="Lead not found"
+            detail="Lead not found",
         )
 
     return {

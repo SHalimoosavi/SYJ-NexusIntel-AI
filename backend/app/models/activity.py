@@ -18,6 +18,13 @@ class Activity(Base):
         index=True,
     )
 
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id"),
+        nullable=True,
+        index=True,
+    )
+
     lead_id = Column(
         Integer,
         ForeignKey("leads.id"),

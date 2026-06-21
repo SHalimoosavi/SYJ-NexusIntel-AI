@@ -5,38 +5,126 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
+from app.core.feature_guard import (
+    require_feature,
+)
+
+from app.core.feature_constants import (
+    EXECUTIVE_INTELLIGENCE,
+)
+
+from app.core.dependencies import (
+    get_current_user,
+)
+
+from app.services.ai_usage_service import (
+    enforce_ai_limit,
+    log_ai_request,
+)
+
 from app.services.executive_intelligence_service import (
     generate_executive_briefing,
     get_top_opportunities,
-    get_risks
+    get_risks,
 )
 
 router = APIRouter(
     prefix="/executive-intelligence",
-    tags=["Executive Intelligence"]
+    tags=["Executive Intelligence"],
 )
 
 
 @router.get("/briefing")
 def executive_briefing(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        require_feature(
+            EXECUTIVE_INTELLIGENCE
+        )
+    ),
 ):
-    return generate_executive_briefing(
-        db
+    organization_id = current_user[
+        "organization_id"
+    ]
+
+    enforce_ai_limit(
+        db,
+        organization_id,
     )
+
+    result = generate_executive_briefing(
+        db,
+        organization_id,
+    )
+
+    log_ai_request(
+        db,
+        organization_id,
+        "EXECUTIVE_BRIEFING",
+    )
+
+    return result
 
 
 @router.get("/opportunities")
 def opportunities(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        require_feature(
+            EXECUTIVE_INTELLIGENCE
+        )
+    ),
 ):
-    return get_top_opportunities(
-        db
+    organization_id = current_user[
+        "organization_id"
+    ]
+
+    enforce_ai_limit(
+        db,
+        organization_id,
     )
+
+    result = get_top_opportunities(
+        db,
+        organization_id,
+    )
+
+    log_ai_request(
+        db,
+        organization_id,
+        "EXECUTIVE_OPPORTUNITIES",
+    )
+
+    return result
 
 
 @router.get("/risks")
 def risks(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        require_feature(
+            EXECUTIVE_INTELLIGENCE
+        )
+    ),
 ):
-    return get_risks(db)
+    organization_id = current_user[
+        "organization_id"
+    ]
+
+    enforce_ai_limit(
+        db,
+        organization_id,
+    )
+
+    result = get_risks(
+        db,
+        organization_id,
+    )
+
+    log_ai_request(
+        db,
+        organization_id,
+        "EXECUTIVE_RISKS",
+    )
+
+    return result

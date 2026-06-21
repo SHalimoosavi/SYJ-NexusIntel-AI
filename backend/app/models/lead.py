@@ -4,6 +4,7 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 
 from app.database.database import Base
 
@@ -14,110 +15,117 @@ class Lead(Base):
     id = Column(
         Integer,
         primary_key=True,
-        index=True
+        index=True,
+    )
+
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id"),
+        nullable=True,
+        index=True,
     )
 
     business_name = Column(
         String,
-        nullable=False
+        nullable=False,
     )
 
     contact_person = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     email = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     phone = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     website = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     city = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     category = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     industry = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     company_size = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     notes = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     source = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     status = Column(
         String,
-        default="NEW"
+        default="NEW",
     )
 
     pipeline_stage = Column(
         String,
-        default="NEW"
+        default="NEW",
     )
 
     estimated_value = Column(
         Integer,
-        default=0
+        default=0,
     )
 
     lead_score = Column(
         Integer,
-        default=0
+        default=0,
     )
 
     priority = Column(
         String,
-        default="COLD"
+        default="COLD",
     )
 
     probability = Column(
         Integer,
-        default=10
+        default=10,
     )
 
     actual_revenue = Column(
         Integer,
-        default=0
+        default=0,
     )
 
     last_contacted = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     next_followup = Column(
         String,
-        nullable=True
+        nullable=True,
     )
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
     )

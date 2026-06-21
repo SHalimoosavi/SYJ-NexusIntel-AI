@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
 
+from app.core.tenant import tenant_filter
+
 
 STAGE_WEIGHTS = {
     "NEW": 0.10,
@@ -13,9 +15,18 @@ STAGE_WEIGHTS = {
 }
 
 
-def calculate_forecast(db: Session):
-
-    leads = db.query(Lead).all()
+def calculate_forecast(
+    db: Session,
+    organization_id: int,
+):
+    leads = (
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
+        .all()
+    )
 
     pipeline_value = 0
     weighted_revenue = 0
@@ -40,7 +51,7 @@ def calculate_forecast(db: Session):
 
         weight = STAGE_WEIGHTS.get(
             stage.upper(),
-            0.10
+            0.10,
         )
 
         weighted_revenue += (
@@ -56,7 +67,7 @@ def calculate_forecast(db: Session):
     if total_leads > 0:
         close_rate = round(
             (won_count / total_leads) * 100,
-            2
+            2,
         )
 
     annual_projection = (
@@ -64,30 +75,19 @@ def calculate_forecast(db: Session):
     )
 
     return {
-        "pipeline_value":
-        pipeline_value,
-
-        "weighted_revenue":
-        round(
+        "pipeline_value": pipeline_value,
+        "weighted_revenue": round(
             weighted_revenue,
-            2
+            2,
         ),
-
-        "won_revenue":
-        won_revenue,
-
-        "forecast_revenue":
-        round(
+        "won_revenue": won_revenue,
+        "forecast_revenue": round(
             weighted_revenue,
-            2
+            2,
         ),
-
-        "close_rate":
-        close_rate,
-
-        "annual_projection":
-        round(
+        "close_rate": close_rate,
+        "annual_projection": round(
             annual_projection,
-            2
-        )
+            2,
+        ),
     }

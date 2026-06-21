@@ -56,7 +56,8 @@ def generate_executive_summary(
 
 def run_multi_agent_analysis(
     domain: str,
-    db
+    db,
+    organization_id: int,
 ):
 
     intelligence = (
@@ -130,9 +131,9 @@ def run_multi_agent_analysis(
 
     save_memory(
         db,
-        memory_payload
+        memory_payload,
+        organization_id,
     )
-
     return {
 
         "research_agent":

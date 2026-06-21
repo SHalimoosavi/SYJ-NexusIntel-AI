@@ -2,16 +2,21 @@ from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
 
+from app.core.tenant import tenant_filter
+
 from app.services.revenue_forecast_service import (
-    calculate_forecast
+    calculate_forecast,
 )
 
 
 def generate_executive_briefing(
-    db: Session
+    db: Session,
+    organization_id: int,
 ):
-
-    forecast = calculate_forecast(db)
+    forecast = calculate_forecast(
+        db,
+        organization_id,
+    )
 
     pipeline_value = forecast[
         "pipeline_value"
@@ -91,16 +96,20 @@ def generate_executive_briefing(
         risk_summary,
 
         "recommendation":
-        recommendation
+        recommendation,
     }
 
 
 def get_top_opportunities(
-    db: Session
+    db: Session,
+    organization_id: int,
 ):
-
     leads = (
-        db.query(Lead)
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
         .order_by(
             Lead.estimated_value.desc()
         )
@@ -111,6 +120,7 @@ def get_top_opportunities(
     return [
         {
             "id": lead.id,
+
             "business_name":
             lead.business_name,
 
@@ -118,19 +128,26 @@ def get_top_opportunities(
             lead.estimated_value,
 
             "pipeline_stage":
-            lead.pipeline_stage
+            lead.pipeline_stage,
         }
         for lead in leads
     ]
 
 
 def get_risks(
-    db: Session
+    db: Session,
+    organization_id: int,
 ):
-
     risks = []
 
-    leads = db.query(Lead).all()
+    leads = (
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
+        .all()
+    )
 
     if not leads:
         risks.append(
@@ -139,11 +156,12 @@ def get_risks(
 
     won_count = len(
         [
-            l for l in leads
+            lead
+            for lead in leads
             if (
-                l.pipeline_stage
+                lead.pipeline_stage
                 and
-                l.pipeline_stage.upper()
+                lead.pipeline_stage.upper()
                 == "WON"
             )
         ]
@@ -156,8 +174,9 @@ def get_risks(
 
     stale_leads = len(
         [
-            l for l in leads
-            if not l.next_followup
+            lead
+            for lead in leads
+            if not lead.next_followup
         ]
     )
 
@@ -171,5 +190,5 @@ def get_risks(
         len(risks),
 
         "risks":
-        risks
+        risks,
     }

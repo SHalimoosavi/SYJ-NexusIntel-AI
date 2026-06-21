@@ -2,12 +2,6 @@ from pydantic import BaseModel
 from pydantic import EmailStr
 
 
-class UserCreate(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
-
-
 class UserLogin(BaseModel):
     email: EmailStr
     password: str
@@ -17,6 +11,9 @@ class UserResponse(BaseModel):
     id: int
     full_name: str
     email: EmailStr
+
+    organization_id: int | None = None
+    role_id: int | None = None
 
     model_config = {
         "from_attributes": True

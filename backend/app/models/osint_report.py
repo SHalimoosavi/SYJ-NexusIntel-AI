@@ -4,6 +4,7 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
+from sqlalchemy import ForeignKey
 
 from app.database.database import Base
 
@@ -14,15 +15,22 @@ class OSINTReport(Base):
     id = Column(
         Integer,
         primary_key=True,
-        index=True
+        index=True,
+    )
+
+    organization_id = Column(
+        Integer,
+        ForeignKey("organizations.id"),
+        nullable=True,
+        index=True,
     )
 
     domain = Column(
         String,
-        nullable=False
+        nullable=False,
     )
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=datetime.utcnow,
     )

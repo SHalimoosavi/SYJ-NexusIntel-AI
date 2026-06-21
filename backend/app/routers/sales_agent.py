@@ -7,44 +7,103 @@ from app.database.database import get_db
 
 from app.schemas.sales_agent import (
     SalesPitchRequest,
-    FollowUpRequest
+    FollowUpRequest,
 )
 
 from app.services.sales_agent_service import (
     get_sales_priorities,
     generate_pitch,
-    generate_followup
+    generate_followup,
+)
+
+from app.services.ai_usage_service import (
+    enforce_ai_limit,
+    log_ai_request,
+)
+
+from app.core.dependencies import (
+    get_current_user,
 )
 
 router = APIRouter(
     prefix="/sales-agent",
-    tags=["Sales Agent"]
+    tags=["Sales Agent"],
 )
 
 
 @router.get("/priorities")
 def priorities(
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    ),
 ):
-    return get_sales_priorities(db)
+    return get_sales_priorities(
+        db,
+        current_user[
+            "organization_id"
+        ],
+    )
 
 
 @router.post("/pitch")
 def pitch(
-    request: SalesPitchRequest
+    request: SalesPitchRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    ),
 ):
-    return generate_pitch(
+    organization_id = current_user[
+        "organization_id"
+    ]
+
+    enforce_ai_limit(
+        db,
+        organization_id,
+    )
+
+    result = generate_pitch(
         request.business_name,
         request.domain,
-        request.lead_score
+        request.lead_score,
     )
+
+    log_ai_request(
+        db,
+        organization_id,
+        "SALES_PITCH",
+    )
+
+    return result
 
 
 @router.post("/followup")
 def followup(
-    request: FollowUpRequest
+    request: FollowUpRequest,
+    db: Session = Depends(get_db),
+    current_user=Depends(
+        get_current_user
+    ),
 ):
-    return generate_followup(
-        request.business_name,
-        request.pipeline_stage
+    organization_id = current_user[
+        "organization_id"
+    ]
+
+    enforce_ai_limit(
+        db,
+        organization_id,
     )
+
+    result = generate_followup(
+        request.business_name,
+        request.pipeline_stage,
+    )
+
+    log_ai_request(
+        db,
+        organization_id,
+        "SALES_FOLLOWUP",
+    )
+
+    return result

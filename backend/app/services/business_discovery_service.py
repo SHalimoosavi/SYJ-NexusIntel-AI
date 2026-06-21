@@ -2,18 +2,26 @@ from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
 
+from app.core.tenant import tenant_filter
+
 
 def search_businesses(
     db: Session,
     city: str,
-    category: str
+    category: str,
+    organization_id: int,
 ):
-
-    query = db.query(Lead)
+    query = tenant_filter(
+        db.query(Lead),
+        Lead,
+        organization_id,
+    )
 
     if city:
         query = query.filter(
-            Lead.city.ilike(f"%{city}%")
+            Lead.city.ilike(
+                f"%{city}%"
+            )
         )
 
     if category:

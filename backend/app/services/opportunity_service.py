@@ -92,7 +92,7 @@ def create_sales_pitch(
 
 
 def analyze_opportunity(
-    domain: str
+    domain: str,
 ):
 
     report = (

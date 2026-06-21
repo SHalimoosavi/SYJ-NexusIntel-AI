@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
-
+from app.core.tenant import tenant_filter
 
 PIPELINE_SCORES = {
     "NEW": 5,
@@ -121,15 +121,20 @@ def calculate_total_score(
 
 
 def get_sales_priorities(
-    db: Session
+    db: Session,
+    organization_id: int,
 ):
 
     leads = (
-        db.query(Lead)
-        .order_by(
-            Lead.estimated_value.desc()
-        )
-        .all()
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+    )
+    .order_by(
+        Lead.estimated_value.desc()
+    )
+    .all()
     )
 
     results = []

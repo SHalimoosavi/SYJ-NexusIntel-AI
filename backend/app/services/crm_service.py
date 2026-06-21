@@ -1,9 +1,22 @@
 from sqlalchemy.orm import Session
+
 from app.models.lead import Lead
 
+from app.core.tenant import tenant_filter
 
-def get_crm_stats(db: Session):
-    leads = db.query(Lead).all()
+
+def get_crm_stats(
+    db: Session,
+    organization_id: int,
+):
+    leads = (
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
+        .all()
+    )
 
     total_leads = len(leads)
 
@@ -82,8 +95,18 @@ def get_crm_stats(db: Session):
     }
 
 
-def get_revenue_metrics(db: Session):
-    leads = db.query(Lead).all()
+def get_revenue_metrics(
+    db: Session,
+    organization_id: int,
+):
+    leads = (
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
+        .all()
+    )
 
     pipeline_value = sum(
         lead.estimated_value or 0
@@ -161,57 +184,25 @@ def get_revenue_metrics(db: Session):
     }
 
 
-def get_pipeline_metrics(db: Session):
-    leads = db.query(Lead).all()
+def get_pipeline_metrics(
+    db: Session,
+    organization_id: int,
+):
+    leads = (
+        tenant_filter(
+            db.query(Lead),
+            Lead,
+            organization_id,
+        )
+        .all()
+    )
 
     return {
-        "new": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "NEW"
-            ]
-        ),
-        "contacted": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "CONTACTED"
-            ]
-        ),
-        "meeting": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "MEETING"
-            ]
-        ),
-        "proposal": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "PROPOSAL"
-            ]
-        ),
-        "negotiation": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "NEGOTIATION"
-            ]
-        ),
-        "won": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "WON"
-            ]
-        ),
-        "lost": len(
-            [
-                x
-                for x in leads
-                if x.pipeline_stage == "LOST"
-            ]
-        ),
+        "new": len([x for x in leads if x.pipeline_stage == "NEW"]),
+        "contacted": len([x for x in leads if x.pipeline_stage == "CONTACTED"]),
+        "meeting": len([x for x in leads if x.pipeline_stage == "MEETING"]),
+        "proposal": len([x for x in leads if x.pipeline_stage == "PROPOSAL"]),
+        "negotiation": len([x for x in leads if x.pipeline_stage == "NEGOTIATION"]),
+        "won": len([x for x in leads if x.pipeline_stage == "WON"]),
+        "lost": len([x for x in leads if x.pipeline_stage == "LOST"]),
     }
