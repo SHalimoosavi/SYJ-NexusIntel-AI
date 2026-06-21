@@ -21,6 +21,14 @@ export interface Lead {
   created_at: string;
 }
 
+export interface Activity {
+  id: number;
+  lead_id: number;
+  activity_type: string;
+  description: string | null;
+  created_at: string;
+}
+
 export interface CRMStats {
   total_leads: number;
   hot_leads: number;
@@ -296,6 +304,25 @@ export async function getIntelligenceReport() {
   if (!response.ok) {
     throw new Error(
       "Failed to fetch intelligence report"
+    );
+  }
+
+  return response.json();
+}
+
+export async function getLeadActivities(
+  leadId: number
+): Promise<Activity[]> {
+  const response = await fetch(
+    `${API_BASE}/activities/${leadId}`,
+    {
+      cache: "no-store",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      "Failed to fetch activities"
     );
   }
 
