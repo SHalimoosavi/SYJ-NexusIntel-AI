@@ -4,65 +4,99 @@ from app.models.lead import Lead
 
 
 def calculate_lead_score(
-    lead_data
+    industry: str | None,
+    company_size: str | None,
+    estimated_value: int,
 ):
     score = 0
 
-    if lead_data.email:
-        score += 15
+    # Industry Scoring
 
-    if lead_data.phone:
-        score += 15
+    high_value_industries = [
+        "Healthcare",
+        "Finance",
+        "Technology",
+        "Manufacturing",
+    ]
 
-    if lead_data.website:
-        score += 15
+    medium_value_industries = [
+        "Education",
+        "Retail",
+        "Hospitality",
+    ]
 
-    if lead_data.city:
+    if industry in high_value_industries:
+        score += 30
+
+    elif industry in medium_value_industries:
+        score += 20
+
+    else:
         score += 10
 
-    if lead_data.category:
+    # Company Size
+
+    if company_size == "ENTERPRISE":
+        score += 30
+
+    elif company_size == "MEDIUM":
+        score += 20
+
+    elif company_size == "SMALL":
         score += 10
 
-    if lead_data.industry:
+    # Deal Value
+
+    if estimated_value >= 1000000:
+        score += 40
+
+    elif estimated_value >= 500000:
+        score += 30
+
+    elif estimated_value >= 100000:
+        score += 20
+
+    else:
         score += 10
 
-    if lead_data.company_size:
-        score += 10
+    score = min(score, 100)
 
-    if lead_data.estimated_value >= 100000:
-        score += 15
+    # Priority
 
-    return min(score, 100)
-
-
-def calculate_priority(
-    score: int
-):
     if score >= 80:
-        return "HOT"
+        priority = "HOT"
+        probability = 80
 
-    if score >= 50:
-        return "WARM"
+    elif score >= 50:
+        priority = "WARM"
+        probability = 50
 
-    return "COLD"
+    else:
+        priority = "COLD"
+        probability = 20
+
+    return {
+        "score": score,
+        "priority": priority,
+        "probability": probability,
+    }
 
 
 def create_lead(
     db: Session,
-    lead_data
+    lead_data,
 ):
-    score = calculate_lead_score(
-        lead_data
-    )
-
-    priority = calculate_priority(
-        score
+    scoring = calculate_lead_score(
+        lead_data.industry,
+        lead_data.company_size,
+        lead_data.estimated_value,
     )
 
     lead = Lead(
         **lead_data.model_dump(),
-        lead_score=score,
-        priority=priority
+        lead_score=scoring["score"],
+        priority=scoring["priority"],
+        probability=scoring["probability"],
     )
 
     db.add(lead)
@@ -75,20 +109,14 @@ def create_lead(
 
 
 def get_all_leads(
-    db: Session
+    db: Session,
 ):
-    return (
-        db.query(Lead)
-        .order_by(
-            Lead.lead_score.desc()
-        )
-        .all()
-    )
+    return db.query(Lead).all()
 
 
 def get_lead(
     db: Session,
-    lead_id: int
+    lead_id: int,
 ):
     return (
         db.query(Lead)
@@ -102,11 +130,11 @@ def get_lead(
 def update_lead_pipeline(
     db: Session,
     lead_id: int,
-    data
+    data,
 ):
     lead = get_lead(
         db,
-        lead_id
+        lead_id,
     )
 
     if not lead:
@@ -114,26 +142,11 @@ def update_lead_pipeline(
 
     lead.status = data.status
     lead.pipeline_stage = data.pipeline_stage
-
-    lead.estimated_value = (
-        data.estimated_value
-    )
-
-    lead.probability = (
-        data.probability
-    )
-
-    lead.actual_revenue = (
-        data.actual_revenue
-    )
-
-    lead.last_contacted = (
-        data.last_contacted
-    )
-
-    lead.next_followup = (
-        data.next_followup
-    )
+    lead.estimated_value = data.estimated_value
+    lead.probability = data.probability
+    lead.actual_revenue = data.actual_revenue
+    lead.last_contacted = data.last_contacted
+    lead.next_followup = data.next_followup
 
     db.commit()
 
@@ -144,11 +157,11 @@ def update_lead_pipeline(
 
 def delete_lead(
     db: Session,
-    lead_id: int
+    lead_id: int,
 ):
     lead = get_lead(
         db,
-        lead_id
+        lead_id,
     )
 
     if not lead:
