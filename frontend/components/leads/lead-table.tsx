@@ -31,7 +31,8 @@ export default function LeadTable({
           `${API_BASE}/leads/${id}`,
           {
             method: "DELETE",
-            headers: authHeaders(),
+            headers:
+              authHeaders(),
           }
         );
 
@@ -52,69 +53,67 @@ export default function LeadTable({
     }
   }
 
-  async function updateStage(
-    id: number,
-    stage: string
+  function priorityBadge(
+    priority?: string
   ) {
-    try {
-      const response =
-        await fetch(
-          `${API_BASE}/leads/${id}`,
-          {
-            method: "PUT",
-            headers: authHeaders(),
-            body: JSON.stringify({
-              status: stage,
-              pipeline_stage: stage,
-              estimated_value: 0,
-            }),
-          }
-        );
-
-      if (!response.ok) {
-        alert(
-          "Failed to update lead"
-        );
-        return;
-      }
-
-      window.location.reload();
-    } catch (error) {
-      console.error(error);
-
-      alert(
-        "Failed to update lead"
+    if (priority === "HOT") {
+      return (
+        <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 text-xs font-bold">
+          HOT
+        </span>
       );
     }
+
+    if (priority === "WARM") {
+      return (
+        <span className="px-3 py-1 rounded-full bg-yellow-500/20 text-yellow-400 text-xs font-bold">
+          WARM
+        </span>
+      );
+    }
+
+    return (
+      <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 text-xs font-bold">
+        COLD
+      </span>
+    );
   }
 
   return (
     <div className="glass rounded-3xl p-6 overflow-auto">
       <h2 className="text-2xl font-bold mb-6">
-        Lead Management
+        Professional CRM
       </h2>
 
       <table className="w-full">
         <thead>
-          <tr className="text-left border-b border-white/10">
+          <tr className="border-b border-white/10 text-left">
             <th className="p-3">
               Business
             </th>
 
             <th className="p-3">
-              Category
+              Lead Score
             </th>
 
             <th className="p-3">
-              City
+              Priority
             </th>
 
             <th className="p-3">
-              Contact
+              Pipeline
             </th>
 
             <th className="p-3">
-              Stage
+              Probability
+            </th>
+
+            <th className="p-3">
+              Value
+            </th>
+
+            <th className="p-3">
+              Forecast
             </th>
 
             <th className="p-3">
@@ -124,95 +123,90 @@ export default function LeadTable({
         </thead>
 
         <tbody>
-          {leads.map((lead) => (
-            <tr
-              key={lead.id}
-              className="border-b border-white/5"
-            >
-              <td className="p-3">
-                {lead.business_name}
-              </td>
+          {leads.map((lead) => {
+            const forecast =
+              Math.round(
+                ((lead
+                  .estimated_value ||
+                  0) *
+                  (lead
+                    .probability ||
+                    0)) /
+                  100
+              );
 
-              <td className="p-3">
-                {lead.category}
-              </td>
+            return (
+              <tr
+                key={lead.id}
+                className="border-b border-white/5"
+              >
+                <td className="p-3">
+                  <div>
+                    <div className="font-semibold">
+                      {
+                        lead.business_name
+                      }
+                    </div>
 
-              <td className="p-3">
-                {lead.city}
-              </td>
+                    <div className="text-xs text-slate-400">
+                      {lead.city}
+                    </div>
+                  </div>
+                </td>
 
-              <td className="p-3">
-                {lead.contact_person}
-              </td>
+                <td className="p-3">
+                  {lead.lead_score ||
+                    0}
+                  /100
+                </td>
 
-              <td className="p-3">
-                <select
-                  defaultValue={
-                    (lead as any)
-                      .pipeline_stage ||
-                    "NEW"
+                <td className="p-3">
+                  {priorityBadge(
+                    lead.priority
+                  )}
+                </td>
+
+                <td className="p-3">
+                  {
+                    lead.pipeline_stage
                   }
-                  onChange={(e) =>
-                    updateStage(
-                      lead.id,
-                      e.target.value
-                    )
+                </td>
+
+                <td className="p-3">
+                  {
+                    lead.probability
                   }
-                  className="
-                    bg-slate-900
-                    border
-                    border-white/10
-                    rounded-lg
-                    px-3
-                    py-2
-                  "
-                >
-                  <option value="NEW">
-                    NEW
-                  </option>
+                  %
+                </td>
 
-                  <option value="CONTACTED">
-                    CONTACTED
-                  </option>
+                <td className="p-3">
+                  ₹
+                  {(
+                    lead.estimated_value ||
+                    0
+                  ).toLocaleString()}
+                </td>
 
-                  <option value="MEETING">
-                    MEETING
-                  </option>
+                <td className="p-3 text-emerald-400 font-semibold">
+                  ₹
+                  {forecast.toLocaleString()}
+                </td>
 
-                  <option value="PROPOSAL">
-                    PROPOSAL
-                  </option>
-
-                  <option value="WON">
-                    WON
-                  </option>
-
-                  <option value="LOST">
-                    LOST
-                  </option>
-                </select>
-              </td>
-
-              <td className="p-3">
-                <button
-                  onClick={() =>
-                    deleteLead(
-                      lead.id
-                    )
-                  }
-                  className="
-                    px-3
-                    py-1
-                    rounded-lg
-                    bg-red-500
-                    text-white
-                  "
-                >
-                  Delete
-                </button>
-              </td>
-            </tr>
-          ))}
+                <td className="p-3">
+                  <button
+                    onClick={() =>
+                      deleteLead(
+                        lead.id
+                      )
+                    }
+                    className="px-3 py-1 rounded-lg bg-red-500 text-white"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

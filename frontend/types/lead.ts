@@ -9,7 +9,6 @@ export interface Lead {
 
   city: string;
   category: string;
-
   source: string;
   notes: string;
 
@@ -20,6 +19,15 @@ export interface Lead {
 
   last_contacted: string | null;
   next_followup: string | null;
+
+  industry?: string;
+  company_size?: string;
+
+  lead_score?: number;
+  priority?: string;
+  probability?: number;
+
+  actual_revenue?: number;
 
   created_at: string;
 }
