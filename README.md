@@ -1,497 +1,288 @@
-# 🚀 SYJ NexusIntel AI
+# SYJ NexusIntel AI
 
-## Enterprise Business Intelligence & Autonomous Revenue Intelligence Platform
+### Enterprise SaaS Foundation for Autonomous Revenue Intelligence
 
-> **Stop guessing. Start winning.** Transform fragmented data into actionable intelligence with AI-powered autonomous agents that identify opportunities, qualify leads, and forecast revenue—automatically.
+> A production-grade multi-tenant platform combining CRM, executive intelligence, and role-based enterprise infrastructure — built to eventually power autonomous AI agents for revenue teams.
+
+[![Status](https://img.shields.io/badge/status-production--stabilisation-yellow)]()
+[![Backend](https://img.shields.io/badge/backend-95%25-brightgreen)]()
+[![Frontend](https://img.shields.io/badge/frontend-90%25-brightgreen)]()
+[![Auth](https://img.shields.io/badge/auth-100%25-brightgreen)]()
+[![Deployment](https://img.shields.io/badge/deployment-live-brightgreen)]()
 
 ---
 
-## 🟢 Current Status
+## Table of Contents
 
-### Deployment Status: FULLY LIVE
+- [Project Overview](#project-overview)
+- [Why NexusIntel AI](#why-nexusintel-ai)
+- [Current Status](#current-status)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Backend Modules](#backend-modules)
+- [Tech Stack](#tech-stack)
+- [Authentication & Security](#authentication--security)
+- [Deployment](#deployment)
+- [Roadmap](#roadmap)
+- [Development Setup](#development-setup)
+- [Documentation](#documentation)
+- [License](#license)
+
+---
+
+## Project Overview
+
+SYJ NexusIntel AI began as a CRM and business-intelligence prototype. It has since grown into a **multi-tenant SaaS foundation** — with organization management, subscriptions, role-based access control, feature flags, and audit logging sitting underneath a CRM and executive intelligence layer.
+
+The long-term vision is an autonomous multi-agent revenue intelligence system. The current phase is deliberately narrower: **making the enterprise foundation reliable enough to launch on.**
+
+## Why NexusIntel AI
+
+Most CRM and BI tools force a choice: simple tools that don't scale, or enterprise platforms that take months to stand up. NexusIntel AI is built API-first and multi-tenant from day one, so the same foundation that runs a single team today can support organizations, subscriptions, and permissioned access without a re-architecture later.
+
+---
+
+## Current Status
+
+**Phase:** Production Stabilisation
+**Goal:** Public Launch
+**Focus:** Reliability, authentication, dashboard, CRM, deployment, and bug fixes — not new feature expansion.
+
+| Layer | Completion |
+|---|---|
+| Backend | 95% |
+| Frontend | 90% |
+| Authentication | 100% |
+| Deployment | 100% |
+| Infrastructure | 100% |
+
+This README intentionally leads with what's real and running, not what's planned. Feature-expansion items (AI agents, OSINT, automation) are tracked separately in the [Roadmap](#roadmap) as future phases, not current capabilities.
+
+---
+
+## Architecture
 
 ```
-🟢 Frontend:        100% deployed (Vercel)
-🟢 Backend:         100% deployed (Railway)
-🟢 Database:        100% operational (PostgreSQL)
-🟢 API:             100% operational (REST + Webhooks)
-🟢 Dashboard:       ✅ Working & interactive
-🟢 CRM:             ✅ Working & operational
-🟢 SaaS Prototype:  ✅ Live on Internet
+Browser
+   │
+   ▼
+Next.js 16 (React 19, TypeScript)
+   │
+   ▼
+JWT Cookie Session
+   │
+   ▼
+Railway-hosted FastAPI
+   │
+   ▼
+RBAC Middleware
+   │
+   ▼
+Business Services
+ (Organizations · Subscriptions · Feature Flags · Audit · CRM · Intelligence)
+   │
+   ▼
+SQLAlchemy ORM
+   │
+   ▼
+Railway PostgreSQL
 ```
 
-**Status Summary:** SYJ NexusIntel AI is no longer a local development project. The platform is a **publicly accessible SaaS MVP** with a working CRM and analytics foundation.
-
-**Current Focus:** Feature expansion (AI agents, OSINT engine, website audit capabilities, and many more coming in v1.5-v2.0)
+Frontend is deployed on Vercel; backend and database are deployed on Railway. Both are live and monitored.
 
 ---
 
-## The Problem Most Businesses Face
+## Features
 
-Your teams are drowning in data but starving for insight.
+### Enterprise SaaS Foundation
+- Organization management with multi-tenant isolation
+- Subscription management
+- Feature flags per organization/plan
+- Role-Based Access Control (RBAC)
+- JWT authentication with cookie-based sessions
+- Audit logging across sensitive actions
 
-**Sales teams** hunt for qualified leads manually.  
-**Leadership** relies on outdated dashboards and gut feelings.  
-**Revenue forecasts** are guesses that miss targets.  
-**Opportunities** slip through the cracks while you manage spreadsheets.
+### CRM & Revenue Intelligence
+- CRM dashboard for prospect and deal management
+- Pipeline visualization
+- Revenue analytics and forecasting
+- Opportunity tracking through the deal lifecycle
+- Executive intelligence briefings
 
-Modern businesses need an intelligent command center—not another disconnected tool.
+### Platform
+- REST API with protected routes and middleware
+- Production authentication flow (JWT, RBAC, org isolation)
+- Executive dashboard UI
 
----
-
-## Meet SYJ NexusIntel AI
-
-**A unified intelligence platform** that combines business intelligence, opportunity discovery, predictive analytics, and multi-agent AI automation into a single decision-making engine.
-
-### What Makes It Different
-
-Unlike traditional CRM and BI tools that operate in silos, **SYJ NexusIntel AI** deploys autonomous agents that:
-
-✨ **Research** prospects and uncover hidden business intelligence  
-✨ **Analyze** revenue potential and growth opportunities  
-✨ **Qualify** leads with precision scoring  
-✨ **Forecast** revenue with predictive models  
-✨ **Recommend** actions and next steps  
-✨ **Remember** everything for continuous learning  
-
-All while you focus on closing deals and driving growth.
+> Autonomous AI agents (Research, Opportunity, Sales, Executive, Memory) are **not yet live**. They are a future roadmap phase — see below.
 
 ---
 
-## Who Should Own This Platform?
-
-### 💼 **Digital Agencies**
-Identify high-value prospects, prioritize outreach, and land bigger clients with data-driven confidence.
-
-### 🎯 **Sales Teams & Revenue Leaders**
-Eliminate manual lead research. Focus on opportunities with the highest revenue potential.
-
-### 📈 **Consultants & Business Advisors**
-Generate sophisticated business intelligence reports and strategic recommendations in minutes.
-
-### 🏢 **SMBs & Scaling Companies**
-Track growth, forecast revenue accurately, and make data-backed decisions without enterprise software complexity.
-
-### 🚀 **Startup Founders & Investors**
-Get executive-level business intelligence and market insights without multi-million dollar BI solutions.
-
----
-
-## Core Intelligence Engines
-
-### 🧠 Lead Intelligence Engine
-**Identify and qualify prospects faster than your competition.**
-
-- Intelligent lead management & deduplication
-- AI-powered lead qualification scoring
-- Opportunity assessment & revenue potential analysis
-- Priority classification (hot, warm, cold)
-- Pipeline health visualization
-- Revenue potential forecasting per lead
-
-### 🔍 Business Intelligence Engine
-**Uncover competitive advantages and market opportunities.**
-
-- Website & technology stack analysis
-- Security posture assessment & risk scoring
-- SEO performance evaluation
-- Trust & reputation analysis
-- Industry trend detection
-- Business opportunity discovery algorithm
-
-### 📊 Executive Intelligence Engine
-**Make smarter strategic decisions.**
-
-- Real-time executive briefings
-- Revenue forecasting & growth projections
-- Pipeline analytics & trend analysis
-- Risk assessment & mitigation recommendations
-- Strategic opportunity recommendations
-- Investor-ready reporting
-
-### 🤖 Autonomous Multi-Agent System
-
-**Meet your tireless intelligence team:**
-
-| Agent | Mission | Status |
-|-------|---------|--------|
-| **Research Agent** | Deep-dive website analysis, technology detection, security assessment, SEO intelligence | Coming v1.5 |
-| **Opportunity Agent** | Revenue potential identification, project valuation, growth opportunity discovery | Coming v1.5 |
-| **Sales Agent** | Dynamic pitch generation, follow-up sequencing, priority intelligence | Coming v1.5 |
-| **Executive Agent** | Strategic briefings, forecast modeling, board-ready summaries | Coming v1.5 |
-| **Memory Agent** | Persistent intelligence snapshots, historical trend tracking, institutional learning | Coming v1.5 |
-
-*Agent system foundation ready, full deployment with v1.5 release (Q3 2026)*
-
----
-
-## Premium Features
-
-### 📊 CRM & Revenue Intelligence Suite
-- **CRM Dashboard** — Unified prospect and deal management ✅ Live
-- **Pipeline Visualization** — Real-time sales pipeline health ✅ Live
-- **Revenue Analytics** — Granular forecasting by segment, stage, and agent ✅ Live
-- **Opportunity Tracking** — End-to-end deal lifecycle management ✅ Live
-- **Annual Revenue Projection** — AI-driven forecasting with confidence intervals ✅ Live
-
-### 🎨 AI Command Center
-**Premium executive dashboard built for decision-makers:**
+## Backend Modules
 
 ```
-✓ KPI Analytics              ✓ Opportunity Center
-✓ Executive Briefings        ✓ Intelligence Library
-✓ Revenue Intelligence       ✓ Memory Timeline
-✓ Agent Activity Center      ✓ Investor Demo Mode
+Authentication
+Users
+Organizations
+Subscriptions
+Roles
+Feature Flags
+Audit Logs
+CRM
+Executive Intelligence
+Agent Memory
+Intelligence
+Leads
+Dashboard
+Settings
 ```
 
-Glassmorphic design with cinematic animations. Built for impressing stakeholders and closing deals.
+---
 
-**Status:** ✅ Fully functional and live
+## Tech Stack
 
-### 🎬 Investor Presentation Mode
-Dedicated `/demo` route for board presentations, investor pitches, and executive demos featuring:
+**Frontend**
+- Next.js 16
+- React 19
+- TypeScript
+- TailwindCSS
+- Deployed on Vercel
 
-- Executive briefing generation
-- 12-month revenue forecasts
-- Growth projections with trend analysis
-- Historical intelligence memory playback
-- Agent activity visualization
+**Backend**
+- FastAPI
+- SQLAlchemy (Alembic-ready migration architecture)
+- JWT authentication
+- Deployed on Railway
 
-**Status:** ✅ Live and accessible
+**Data**
+- Railway-managed PostgreSQL
+
+**Services**
+- Organization Service
+- Subscription Service
+- Feature Flag Service
+- Audit Service
+- Executive Intelligence Service
 
 ---
 
-## Technical Architecture
+## Authentication & Security
 
-Built with **modern, proven technology** for reliability, scalability, and rapid deployment.
+- JWT-based authentication with cookie sessions
+- Protected routes enforced via middleware
+- Role-Based Access Control across organization boundaries
+- Organization-level data isolation
+- Audit logging for sensitive/administrative actions
 
-### Backend Stack
-```
-FastAPI       → Lightning-fast REST API framework
-SQLAlchemy    → Robust ORM with async support
-PostgreSQL    → Enterprise-grade data persistence
-Pydantic      → Type-safe data validation
-Redis Cache   → High-speed query optimization
-Railway       → Production deployment & auto-scaling
-```
-
-**Modular microservice architecture** designed for easy deployment, scaling, and customization.
-
-**Status:** ✅ 100% deployed and operational
-
-### Frontend Stack
-```
-Next.js 16    → Serverless React framework
-React 19      → Latest reactive UI capabilities
-TypeScript    → Type-safe development
-TailwindCSS   → Premium responsive design system
-Framer Motion → Smooth, cinematic animations
-Recharts      → Beautiful data visualization
-Vercel        → Global edge network deployment
-```
-
-**Result:** Ultra-responsive, beautiful UI that impresses enterprise buyers.
-
-**Status:** ✅ 100% deployed on Vercel
-
-### Live Infrastructure
-
-```
-┌─────────────────────────────────────────┐
-│  Frontend (Vercel)                      │
-│  Global CDN + Edge Functions            │
-│  ✅ LIVE: nexusintel.vercel.app         │
-└────────────────┬────────────────────────┘
-                 │
-        ┌────────▼──────────┐
-        │  REST API Layer   │
-        │  (Rate limiting)  │
-        └────────┬──────────┘
-                 │
-┌────────────────▼─────────────────┐
-│  Backend (Railway)                │
-│  FastAPI + PostgreSQL + Redis     │
-│  ✅ LIVE: api.nexusintel.rail.app │
-│  Auto-scaling + 24/7 Monitoring   │
-└───────────────────────────────────┘
-```
-
-**All systems operational and monitored 24/7**
+Security posture is being hardened as part of the current stabilisation phase; formal compliance claims (SOC 2, GDPR certification, etc.) will be added here once actually verified rather than stated ahead of time.
 
 ---
 
-## Key Competitive Advantages
+## Deployment
 
-| Feature | Traditional CRM | BI Tools | SYJ NexusIntel AI |
-|---------|-----------------|----------|-------------------|
-| Unified Intelligence | ❌ | ❌ | ✅ Multi-agent system |
-| Lead Qualification | Manual | Limited | ✅ AI-powered scoring |
-| Revenue Forecasting | Spreadsheets | Basic | ✅ Predictive modeling |
-| Opportunity Discovery | Manual research | Dashboard only | ✅ Autonomous agents |
-| Executive Reporting | Time-consuming | Generic | ✅ AI-generated briefings |
-| Continuous Learning | No | No | ✅ Persistent memory |
-| Setup Time | Weeks | Weeks | ✅ Days |
-| Live & Operational | ❌ | ❌ | ✅ Running now |
+| Component | Host | Status |
+|---|---|---|
+| Frontend | Vercel | Live |
+| Backend | Railway | Live |
+| Database | Railway PostgreSQL | Live |
+| Authentication | Production JWT | Live |
+| API | Production REST API | Live |
+| Dashboard | Production | Live |
 
 ---
 
-## Implementation & Deployment
+## Roadmap
 
-### Quick Start (48-72 hours)
-- ✅ Cloud-ready infrastructure (already live)
-- ✅ Single-click deployment
-- ✅ Pre-configured workflows
-- ✅ Sample data & demo mode included
+### Phase 1 — Production Stabilisation ✅
+- Authentication
+- RBAC
+- Organizations
+- Subscriptions
+- Feature Flags
+- Audit Logs
+- Dashboard
+- CRM
 
-### Enterprise Integration
-- ✅ REST API for third-party systems
-- ✅ Webhook support for real-time updates
-- ✅ Custom agent training available
-- ✅ White-label options (v2.0+)
+### Phase 2 — Production Hardening (in progress)
+- API validation
+- Integration testing
+- Frontend stabilization
+- Regression testing
+- Database validation
 
-### Access the Live Platform
-- **Dashboard:** [Live at app.nexusintel.ai](https://app.nexusintel.ai)
-- **API Docs:** [Swagger at api.nexusintel.ai/docs](https://api.nexusintel.ai/docs)
-- **Demo Mode:** [Investor demo route](/demo)
+### Phase 3 — Public Launch
+- Documentation
+- Licensing
+- Deployment verification
+- Commercial readiness
 
----
-
-## The Roadmap: What's Coming
-
-### Current Version (v1.0) — LIVE
-✅ CRM platform  
-✅ Pipeline analytics  
-✅ Revenue forecasting  
-✅ Executive dashboard  
-✅ API & integrations  
-
-### Version 1.5 (Q3 2026)
-- 🚀 Five autonomous agents (Research, Opportunity, Sales, Executive, Memory)
-- 🚀 Advanced OSINT engine
-- 🚀 Website audit capabilities
-- 🚀 Enhanced business intelligence
-- 🚀 Expanded feature set
-
-### Version 2.0 (Q4 2026)
-- Multi-tenant SaaS architecture
-- Team collaboration & role-based access
-- Email outreach automation
-- WhatsApp Business integration
-- Client portal & white-label support
-- Predictive revenue modeling v2
-- AI strategy assistant
-- Advanced segmentation engine
-
-### Beyond 2.0
-- Mobile app (iOS/Android)
-- Voice-activated intelligence
-- AR/VR data visualization
-- Customer expansion intelligence
-- Churn prediction models
-- Account-based marketing automation
-
-**Full Roadmap:** See [ROADMAP.md](./ROADMAP.md)
+### Future — Feature Expansion
+- Autonomous AI agents (Research, Opportunity, Sales, Executive, Memory)
+- OSINT engine
+- Website audit capabilities
+- Outreach automation
+- Multi-tenant collaboration tooling
 
 ---
 
-## Why Choose SYJ NexusIntel AI?
+## Development Setup
 
-### 🎯 **Proven Results**
-Built by a founder who's shipped enterprise SaaS platforms. Not a generic tool.
+> Setup instructions will be filled in as Phase 2 hardening completes. In the meantime:
 
-### ⚡ **Fast Deployment**
-Already live. Start using immediately. See insights in minutes.
+```bash
+# Clone the repo
+git clone https://github.com/SHalimoosavi/<repo-name>.git
+cd <repo-name>
 
-### 💰 **Clear ROI**
-Better lead qualification = higher close rates.  
-Accurate forecasting = better planning.  
-Automated research = time savings worth thousands monthly.
+# Backend
+cd backend
+pip install -r requirements.txt
+# configure .env with DATABASE_URL, JWT secrets, etc.
+uvicorn app.main:app --reload
 
-### 🔐 **Enterprise-Grade**
-Secure, reliable, scalable infrastructure.  
-Your data is yours. Full compliance and privacy controls.  
-Monitored 24/7 for uptime & performance.
-
-### 🚀 **Continuous Innovation**
-Regular updates, new features, and agent improvements. You're not buying a product—you're buying a platform that evolves with your business.
-
-### ⚙️ **Production Ready**
-Not a prototype. Not a beta. A fully operational SaaS platform serving real customers right now.
-
----
-
-## Real-World Impact
-
-**For a 10-person sales team:**
-- **30% more qualified leads** identified per quarter
-- **$50K+ monthly revenue impact** from better forecasting
-- **15 hours/week saved** on manual research
-- **2-3x faster** opportunity identification
-
----
-
-## Pricing & Licensing
-
-### Flexible Plans for Every Stage
-
-```
-STARTER      →  Single user, up to 500 leads, $2,999/month
-PROFESSIONAL →  Team of 5, unlimited leads, $9,999/month
-ENTERPRISE   →  Custom deployment, dedicated support, custom pricing
+# Frontend
+cd frontend
+npm install
+npm run dev
 ```
 
-**Launch Offer:** 50% off first 12 months for annual commitments through July 31, 2026.
-
-**Special offer:** Schedule a demo for priority pricing and custom configuration.
+Environment variables and full local setup instructions will be documented in `DEPLOYMENT.md` as part of Phase 3.
 
 ---
 
-## Technical Specifications
+## Documentation
 
-### System Requirements
-- **Deployment:** AWS, GCP, or on-premises (already on Railway + Vercel)
-- **Database:** PostgreSQL 12+ (live)
-- **Browser:** Chrome/Safari/Edge (latest 2 versions)
-- **Integration:** REST API, Webhooks, Custom agents
-
-### Performance
-- **Response Time:** <200ms average (monitored)
-- **Uptime:** 99.9% SLA (guaranteed)
-- **Concurrent Users:** Unlimited (horizontally scalable)
-- **Data Processing:** Real-time with batch optimization
-
-### Current Infrastructure
-- **Frontend Hosting:** Vercel (global edge network)
-- **Backend Hosting:** Railway (auto-scaling containers)
-- **Database:** PostgreSQL (managed, backed up hourly)
-- **Cache:** Redis (sub-100ms responses)
-- **Monitoring:** 24/7 uptime monitoring & alerts
+- Installation Guide — `INSTALL.md`
+- Deployment Guide — `DEPLOYMENT.md`
+- API Reference — `API.md`
+- Features Deep Dive — `FEATURES.md`
+- Product Roadmap — `ROADMAP.md`
 
 ---
 
-## Security & Compliance
+## Built By
 
-✅ End-to-end encryption (data in transit & at rest)  
-✅ SOC 2 Type II compliance ready  
-✅ GDPR & data privacy controls  
-✅ Regular security audits  
-✅ Role-based access control  
-✅ Audit logs & activity tracking  
-✅ Automated backups (hourly)  
-✅ Disaster recovery plan tested  
+**Syed Ali Hasan Moosavi**
+Founder & Managing Director, SAYANJALI NEXUS PRIVATE LIMITED
+
+- Portfolio: https://shalimoosavi.github.io/moosavi/
+- GitHub: https://github.com/SHalimoosavi
+- Email: shalimoosavi@gmail.com
 
 ---
 
-## Get Started Today
-
-### Next Steps
-
-1. **Access the Live Platform** — Go to [app.nexusintel.ai](https://app.nexusintel.ai)
-2. **Schedule a 30-minute demo** — See the features in action
-3. **Review your use case** — We'll show how it fits your business
-4. **Start a free trial** — 14 days, full feature access
-5. **Deploy & scale** — Go live in 48-72 hours
-
----
-
-## Documentation & Resources
-
-- 📖 **Installation Guide:** [INSTALL.md](./INSTALL.md)
-- 🚀 **Deployment Guide:** [DEPLOYMENT.md](./DEPLOYMENT.md)
-- 📡 **API Reference:** [API.md](./API.md)
-- ✨ **Features Deep Dive:** [FEATURES.md](./FEATURES.md)
-- 🗺️ **Product Roadmap:** [ROADMAP.md](./ROADMAP.md)
-- 📢 **v1.0 Release Notes:** [v1.0_COMMERCIAL_RELEASE.md](./v1.0_COMMERCIAL_RELEASE.md)
-
----
-
-## Built by Revenue Leaders, For Revenue Leaders
-
-**Syed Ali Hasan Moosavi**  
-Founder & Managing Director  
-SAYANJALI NEXUS PRIVATE LIMITED
-
-With 15+ years of enterprise SaaS development, autonomous AI systems, and business intelligence architecture.
-
----
-
-### Connect & Learn More
-
-🔗 **Portfolio:** https://shalimoosavi.github.io/moosavi/  
-💻 **GitHub:** https://github.com/SHalimoosavi  
-📧 **Email:** hello@sayanjali.ai  
-🐦 **Twitter:** [@SHAliMoosavi](https://twitter.com/SHAliMoosavi)  
-📅 **Schedule Demo:** [calendly.com/sayanjali-demo](https://calendly.com/sayanjali-demo)  
-
----
-
-## Copyright & Licensing
+## License
 
 ```
 © 2026 SYJ NexusIntel AI
-
-Developed and maintained by:
-Syed Ali Hasan Moosavi
-
-Under:
-SAYANJALI NEXUS PRIVATE LIMITED
-
+Developed and maintained by Syed Ali Hasan Moosavi
+Under SAYANJALI NEXUS PRIVATE LIMITED
 All Rights Reserved.
-
-Unauthorized copying, modification, distribution,
-or resale prohibited without written permission.
 ```
 
-### License Terms
-
-- ✅ **Trial/Demo Use:** Fully functional demonstration access
-- ✅ **Development:** Available with valid license
-- ✅ **Commercial Use:** Requires subscription agreement
-- ⚠️ **Redistribution:** Strictly prohibited without authorization
-- ⚠️ **Modification:** Prohibited without written permission
-
-**For commercial licensing inquiries:** [shalimoosavi@gmail.com](mailto:shalimoosavi@gamil.com)
+Redistribution and modification are prohibited without written permission. For licensing inquiries, contact shalimoosavi@gmail.com.
 
 ---
 
-<div align="center">
-
-### 🚀 Stop Guessing. Start Winning.
-
-**[Access Platform](comming soon)** · **[Schedule Demo](https://calendly.com/sayanjali-demo)** · **[View Docs](./README.md)**
-
----
-
-### ✅ Production Ready | 🟢 Fully Deployed | 💼 Enterprise Grade
-
-*Trusted by digital agencies, sales teams, and growing companies worldwide.*
-
-**Status:** Live & Operational (June 2026)  
-**Version:** 1.0 Commercial Release  
-**Uptime:** 99.9% SLA guaranteed
-
----
-
-**The future of revenue intelligence is here. Welcome aboard.** 🎯
-
-</div>
-
----
-
-## Version History
-
-| Version | Date | Status | Features |
-|---------|------|--------|----------|
-| **v1.0** | June 2026 | ✅ Live | CRM, Pipeline, Analytics, Dashboard, API |
-| **v1.5** | Q3 2026 | 🚀 Coming | Agents, OSINT, Website Audit |
-| **v2.0** | Q4 2026 | 🚀 Coming | Multi-tenant, Collaboration, Automation |
-
----
-
-**Last Updated:** June 2026  
-**Status:** ✅ Production Ready  
-**Version:** 1.0 (Enterprise Release)  
-**Deployment:** ✅ Fully Live on Vercel + Railway  
-**Uptime:** ✅ 99.9% SLA
-
-**Questions?** Email [shalimoosavi@gmail.com](mailto:shalimoosavi@gmail.com) or visit our [documentation](./README.md).
+**Status:** Production Stabilisation · **Goal:** Public Launch
+**Last Updated:** July 2026
