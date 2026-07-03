@@ -23,6 +23,8 @@ from app.models.invitation import Invitation
 
 from app.database.database import SessionLocal
 
+from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
 from app.services.role_service import (
     seed_roles,
 )
@@ -128,6 +130,8 @@ app = FastAPI(
     description="AI Powered Business Intelligence, Lead Discovery and OSINT Platform",
     version="1.0.0",
 )
+
+app.add_middleware(ProxyHeadersMiddleware)
 
 app.add_middleware(
     CORSMiddleware,
