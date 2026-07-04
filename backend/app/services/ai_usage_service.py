@@ -1,8 +1,8 @@
 from datetime import datetime
 from datetime import timedelta
+import os
 
 from fastapi import HTTPException
-
 from sqlalchemy.orm import Session
 
 from app.models.ai_usage import AIUsage
@@ -51,6 +51,23 @@ def enforce_ai_limit(
     db: Session,
     organization_id: int,
 ):
+    # ---------------------------------
+    # DEVELOPMENT BYPASS
+    # ---------------------------------
+    # Set AI_LIMIT_BYPASS=true locally.
+    # Railway production should leave it
+    # unset or false.
+    # ---------------------------------
+
+    if (
+        os.getenv(
+            "AI_LIMIT_BYPASS",
+            "false",
+        ).lower()
+        == "true"
+    ):
+        return
+
     subscription = get_subscription(
         db,
         organization_id,
