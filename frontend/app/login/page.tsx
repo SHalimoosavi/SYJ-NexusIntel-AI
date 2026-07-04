@@ -22,10 +22,19 @@ export default function LoginPage() {
 
     setLoading(true);
 
+    const targetUrl = `${API_BASE}/auth/login`;
+
+    alert(
+      "DEBUG: About to fetch\nURL: " +
+      targetUrl +
+      "\nEmail: " +
+      email
+    );
+
     try {
       const response =
         await fetch(
-          `${API_BASE}/auth/login`,
+          targetUrl,
           {
             method: "POST",
             headers: {
@@ -39,8 +48,20 @@ export default function LoginPage() {
           }
         );
 
+      alert(
+        "DEBUG: Fetch resolved\nStatus: " +
+        response.status +
+        "\nOK: " +
+        response.ok
+      );
+
       const data =
         await response.json();
+
+      alert(
+        "DEBUG: Response body\n" +
+        JSON.stringify(data, null, 2)
+      );
 
       if (
         !response.ok ||
@@ -64,6 +85,15 @@ export default function LoginPage() {
       window.location.href =
         "/dashboard";
     } catch (error) {
+      alert(
+        "DEBUG: Fetch threw an error\nName: " +
+        (error instanceof Error ? error.name : "unknown") +
+        "\nMessage: " +
+        (error instanceof Error ? error.message : String(error)) +
+        "\nStack: " +
+        (error instanceof Error ? error.stack : "no stack")
+      );
+
       console.error(error);
 
       alert(
