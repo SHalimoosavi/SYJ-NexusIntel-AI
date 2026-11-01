@@ -178,3 +178,12 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 - Invitation and subscription list response models now omit organization foreign keys; audit response omits tenant/actor/resource IDs; user response omits organization_id. The one-time invitation creation response still intentionally returns its bearer token only to the authorized creator.
 - Outbound HTTPS/TLS inspection now pins to validated public DNS addresses and caps response bodies at 2 MB. WHOIS/DNS network egress remains an operator-level residual risk.
 - No further writes to main have been made after the recorded accidental add/delete incident.
+
+
+## CI verification and remediation (2026-11-01)
+
+- GitHub Actions run 41291149985 (commit 310479203dd765f8ff5fa09c5ee1e8e0e59abe7f): backend security suite reported 94 passed / 4 failed. Failures were: refresh replay test cookie-jar behavior, a redirect fake missing bounded read(), an HTTPS pool fake with the wrong constructor signature, and the tenant agent-memory test using the reserved .example suffix.
+- Fixes committed after that run: direct replay test using the same signed refresh token, corrected fake response/pool interfaces, and public example.com domains in tenant tests. Latest branch head after fixes: b2e359485e22b5274c9101a62f8e3fa3c58aea2e. A fresh CI run for this exact head has not yet appeared.
+- Dependency Audit and Secret Scan both passed at commit 310479203dd765f8ff5fa09c5ee1e8e0e59abe7f. An earlier dependency audit on older PyJWT 2.10.1 failed with advisories; requirements now pin PyJWT 2.15.0 and the subsequent dependency audit passed.
+- An earlier secret scan run passed; it is PR/push diff-scoped, not a replacement for the one-time history ledger. Do not repeat the historical scan.
+- The latest branch tests remain **NOT VERIFIED** until Security Tests passes on the current head. Docker/Nginx, PostgreSQL grants/trigger, Redis multi-replica and live proxy attack tests remain pending.
