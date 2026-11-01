@@ -78,6 +78,17 @@ def create_activity_log(
     description: str,
     organization_id: int,
 ):
+    lead = (
+        db.query(Lead)
+        .filter(
+            Lead.id == lead_id,
+            Lead.organization_id == organization_id,
+        )
+        .first()
+    )
+    if lead is None:
+        raise HTTPException(status_code=404, detail="Lead not found")
+
     activity = Activity(
         lead_id=lead_id,
         activity_type=activity_type,
