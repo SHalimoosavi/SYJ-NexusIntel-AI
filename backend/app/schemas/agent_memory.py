@@ -1,6 +1,9 @@
+from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+from app.core.input_validation import validate_domain
 
 
 class AgentMemoryCreate(BaseModel):
@@ -12,6 +15,11 @@ class AgentMemoryCreate(BaseModel):
     estimated_value: str = Field(default="", max_length=120)
     analysis_data: dict[str, Any] = Field(default_factory=dict)
 
+    @field_validator("domain")
+    @classmethod
+    def validate_public_domain(cls, value: str) -> str:
+        return validate_domain(value)
+
 
 class AgentMemoryResponse(BaseModel):
     id: int
@@ -20,6 +28,6 @@ class AgentMemoryResponse(BaseModel):
     priority: str
     estimated_value: str | None = None
     analysis_data: str
-    created_at: str | None = None
+    created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
