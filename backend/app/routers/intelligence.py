@@ -51,6 +51,7 @@ def intelligence_report(
         db,
         organization_id,
         "INTELLIGENCE_REPORT",
+        current_user["user_id"],
     )
 
     return result
