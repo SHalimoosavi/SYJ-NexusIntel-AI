@@ -1,12 +1,13 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.schemas.lead import LeadResponse
 
 
 class BusinessSearchRequest(BaseModel):
-    city: str
-    category: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
-
-from app.schemas.lead import LeadResponse
+    city: str = Field(min_length=1, max_length=100)
+    category: str = Field(min_length=1, max_length=100)
 
 
 class BusinessDiscoveryResponse(BaseModel):
