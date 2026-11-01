@@ -46,7 +46,7 @@ def login(
         for value in os.getenv("CORS_ORIGINS", "").split(",")
         if value.strip()
     }
-    if origin and origin.rstrip("/") not in configured_origins:
+    if not origin or origin.rstrip("/") not in configured_origins:
         raise HTTPException(status_code=403, detail="Untrusted request origin")
 
     client_ip = request.client.host if request.client else "unknown"
