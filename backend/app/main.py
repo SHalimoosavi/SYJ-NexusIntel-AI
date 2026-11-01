@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from pathlib import Path
 import os
-import time
+import logging
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -35,7 +35,7 @@ from app.database.database import SessionLocal
 
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from app.core.rate_limit import limiter
+from app.core.rate_limit import (\n    RateLimitBackendUnavailable,\n    rate_limit_manager,\n    rate_limit_policy_for_path,\n)
 from app.core.api_docs import api_docs_config
 
 from app.services.role_service import (
@@ -255,29 +255,35 @@ app.include_router(
 
 @app.middleware("http")
 async def apply_route_rate_limits(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
     path = request.url.path
-    limits = {
-        "/auth/login": (8, 60),
-        "/osint/domain": (15, 60),
-        "/reports/generate": (8, 60),
-        "/intelligence/report": (15, 60),
-        "/technology/detect": (15, 60),
-        "/lead-qualification/analyze": (15, 60),
-        "/multi-agent/analyze": (8, 60),
-        "/opportunity/analyze": (15, 60),
-    }
-    policy = limits.get(path)
-    if policy:
-        client_ip = request.client.host if request.client else "unknown"
-        identity = f"{path}:{client_ip}"
-        if not limiter.allow(identity, policy[0], policy[1]):
-            return JSONResponse(
-                status_code=429,
-                content={"detail": "Rate limit exceeded. Please retry later."},
-                headers={"Retry-After": str(policy[1])},
-            )
-    return await call_next(request)
+    limit, window_seconds = rate_limit_policy_for_path(path)
+    identity = f"ip:{client_ip}:{request.method}:{path}"
+    try:
+        allowed, retry_after = rate_limit_manager.check(
+            identity,
+            limit,
+            window_seconds,
+        )
+    except RateLimitBackendUnavailable:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Rate limiting service unavailable"},
+            headers={"Retry-After": "5"},
+        )
 
+    if not allowed:
+        logging.getLogger("security.rate_limit").warning(
+            "rate_limit_hit scope=ip method=%s route_group=%s",
+            request.method,
+            path.split("/", 2)[1] if path.count("/") >= 1 else "root",
+        )
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Please retry later."},
+            headers={"Retry-After": str(retry_after)},
+        )
+    return await call_next(request)
 
 @app.get("/")
 def root():
