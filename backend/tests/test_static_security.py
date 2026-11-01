@@ -52,3 +52,12 @@ def test_frontend_avoids_raw_html_injection_apis():
     assert "dangerouslySetInnerHTML" not in source
     assert ".innerHTML" not in source
     assert ".outerHTML" not in source
+
+
+
+def test_postgres_audit_trigger_and_runtime_grants_are_documented():
+    root = Path(__file__).resolve().parents[2]
+    sql = (root / "backend" / "sql" / "audit_log_immutability.sql").read_text()
+    assert "BEFORE UPDATE OR DELETE" in sql
+    assert "REVOKE UPDATE, DELETE, TRUNCATE" in sql
+    assert "GRANT SELECT, INSERT" in sql
