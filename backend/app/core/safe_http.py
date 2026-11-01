@@ -83,6 +83,7 @@ def _pinned_https_get(host: str, ip_address: str, path: str, timeout: int) -> Sa
                 "Host": host,
                 "User-Agent": "SYJ-NexusIntel-AI/1.0",
                 "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
+                "Accept-Encoding": "identity",
             },
             redirect=False,
             retries=False,
