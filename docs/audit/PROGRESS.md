@@ -1,14 +1,16 @@
 ## Authoritative checkpoint — 2026-11-01 (Step A complete; Step B awaiting confirmation)
 
-- Current branch heads before this checkpoint commit: `main` = `e51373d276b443581367f2c19aa291ebf2a042d3`; `audit/baseline` = `c2b71f367327cc105ba886b2816900fbc34eab6d`; `feat/security-hardening` = `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a`.
-- Secret-history coverage: the prior 48/64 commits were not rescanned. The remaining 16 commits were inspected once, in a single batch: `dc195abdcadf0d5e5825d085c777958c93e85349` through `c06218f640b5765746cf98916f3a92792992dfb7` inclusive. Four post-baseline main commits were separately inspected for the accidental helper add/delete sequence.
-- Confirmed JWT finding: introduced at `c06218f640b5765746cf98916f3a92792992dfb7`, `backend/app/core/security.py:6`; last present in parent commit `97d29d73178c44a0efd8da2c3d0e94298734b086`; removed by `827aad3701b3e25843d56804e6ee21e8e2dab55f`. It remains recoverable in all 24 inspected tags. It is absent from current branch and PR head source snapshots.
+- Branch heads at this checkpoint, before this progress commit: `main` = `e51373d276b443581367f2c19aa291ebf2a042d3`; `audit/baseline` = `c2b71f367327cc105ba886b2816900fbc34eab6d`; `feat/security-hardening` = `4444b0608762b59d976c30576dae960a87fa7c85`.
+- Divergence measured at feature head `4444b0608762b59d976c30576dae960a87fa7c85`: feature branch 421 ahead / 4 behind `main`, 149 changed files; audit branch 5 ahead / 4 behind; main 0/0. Common merge base: `d2669b9264ed5de189facfcaafd3cd76f26cd965`.
+- Main's Git tree SHA exactly matches the merge-base tree SHA `8805bb9b2efa3b3e76b5039fd5f4a0fcb75748b1`; main's four later commits are an add/delete sequence with no net tree change. No file-level conflicts are predicted. The historical path `backend/tests/test_log_redaction.py` is present on feature and absent on main; because main's final tree equals the merge base, it is not a current merge conflict. `backend/app/core/logging_security.py` is absent from both final trees; feature uses `backend/app/core/redaction.py`.
+- Secret-history coverage: prior 48/64 commits were not rescanned. The remaining 16 commits were inspected once in one batch: `dc195abdcadf0d5e5825d085c777958c93e85349` through `c06218f640b5765746cf98916f3a92792992dfb7` inclusive. Four post-baseline main commits were separately inspected for the accidental helper add/delete sequence.
+- Confirmed JWT finding: introduced at `c06218f640b5765746cf98916f3a92792992dfb7`, `backend/app/core/security.py:6`; last present in parent commit `97d29d73178c44a0efd8da2c3d0e94298734b086`; removed by `827aad3701b3e25843d56804e6ee21e8e2dab55f`. It remains recoverable in all 24 inspected tags. It is absent from the current three branch source snapshots and both PR head source snapshots.
 - Additional credential candidate: PostgreSQL URL with embedded username/password at `.env.example:4`, introduced and last seen in `c0e2705da78d2568dcb38181728fa0701b48e4ed`; present on feature branch and closed PR #2 snapshot. Validity/use is UNVERIFIED; treat as compromised and rotate if reused.
 - Other provider-key/OAuth/SMTP/platform-token/PEM findings: none confirmed in the newly scanned 16 commits, four post-baseline main commits, 24 tag trees or inspected current configuration. Absence in the prior 48-commit batch remains UNVERIFIED because its raw scanner artifact is unavailable. One additional historical Gitleaks match remains unclassified and may or may not be the PostgreSQL URL.
-- No actual `.env` file was found in the 3 branch trees or 24 tag trees. Feature branch has only example files; root `.env.example` contains the credential-bearing URL above.
-- Step A documentation is in `docs/audit/SECRET_FINDINGS.md`; this progress update records the current evidence. CI Secret Scan, Dependency Audit and Security Tests passed at code snapshot `fdc04b028963a28bb0f7dd75310a94f231d29ec2` (runs `41291435809`, `41291435698`, `41291435857`). Documentation-only commits followed; no CI run is recorded for those exact commits.
-- Step B: `feat/security-hardening` is 419 ahead / 4 behind `main`; `audit/baseline` is 5 ahead / 4 behind; `main` is 0/0. Merge base is `d2669b9264ed5de189facfcaafd3cd76f26cd965`. `main` has no net file changes relative to the merge base, so no file-level conflicts are predicted. A merge has NOT been attempted. Plan is to merge `main` into `feat/security-hardening` with a normal non-fast-forward merge commit, preserve all history, inspect the resulting tree, run targeted tests, and stop before PR/merge-to-main. Awaiting explicit confirmation.
-- No changes to `main`, no history rewrite, no force-push, no tag/branch deletion, and no production credential testing. Licensing, packaging, and all other security implementation tasks remain paused.
+- No actual `.env` file was found in the three branch trees or 24 tag trees. The feature branch has example files only; root `.env.example` contains the credential-bearing URL above.
+- Step A findings are documented in `docs/audit/SECRET_FINDINGS.md`. CI Secret Scan, Dependency Audit and Security Tests passed at code snapshot `fdc04b028963a28bb0f7dd75310a94f231d29ec2` (runs `41291435809`, `41291435698`, `41291435857`). Subsequent commits `a196fa84ae66a84cfb1e4837130f0a4cb20be42f`, `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a`, and `4444b0608762b59d976c30576dae960a87fa7c85` changed audit documentation only; no CI run is recorded for those exact SHAs.
+- Step B plan: after explicit owner confirmation, merge `main` into `feat/security-hardening` using a normal merge commit with both histories preserved. Recheck refs immediately before the operation; use the feature tree as the merge result only if main still has the same tree as the merge base; update the feature ref fast-forward-only. Then verify both parents, tree, status and CI. Do not merge anything into main. No merge has been attempted; awaiting confirmation.
+- No changes to `main`, no history rewrite, no force-push, no branch/tag deletion, and no production credential testing. Licensing, packaging, and all other security implementation tasks remain paused.
 
 # Phase 2 Security Hardening — Progress Log
 
@@ -19,7 +21,7 @@ Constraints: branch/PR only; never merge; no production data or credentials; no 
 ## Current resume status
 
 - Phase 1 PR #1 remains open and unmerged: `audit/baseline` → `main`.
-- Phase 2 branch exists: `feat/security-hardening`. Current observed head before this progress update: `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a`.
+- Phase 2 branch exists: `feat/security-hardening`. Current observed head before this progress update: `4444b0608762b59d976c30576dae960a87fa7c85`. 
 - Phase 2 Step A secret-exposure evidence has been recorded in `docs/audit/SECRET_FINDINGS.md` (JWT exposure plus a credential-bearing PostgreSQL URL candidate). CI Secret Scan, Dependency Audit and Security Tests passed on code snapshot `fdc04b028963a28bb0f7dd75310a94f231d29ec2`; the later commits `a196fa84ae66a84cfb1e4837130f0a4cb20be42f` and `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a` are documentation-only.
 - Task 4 has started. Tenant service-level regression tests and a route-family isolation matrix are committed. Full HTTP endpoint/RBAC matrix is still pending.
 - No production service, production data or production credential has been accessed.
@@ -143,7 +145,7 @@ Constraints: branch/PR only; never merge; no production data or credentials; no 
 
 ## Validation status
 
-Task 4 tests and source changes are authored. GitHub Actions runs have been triggered for the current branch; results are still pending. No local test suite has been executed. Docker, Redis, database and attack simulation runtime validation remains UNVERIFIED. Never claim fully secure.
+Task 4 tests and source changes are authored. Security Tests, Dependency Audit and Secret Scan passed at code snapshot `fdc04b028963a28bb0f7dd75310a94f231d29ec2` (runs `41291435857`, `41291435698`, `41291435809`). The subsequent audit-only commits were not separately run through CI. Docker, Redis, database and attack simulation runtime validation remains UNVERIFIED. Never claim fully secure.
 
 
 ## Task 4 implementation record (2026-11-01)
@@ -172,7 +174,7 @@ This violated the branch-only constraint. No application behavior remains change
 
 ## Latest CI observation
 
-At the time of this update, the branch had active/queued Security CI, Dependency Audit and Secret Scan runs. The earlier diff-only Gitleaks action reported success, which is not sufficient evidence that the historic key was scanned. The current secret workflow runs Gitleaks on PR/push diffs with redacted output. The earlier one-time history scan reported two matches but did not retain per-match metadata; the known historical JWT key is confirmed independently. The full-history scan will not be repeated under the no-rescan rule.
+Historical note superseded by the authoritative checkpoint above: Secret Scan is diff-scoped, and the earlier one-time history scan's second match remains unclassified. The 16 previously unreviewed commits have now been inspected once; do not repeat the completed historical range.
 
 
 
@@ -209,9 +211,9 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 ## Branch/PR reconciliation (2026-11-01)
 
 - Current main head: `e51373d276b443581367f2c19aa291ebf2a042d3`. Current security branch head before this progress update: `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a`. Current audit branch head: `c2b71f367327cc105ba886b2816900fbc34eab6d`.
-- Current compare: `feat/security-hardening` is 419 commits ahead and 4 behind `main` (148 changed files), merge base `d2669b9264ed5de189facfcaafd3cd76f26cd965`. `audit/baseline` is 5 ahead and 4 behind `main`, same merge base. `main` is 0 ahead / 0 behind itself. Comparing `main` against the merge base returns no changed files: the four main commits are an add/delete sequence with no net tree changes. No file-level merge conflicts are predicted by the current tree comparison; this is not a tested merge.
+- Current compare at `4444b0608762b59d976c30576dae960a87fa7c85`: `feat/security-hardening` is 421 commits ahead and 4 behind `main` (149 changed files), merge base `d2669b9264ed5de189facfcaafd3cd76f26cd965`. `audit/baseline` is 5 ahead and 4 behind `main`, same merge base. `main` is 0 ahead / 0 behind itself. Comparing `main` against the merge base returns no changed files: the four main commits are an add/delete sequence with no net tree changes. No file-level merge conflicts are predicted by the current tree comparison; this is not a tested merge.
 - PR #2 is closed and unmerged; its head snapshot is `fdc04b028963a28bb0f7dd75310a94f231d29ec2`. PR #1 remains open, draft and unmerged (`audit/baseline` → `main`). No merge, rebase, cherry-pick, force-push or history rewrite has been performed.
-- No force-push, branch rewrite, rebase or cherry-pick has been performed. Do not attempt to merge PR #2. A clean backport/rebase strategy requires explicit owner approval after investigating why 413 commits are not reachable from main.
+- No force-push, branch rewrite, rebase or cherry-pick has been performed. Do not attempt to merge PR #2. A history-preserving merge of main into feat/security-hardening requires explicit owner confirmation; no rebase/backport or force-push is planned.
 - PR #1 (Phase 1 audit docs) remains open and unmerged.
 
 
@@ -219,6 +221,6 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 
 - Latest implementation CI snapshot: `fdc04b028963a28bb0f7dd75310a94f231d29ec2`. Latest documentation commits: `a196fa84ae66a84cfb1e4837130f0a4cb20be42f` (secret findings report) and `9d95f0f51aa49f9ed5846f40aa59c1e3ba65620a` (PostgreSQL URL exposure update).
 - GitHub Actions run `41291435857` passed Security Tests, run `41291435698` passed pip-audit and npm audit, and run `41291435809` passed Gitleaks at code snapshot `fdc04b028963a28bb0f7dd75310a94f231d29ec2`. The later two commits are documentation-only; no CI run is recorded for their exact SHAs.
-- PR #2 is closed/unmerged because of the 419-ahead / 4-behind divergence. No history rewrite, force push, branch deletion or tag deletion has been attempted.
+- PR #2 is closed/unmerged; the feature branch divergence is 421 ahead / 4 behind at the documented checkpoint. No history rewrite, force push, branch deletion or tag deletion has been attempted.
 - No changes have been made to `main` during this approved task. The historical accidental helper-file add/delete sequence remains in main history; current `main` tree has no net changes against the merge base.
 - Phase 2 code and documentation remain on feat/security-hardening; licensing and packaging have not started.
