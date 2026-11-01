@@ -49,6 +49,7 @@ def update_user_role(
     role_id: int,
     organization_id: int,
     actor_user_id: int,
+    actor_role_name: str = "ORGANIZATION_OWNER",
 ):
     user = get_user(
         db,
@@ -75,6 +76,16 @@ def update_user_role(
             status_code=404,
             detail="Role not found",
         )
+
+    if user.id == actor_user_id:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+
+    if actor_role_name != "SUPER_ADMIN" and role.name not in {
+        "MANAGER",
+        "SALES_REPRESENTATIVE",
+        "VIEWER",
+    }:
+        raise HTTPException(status_code=403, detail="Role assignment is not permitted")
 
     user.role_id = role_id
 
