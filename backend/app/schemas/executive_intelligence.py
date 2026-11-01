@@ -15,8 +15,8 @@ class ExecutiveBriefingResponse(BaseModel):
 class OpportunitySummaryResponse(BaseModel):
     id: int
     business_name: str
-    estimated_value: int
-    pipeline_stage: str
+    estimated_value: int | None = None
+    pipeline_stage: str | None = None
 
 
 class ExecutiveRisksResponse(BaseModel):
