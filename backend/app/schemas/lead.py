@@ -49,13 +49,13 @@ class LeadResponse(BaseModel):
     company_size: str | None = None
     notes: str | None = None
     source: str | None = None
-    status: str
-    pipeline_stage: str
-    estimated_value: int
-    lead_score: int
-    priority: str
-    probability: int
-    actual_revenue: int
+    status: str | None = None
+    pipeline_stage: str | None = None
+    estimated_value: int | None = None
+    lead_score: int | None = None
+    priority: str | None = None
+    probability: int | None = None
+    actual_revenue: int | None = None
     last_contacted: str | None = None
     next_followup: str | None = None
     created_at: datetime | None = None
