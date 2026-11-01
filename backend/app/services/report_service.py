@@ -53,4 +53,4 @@ def generate_pdf_report(domain: str):
         content.append(Paragraph(escape(str(recommendation)), styles["Normal"]))
 
     document.build(content)
-    return {"success": True, "pdf_path": str(report_path)}
+    return {"success": True, "report_id": report_path.stem}
