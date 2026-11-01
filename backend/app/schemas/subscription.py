@@ -10,7 +10,6 @@ class SubscriptionCreate(BaseModel):
 
 class SubscriptionResponse(BaseModel):
     id: int
-    organization_id: int
     plan_name: str
     max_users: int
     max_leads: int
