@@ -10,3 +10,8 @@ class ReportRequest(BaseModel):
     @classmethod
     def validate_public_domain(cls, value: str) -> str:
         return validate_domain(value)
+
+
+class ReportGenerationResponse(BaseModel):
+    success: bool
+    report_id: str
