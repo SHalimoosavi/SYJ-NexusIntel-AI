@@ -62,7 +62,7 @@ class RateLimitManager:
     def __init__(self, redis_url: str | None = None, app_env: str | None = None):
         self.redis_url = redis_url if redis_url is not None else os.getenv("REDIS_URL")
         self.app_env = (app_env or os.getenv("APP_ENV", "production")).lower()
-        self.local_mode = self.app_env in {"development", "dev", "local", "test"}
+        self.local_mode = self.app_env in {"development", "dev", "local", "desktop", "test"}
         self._redis_client = None
         self._memory = SlidingWindowLimiter()
         self._memory_failures: dict[str, tuple[int, float]] = {}
