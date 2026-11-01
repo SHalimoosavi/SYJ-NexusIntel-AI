@@ -5,7 +5,6 @@ import logging
 from urllib.parse import urlsplit
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from fastapi import HTTPException
 
 from app.core.redaction import RedactingLogFilter
 from app.schemas.common import HealthResponse, ReadinessResponse
@@ -313,13 +312,17 @@ app.include_router(
 async def apply_route_rate_limits(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     path = request.url.path
-    limit, window_seconds = rate_limit_policy_for_path(path)
-    identity = f"ip:{client_ip}:{request.method}:{path}"
+    route_limit, route_window = rate_limit_policy_for_path(path)
     try:
-        allowed, retry_after = rate_limit_manager.check(
-            identity,
-            limit,
-            window_seconds,
+        global_allowed, global_retry = rate_limit_manager.check(
+            f"ip:{client_ip}:global",
+            600,
+            60,
+        )
+        route_allowed, route_retry = rate_limit_manager.check(
+            f"ip:{client_ip}:{request.method}:{path}",
+            route_limit,
+            route_window,
         )
     except RateLimitBackendUnavailable:
         return JSONResponse(
@@ -328,7 +331,8 @@ async def apply_route_rate_limits(request: Request, call_next):
             headers={"Retry-After": "5"},
         )
 
-    if not allowed:
+    if not global_allowed or not route_allowed:
+        retry_after = max(1, global_retry, route_retry)
         logging.getLogger("security.rate_limit").warning(
             "rate_limit_hit scope=ip method=%s route_group=%s",
             request.method,
