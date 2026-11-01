@@ -36,7 +36,7 @@ def test_bruteforce_lockout_returns_same_generic_error(monkeypatch):
     monkeypatch.setattr(auth.time, "sleep", lambda *_args, **_kwargs: None)
 
     responses = [
-        _attempt("198.51.100.10", "victim@example.invalid")
+        _attempt("198.51.100.10", "victim@example.com")
         for _ in range(6)
     ]
     assert responses == [(401, "Invalid credentials")] * 6
@@ -50,9 +50,9 @@ def test_account_lockout_applies_across_multiple_source_ips(monkeypatch):
 
     for index in range(10):
         ip = f"198.51.100.{index + 10}"
-        assert _attempt(ip, "victim@example.invalid") == (401, "Invalid credentials")
+        assert _attempt(ip, "victim@example.com") == (401, "Invalid credentials")
 
-    assert _attempt("203.0.113.99", "victim@example.invalid") == (
+    assert _attempt("203.0.113.99", "victim@example.com") == (
         401,
         "Invalid credentials",
     )
