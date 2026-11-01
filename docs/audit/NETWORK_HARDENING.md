@@ -45,7 +45,7 @@ Certbot checks for renewal every 12 hours. The Nginx container reloads its confi
 The supplied Nginx configuration includes:
 - Per-IP API request rate zone and a stricter authentication zone.
 - Per-IP concurrent connection limits.
-- 10 MB request-body cap.
+- 10 MB request-body cap at Nginx and a streaming 10 MB ASGI cap in FastAPI, including chunked requests.
 - Header/body/send timeouts to constrain slow clients.
 - Upstream connect/read/send timeouts.
 - gzip compression for text, JSON, CSS, JS and SVG.
