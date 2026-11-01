@@ -10,7 +10,7 @@ Scope: source review of the current security-hardening branch and registered Fas
 - DNS A-record lookups reject non-global results.
 - SQLAlchemy ORM queries use bound parameters for reviewed tenant-sensitive access paths. No raw SQL construction was found in the reviewed services.
 - Pydantic request schemas now bound many high-risk strings and reject unexpected fields for organization, lead, activity, note, invitation, subscription, login, password and sales-agent inputs.
-- Nginx caps hosted request bodies at 10 MB. Direct Railway ingress body-size enforcement remains dependent on platform edge limits; the application has not yet added a complete streaming ASGI body cap.
+- Nginx caps hosted request bodies at 10 MB. A streaming ASGI body cap is also installed for direct Railway ingress and counts chunked bodies when the application consumes them.
 
 ## File handling
 
