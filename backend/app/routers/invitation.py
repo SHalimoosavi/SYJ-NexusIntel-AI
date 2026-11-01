@@ -32,6 +32,7 @@ def create_invitation_route(
         organization_id=current_user["organization_id"],
         email=invitation.email,
         role_id=invitation.role_id,
+        actor_role_name=current_user["role_name"],
     )
 
 
