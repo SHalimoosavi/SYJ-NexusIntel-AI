@@ -36,7 +36,7 @@ def auth_session(monkeypatch):
     db.refresh(role)
     user = User(
         full_name="Session User",
-        email="session-user@example.invalid",
+        email="session-user@example.com",
         hashed_password=hash_password("OldPassword123!"),
         organization_id=org.id,
         role_id=role.id,
@@ -144,7 +144,7 @@ def test_bruteforce_lockout_and_unknown_user_share_generic_error(monkeypatch, au
     )
     unknown_user = client.post(
         "/auth/login",
-        json={"email": "unknown-user@example.invalid", "password": "WrongPassword123!"},
+        json={"email": "unknown-user@example.com", "password": "WrongPassword123!"},
         headers=headers,
     )
     assert wrong_password.status_code == 401
