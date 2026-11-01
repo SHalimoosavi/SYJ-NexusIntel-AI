@@ -10,3 +10,9 @@ class TechnologyRequest(BaseModel):
     @classmethod
     def validate_public_domain(cls, value: str) -> str:
         return validate_domain(value)
+
+
+class TechnologyResponse(BaseModel):
+    domain: str
+    technologies: list[str]
+    error: str | None = None
