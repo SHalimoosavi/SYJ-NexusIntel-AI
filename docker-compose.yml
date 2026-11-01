@@ -12,6 +12,7 @@ services:
       TRUSTED_PROXY_HOSTS: 172.30.0.2
       COOKIE_SECURE: "true"
       COOKIE_SAMESITE: lax
+      REPORTS_DIR: /tmp/nexusintel-reports
     expose:
       - "8000"
     networks:
