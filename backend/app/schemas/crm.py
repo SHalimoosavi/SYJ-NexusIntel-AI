@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from app.schemas.revenue_forecast import RevenueForecastResponse
+
 
 class CRMStatsResponse(BaseModel):
 
@@ -59,4 +61,4 @@ class ExecutiveDashboardResponse(BaseModel):
     ai_usage: int
     subscription: str | None = None
     crm: CRMStatsResponse
-    forecast: dict
+    forecast: RevenueForecastResponse
