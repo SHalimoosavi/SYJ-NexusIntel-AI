@@ -143,6 +143,15 @@ try:
 finally:
     db.close()
 
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+TRUSTED_PROXY_HOSTS = [
+    host.strip()
+    for host in os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1,::1").split(",")
+    if host.strip()
+]
+if "*" in TRUSTED_PROXY_HOSTS:
+    raise RuntimeError("Wildcard trusted proxies are forbidden")
+
 app = FastAPI(
     title="SYJ NexusIntel AI",
     description="AI Powered Business Intelligence, Lead Discovery and OSINT Platform",
@@ -155,7 +164,6 @@ app.add_middleware(
     trusted_hosts=TRUSTED_PROXY_HOSTS,
 )
 
-APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
 _raw_cors_origins = os.getenv("CORS_ORIGINS", "")
 if not _raw_cors_origins and APP_ENV not in {"development", "dev", "local", "desktop", "test"}:
     raise RuntimeError("CORS_ORIGINS must be explicitly configured in production")
@@ -178,14 +186,6 @@ for origin in CORS_ORIGINS:
         or origin == "*"
     ):
         raise RuntimeError("CORS_ORIGINS contains an invalid or unsafe origin")
-
-TRUSTED_PROXY_HOSTS = [
-    host.strip()
-    for host in os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1,::1").split(",")
-    if host.strip()
-]
-if "*" in TRUSTED_PROXY_HOSTS:
-    raise RuntimeError("Wildcard trusted proxies are forbidden")
 
 app.add_middleware(
     CORSMiddleware,
