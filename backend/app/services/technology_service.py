@@ -1,4 +1,4 @@
-import requests
+from app.core.safe_http import safe_get
 
 
 def detect_technologies(domain: str):
@@ -7,10 +7,7 @@ def detect_technologies(domain: str):
 
     try:
 
-        response = requests.get(
-            f"https://{domain}",
-            timeout=10
-        )
+        response = safe_get(domain, timeout=10)
 
         html = response.text.lower()
 
@@ -91,16 +88,16 @@ def detect_technologies(domain: str):
                 "Django"
             )
 
+        response.close()
+
         return {
             "domain": domain,
-            "technologies": list(
-                set(technologies)
-            )
+            "technologies": list(set(technologies))
         }
 
-    except Exception as e:
-
+    except Exception:
         return {
             "domain": domain,
-            "error": str(e)
+            "technologies": [],
+            "error": "Technology inspection failed for public domain"
         }
