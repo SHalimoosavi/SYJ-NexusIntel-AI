@@ -1,13 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { logout } from "@/lib/auth";
 
 export default function Topbar() {
-  function handleLogout() {
-    document.cookie =
-      "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-    window.location.href = "/login";
+  async function handleLogout() {
+    await logout();
   }
 
   return (
