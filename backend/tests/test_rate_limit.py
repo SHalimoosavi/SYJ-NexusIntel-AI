@@ -55,13 +55,22 @@ def test_route_policy(path, expected):
 def test_login_failures_trigger_temporary_lockout_and_clear():
     manager = RateLimitManager(redis_url=None, app_env="test")
     key = "login-attempt:hashed"
+    account_key = "account-login-attempt:hashed"
     assert not manager.is_login_locked(key)
     for _ in range(4):
         assert manager.record_login_failure(key, threshold=5) < 5
+        manager.record_login_failure(account_key, threshold=10)
     assert manager.record_login_failure(key, threshold=5) == 5
+    assert manager.record_login_failure(account_key, threshold=10) == 5
     assert manager.is_login_locked(key)
+    assert not manager.is_login_locked(account_key)
+    for _ in range(5):
+        manager.record_login_failure(account_key, threshold=10)
+    assert manager.is_login_locked(account_key)
     manager.clear_login_failures(key)
+    manager.clear_login_failures(account_key)
     assert not manager.is_login_locked(key)
+    assert not manager.is_login_locked(account_key)
 
 
 def test_user_and_organization_quotas_use_independent_buckets():
