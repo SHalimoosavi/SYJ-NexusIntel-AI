@@ -67,6 +67,8 @@ class RateLimitManager:
         self._memory = SlidingWindowLimiter()
         self._memory_failures: dict[str, tuple[int, float]] = {}
         self._memory_lockouts: dict[str, float] = {}
+        self._memory_user_versions: dict[int, int] = defaultdict(int)
+        self._memory_consumed_jti: dict[str, float] = {}
         self._lock = Lock()
 
     def _redis(self):
@@ -198,6 +200,66 @@ class RateLimitManager:
                     self._memory_lockouts.pop(key, None)
                 return
             raise RateLimitBackendUnavailable("Redis login failure reset failed") from exc
+
+
+    def get_user_session_version(self, user_id: int) -> int:
+        client = self._redis()
+        if client is None:
+            with self._lock:
+                return self._memory_user_versions[user_id]
+        try:
+            value = client.get(self._key(f"user-version:{user_id}"))
+            return int(value or 0)
+        except Exception as exc:
+            if self.local_mode:
+                with self._lock:
+                    return self._memory_user_versions[user_id]
+            raise RateLimitBackendUnavailable("Redis session-version lookup failed") from exc
+
+    def revoke_user_sessions(self, user_id: int) -> int:
+        client = self._redis()
+        if client is None:
+            with self._lock:
+                self._memory_user_versions[user_id] += 1
+                return self._memory_user_versions[user_id]
+        try:
+            return int(client.incr(self._key(f"user-version:{user_id}")))
+        except Exception as exc:
+            if self.local_mode:
+                with self._lock:
+                    self._memory_user_versions[user_id] += 1
+                    return self._memory_user_versions[user_id]
+            raise RateLimitBackendUnavailable("Redis session revocation failed") from exc
+
+    def consume_refresh_jti(self, jti: str, ttl_seconds: int) -> bool:
+        client = self._redis()
+        if client is None:
+            now = time.monotonic()
+            with self._lock:
+                expires = self._memory_consumed_jti.get(jti, 0.0)
+                if expires > now:
+                    return False
+                self._memory_consumed_jti[jti] = now + ttl_seconds
+                return True
+        try:
+            return bool(
+                client.set(
+                    self._key("consumed-refresh:" + jti),
+                    "1",
+                    ex=ttl_seconds,
+                    nx=True,
+                )
+            )
+        except Exception as exc:
+            if self.local_mode:
+                now = time.monotonic()
+                with self._lock:
+                    expires = self._memory_consumed_jti.get(jti, 0.0)
+                    if expires > now:
+                        return False
+                    self._memory_consumed_jti[jti] = now + ttl_seconds
+                    return True
+            raise RateLimitBackendUnavailable("Redis refresh-token rotation failed") from exc
 
 
 def rate_limit_policy_for_path(path: str) -> tuple[int, int]:
