@@ -211,7 +211,7 @@ def test_http_user_organization_subscription_and_invitation_idor(tenant_client):
     assert organization_list.status_code == 200
     assert [row["slug"] for row in organization_list.json()] == ["http-tenant-a"]
     assert client.get(f"/organizations/{org_b.id}").status_code == 404
-    assert client.get(f"/subscriptions/{tenant_client["a"].id}").status_code == 200
+    assert client.get(f"/subscriptions/{tenant_client['a'].id}").status_code == 200
     assert client.get(f"/subscriptions/{org_b.id}").status_code == 404
 
     invitations = client.get("/invitations")
