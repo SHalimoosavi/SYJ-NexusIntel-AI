@@ -12,20 +12,25 @@ Constraints: branch/PR only; never merge; no production data or credentials; no 
 - Task 4 has started. Tenant service-level regression tests and a route-family isolation matrix are committed. Full HTTP endpoint/RBAC matrix is still pending.
 - No production service, production data or production credential has been accessed.
 
-## Git-history secret scan ledger
+## Git-history secret scan ledger — updated 2026-11-01
 
-Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916f3a92792992dfb7`, newest `d2669b9264ed5de189facfcaafd3cd76f26cd965`.
+- Prior documented review: 48 commits, range `d2669b9264ed5de189facfcaafd3cd76f26cd965` through (exclusive) `762cb3f143c249313d5456473d0a0691047169c1`. This range was not rescanned.
+- Newly scanned remaining historical batch: 16 commits, newest `dc195abdcadf0d5e5825d085c777958c93e85349` through oldest `c06218f640b5765746cf98916f3a92792992dfb7` inclusive. Each commit diff was inspected once. No further batch remains in the documented 64-commit baseline.
+- Current main history has four commits after the recorded baseline merge-base `d2669b9264ed5de189facfcaafd3cd76f26cd965`; this post-baseline range is being reviewed specifically for the accidental add/delete incident and is not counted in the 16-commit batch.
+- Initial repository commit `c06218f640b5765746cf98916f3a92792992dfb7` introduced a hardcoded JWT signing key at `backend/app/core/security.py:6`.
+- The key was removed from source by `827aad3701b3e25843d56804e6ee21e8e2dab55f`. Its parent is `97d29d73178c44a0efd8da2c3d0e94298734b086`, the last confirmed commit whose tree still contains the literal. The previous register incorrectly identified this parent as the introducing commit; corrected here.
+- The initial commit also added database URL configuration in `backend/app/database/database.py`; inspection shows environment-variable/local SQLite configuration, not a confirmed live database credential.
+- The 16-commit batch produced no confirmed AI provider key, OAuth secret, SMTP credential, Railway/Vercel token, PEM private key or committed `.env` file. This statement is limited to the scanned commit diffs.
+- Branch/tag/PR ref sweep and the four post-baseline main commits remain under review. Any tag containing the historical literal remains compromised even if current branches no longer contain it.
+- No credential was tested against a live service. No secret value is stored in this log.
 
-- Previously reviewed in the interrupted session: 48 newest commits, range `d2669b9264ed5de189facfcaafd3cd76f26cd965` through `762cb3f143c249313d5456473d0a0691047169c1`. Do not rescan.
-- Remaining 16 oldest commits: `762cb3f143c249313d5456473d0a0691047169c1` (exclusive) through `c06218f640b5765746cf98916f3a92792992dfb7` (inclusive). The interrupted attempt did not produce usable findings. Mark UNVERIFIED; do not repeat.
-- Coverage: 48/64 reviewed; 16/64 UNVERIFIED. No history scan was repeated in the resumed session.
+## Confirmed secret findings — corrected
 
-## Confirmed secret findings
-
-1. CRITICAL — hardcoded JWT signing secret in `backend/app/core/security.py:6`, commit `97d29d73178c44a0efd8da2c3d0e94298734b086`. Later moved to environment config in commit `827aad3701b3e25843d56804e6ee21e8e2dab55f`. Treat as compromised; deployment/reuse status unknown. Never retain in JWT verification keyring.
-2. Historical frontend login debug/token handling is a disclosure vulnerability; no literal committed live bearer token was confirmed in the previously inspected history.
-3. Environment variable names such as `DATABASE_URL`, `SECRET_KEY`, API keys or webhook secrets are not evidence of literal credential exposure.
-4. No secret values are recorded in this file or chat.
+1. CRITICAL — hardcoded JWT signing key introduced in `backend/app/core/security.py:6` by initial commit `c06218f640b5765746cf98916f3a92792992dfb7`. The literal remained in the parent commit `97d29d73178c44a0efd8da2c3d0e94298734b086` and was removed by `827aad3701b3e25843d56804e6ee21e8e2dab55f`. Treat as compromised; deployment/reuse status is UNVERIFIED. Never retain this key in any verification keyring.
+2. The earlier claim that `97d29d73178c44a0efd8da2c3d0e94298734b086` introduced the key was incorrect; that commit is the parent of the removal commit and is the last confirmed tree containing it.
+3. Database URL configuration exists in the initial source, but the inspected line uses environment configuration/local SQLite defaults; no actual DB password or live database credential was confirmed in the newly scanned range.
+4. Historical frontend login debug/token handling was documented as a disclosure vulnerability. A literal live bearer token has not been confirmed from the evidence inspected so far.
+5. Every secret literal ever committed to Git history must be treated as compromised. No secret values are stored in this file.
 
 ## Task 1 — secret and API exposure
 
