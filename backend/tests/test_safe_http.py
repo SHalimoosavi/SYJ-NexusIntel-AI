@@ -151,7 +151,8 @@ def test_outbound_response_size_is_bounded(monkeypatch):
             pass
 
     class FakePool:
-        def __init__(self, _host, **_kwargs):
+        def __init__(self, host, **_kwargs):
+            assert host == "93.184.216.34"
             pass
 
         def request(self, *_args, **_kwargs):
