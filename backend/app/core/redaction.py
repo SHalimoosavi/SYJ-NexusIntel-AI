@@ -18,6 +18,7 @@ def redact_text(value: str | None) -> str | None:
     result = _BEARER.sub("Bearer [REDACTED]", result)
     result = _JWT.sub("[REDACTED_TOKEN]", result)
     result = _SECRET_ASSIGNMENT.sub(lambda match: f"{match.group(1)}=[REDACTED]", result)
+    result = _IPV4.sub("[REDACTED_IP]", result)
     return _PHONE.sub("[REDACTED_PHONE]", result)
 
 
