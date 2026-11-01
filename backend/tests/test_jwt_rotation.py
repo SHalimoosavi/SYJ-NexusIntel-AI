@@ -1,6 +1,6 @@
 import os
 
-from jose import jwt
+import jwt
 
 from app.core.rate_limit import RateLimitManager
 from app.core.security import ALGORITHM, JWT_ACTIVE_KID, JWT_SIGNING_KEYS, create_access_token, create_refresh_token, verify_token
