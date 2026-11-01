@@ -91,6 +91,7 @@ def log_ai_request(
     db: Session,
     organization_id: int,
     request_type: str,
+    actor_user_id: int | None = None,
 ):
     usage = AIUsage(
         organization_id=organization_id,
@@ -106,7 +107,7 @@ def log_ai_request(
     log_event(
         db=db,
         organization_id=organization_id,
-        user_id=None,
+        user_id=actor_user_id,
         event_type="AI_REQUEST",
         resource_type="AI_USAGE",
         resource_id=usage.id,
