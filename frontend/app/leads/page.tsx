@@ -32,12 +32,12 @@ export default async function LeadsPage() {
   ).length;
 
   const warmLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "WARM"
   ).length;
 
   const coldLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "COLD"
   ).length;
 
@@ -66,7 +66,7 @@ export default async function LeadsPage() {
     );
 
   const overdueFollowups =
-    leads.filter((lead: any) => {
+    leads.filter((lead: Lead) => {
       if (!lead.next_followup) {
         return false;
       }
