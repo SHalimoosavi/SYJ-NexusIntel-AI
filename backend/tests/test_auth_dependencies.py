@@ -96,3 +96,34 @@ def test_inactive_user_is_rejected(monkeypatch, db_session):
     with pytest.raises(HTTPException) as error:
         dependencies.get_current_user(request, credentials, session)
     assert error.value.status_code == 401
+
+
+def test_stale_session_version_is_rejected(monkeypatch, db_session):
+    session, user, _org, _role = db_session
+    monkeypatch.setattr(
+        dependencies,
+        "verify_token",
+        lambda _value: {
+            "user_id": user.id,
+            "token_type": "access",
+            "jti": "stale-session",
+            "session_version": 1,
+        },
+    )
+    request = SimpleNamespace(cookies={}, method="GET", headers={})
+    credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="stale")
+    with pytest.raises(HTTPException) as error:
+        dependencies.get_current_user(request, credentials, session)
+    assert error.value.status_code == 401
+
+
+def test_cookie_authenticated_state_change_requires_trusted_origin(db_session):
+    session, _user, _org, _role = db_session
+    request = SimpleNamespace(
+        cookies={"access_token": "cookie-token"},
+        method="POST",
+        headers={},
+    )
+    with pytest.raises(HTTPException) as error:
+        dependencies.get_current_user(request, None, session)
+    assert error.value.status_code == 403
