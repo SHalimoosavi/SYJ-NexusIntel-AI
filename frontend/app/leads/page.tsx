@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import CreateLeadForm from "@/components/leads/create-lead-form";
 import LeadTable from "@/components/leads/lead-table";
 import CRMKPICards from "@/components/leads/crm-kpi-cards";
@@ -17,14 +20,58 @@ import {
   getRelationshipIntelligence,
 } from "@/lib/api";
 
-export default async function LeadsPage() {
-  const leads = await getLeads();
+type LeadsPageData = {
+  leads: Lead[];
+  revenue: Awaited<ReturnType<typeof getCRMRevenue>>;
+  relationship: Awaited<ReturnType<typeof getRelationshipIntelligence>>;
+};
 
-  const revenue =
-    await getCRMRevenue();
+export default function LeadsPage() {
+  const [data, setData] = useState<LeadsPageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const relationship =
-    await getRelationshipIntelligence();
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      getLeads(),
+      getCRMRevenue(),
+      getRelationshipIntelligence(),
+    ])
+      .then(([leads, revenue, relationship]) => {
+        if (active) setData({ leads, revenue, relationship });
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load CRM data"
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <main className="gradient-bg min-h-screen p-8">Loading CRM...</main>;
+  }
+  if (error || !data) {
+    return (
+      <main className="gradient-bg min-h-screen p-8">
+        <p role="alert" className="text-red-400">
+          {error || "CRM data is unavailable"}
+        </p>
+      </main>
+    );
+  }
+
+  const { leads, revenue, relationship } = data;
 
   const hotLeads = leads.filter(
     (l: Lead) =>
