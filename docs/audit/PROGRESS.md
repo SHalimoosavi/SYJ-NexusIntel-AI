@@ -157,3 +157,13 @@ This violated the branch-only constraint. No application behavior remains change
 
 At the time of this update, the branch had active/queued Security CI, Dependency Audit and Secret Scan runs. The earlier diff-only Gitleaks action reported success, which is not sufficient evidence that the historic key was scanned. The secret workflow now also runs pinned Gitleaks CLI against the complete Git history with redacted reporting; expect it to flag the known historical JWT key. Full-history scan result is pending.
 
+
+
+## CI remediation update (2026-11-01)
+
+- Backend test collection failure was traced to missing `PYTHONPATH` in the Security Tests workflow. The workflow now sets `PYTHONPATH=${{ github.workspace }}/backend`.
+- Frontend lint blockers were addressed: removed explicit `any` types, typed API payloads and dashboard state, replaced effect-driven state setters with asynchronous fetch chains, and routed lead/activity/note calls through the authenticated API client.
+- Removed unused Axios instead of forcing an unsupported version. Pinned Next.js and eslint-config-next to `16.4.3`; added a patched `minimatch@11.0.1` override. The dependency-refresh workflow regenerated `frontend/package-lock.json` on `feat/security-hardening` without `--force` or lifecycle scripts.
+- The completed Dependency Refresh run reported **0 npm vulnerabilities** after lockfile regeneration. The lockfile now resolves Next.js/eslint-config-next 16.4.3, minimatch 11.0.1, @tailwindcss/postcss 4.3.3 and sharp 0.35.5; Axios is absent.
+- Dependency Refresh commit: `747d3bb15790ad531afa930be89448df44aeba2b`.
+- The prior Security Tests/Dependency Audit runs were queued against a pre-lockfile commit; a new verification run must be triggered against the current lockfile head before declaring CI green.
