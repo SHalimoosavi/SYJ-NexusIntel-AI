@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 
 from app.schemas.lead import LeadCreate, LeadUpdate, LeadResponse
+from app.schemas.common import SuccessResponse
 
 from app.services.lead_service import (
     create_lead,
@@ -84,7 +85,7 @@ def update_pipeline(
     return lead
 
 
-@router.delete("/{lead_id}")
+@router.delete("/{lead_id}", response_model=SuccessResponse)
 def remove_lead(
     lead_id: int,
     db: Session = Depends(get_db),
