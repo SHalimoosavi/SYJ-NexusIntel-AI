@@ -5,15 +5,15 @@ from sqlalchemy.orm import Session
 from app.models.activity import Activity
 from app.models.lead import Lead
 
-from app.core.tenant import (
-    tenant_filter,
-)
+from app.core.tenant import tenant_filter
+from app.services.audit_service import log_event
 
 
 def create_activity(
     db: Session,
     activity_data,
     organization_id: int,
+    actor_user_id: int | None = None,
 ):
     lead = (
         db.query(Lead)
@@ -42,6 +42,7 @@ def create_activity(
     db.commit()
 
     db.refresh(activity)
+    log_event(db, organization_id, actor_user_id, "ACTIVITY_CREATED", "ACTIVITY", activity.id, "Lead activity created")
 
     return activity
 
