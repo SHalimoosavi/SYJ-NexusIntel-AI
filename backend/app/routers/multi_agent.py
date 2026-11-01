@@ -63,6 +63,7 @@ def analyze(
         db,
         organization_id,
         "MULTI_AGENT",
+        current_user["user_id"],
     )
 
     return result
