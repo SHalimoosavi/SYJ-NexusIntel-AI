@@ -1,0 +1,25 @@
+title = "SYJ NexusIntel AI secret scanning"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "syj-generic-assigned-secret"
+description = "High-entropy literal assigned to a secret-like variable"
+regex = '''(?i)(?:secret|token|password|api[_-]?key|private[_-]?key|client[_-]?secret)\s*[:=]\s*["']([A-Za-z0-9_./+=-]{24,})["']'''
+secretGroup = 1
+entropy = 3.5
+keywords = ["secret", "token", "password", "api_key", "api-key", "private_key", "private-key", "client_secret"]
+
+[[rules]]
+id = "syj-private-key-block"
+description = "PEM private key material"
+regex = '''-----BEGIN (?:RSA |EC |OPENSSH |DSA )?PRIVATE KEY-----'''
+keywords = ["PRIVATE KEY"]
+
+[[rules]]
+id = "syj-jwt-compact-literal"
+description = "JWT-shaped literal assigned in source"
+regex = '''(?i)(?:token|jwt|access_token)\s*[:=]\s*["'](eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,})["']'''
+secretGroup = 1
+keywords = ["eyJ"]
