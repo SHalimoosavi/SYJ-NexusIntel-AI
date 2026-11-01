@@ -66,7 +66,7 @@ These tests are authored but have not yet been confirmed passing in GitHub Actio
 11. **AI prompt injection is not currently evidenced as a live LLM-provider path.** Multi-agent orchestration is deterministic. If an LLM provider is added, implement the controls in `AI_INPUT_SECURITY.md` before release.
 12. **No backend file-upload endpoint is present.** Any future upload feature requires a dedicated size/type/magic-byte/malware/tenant-storage policy.
 13. **Full endpoint data-flow testing remains incomplete.** Route authentication inventory is broad, but all endpoint combinations, IDOR permutations, tenant cache behavior and role transitions need a structured independent test/penetration test.
-14. **Main-branch policy incident:** two helper files were accidentally committed to `main` and immediately deleted in compensating commits. Current main tree is restored, but history contains those four commits. This is recorded in `PROGRESS.md`; no further main writes are authorized or planned.
+14. **Branch divergence / PR blocker:** feat/security-hardening is 413 commits ahead and 4 behind current main, with 148 changed files. Draft PR #2 was closed without merge; no force-push or history rewrite was performed. A clean backport strategy requires owner approval.\n15. **Main-branch policy incident:** two helper files were accidentally committed to `main` and immediately deleted in compensating commits. Current main tree is restored, but history contains those four commits. This is recorded in `PROGRESS.md`; no further main writes are authorized or planned.
 
 ## Recommended independent penetration-test scope
 
