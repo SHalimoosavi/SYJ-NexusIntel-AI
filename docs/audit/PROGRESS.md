@@ -135,17 +135,17 @@ Task 4 tests and source changes are authored. GitHub Actions runs have been trig
 - Added recursive FastAPI dependency inventory asserting every non-public API route depends on the current-user dependency. Added analytics-service tests and owner role-escalation/super-admin route tests. Full endpoint coverage limits are explicit in `TENANT_BOUNDARY_MATRIX.md`.
 - Added explicit response models/constraints for leads and agent memory; activity/note response schemas are constrained; existing dashboard, CRM, OSINT, technology, intelligence, sales, audit, user, invitation, subscription and report response models were reviewed. Removed tenant/actor foreign keys from user/invitation/audit responses and removed absolute PDF path from report response. Invitation creation still returns a one-time opaque invitation bearer token to the authorized creator; list responses omit it.
 - Added `RedactingLogFilter` and generic 500 handling in `backend/app/main.py`; redaction covers email, phone, bearer/JWT and credential assignments. No exception trace is emitted to client or application log.
-- Added AST guard against f-string/format-built SQL, static upload endpoint guard, frontend raw-HTML injection guard, and SSRF tests for private DNS and redirects. Source review shows deterministic multi-agent orchestration and no current external LLM SDK integration; future LLM safety requirements and DNS-rebinding risk are in `AI_INPUT_SECURITY.md`.
+- Added AST guard against f-string/format-built SQL, static upload endpoint guard, frontend raw-HTML injection guard, and SSRF tests for private DNS and redirects. Source review shows deterministic multi-agent orchestration and no current external LLM SDK integration; future LLM safety requirements and outbound egress risks are in `AI_INPUT_SECURITY.md`; shared HTTPS fetch and TLS paths now pin validated public IPs.
 - Added JWT lifecycle route tests for logout revocation, refresh-token replay detection and password-change revocation; added brute-force lockout and generic unknown/wrong credential response tests.
-- Added `backend/sql/audit_log_immutability.sql` and `docs/audit/DATABASE_OPERATIONS.md`. ORM tests reject audit-log update/delete; the PostgreSQL trigger, runtime grants, database role separation, backup schedule and restore drill are operator actions and remain unverified.
-- Added `backend/tests/test_tenant_isolation.py`, `test_auth_sessions.py`, `test_jwt_rotation.py`, `test_response_models.py`, `test_security_controls.py`, `test_static_security.py`, `test_log_redaction.py`, and expanded `test_input_validation.py`. Sensitive AI usage, organization/subscription creation, invitation, lead, note, activity, login/logout and password-change events now carry actor attribution where applicable.
-- Added `.github/workflows/security-ci.yml`, `.github/workflows/dependency-audit.yml` (already present on branch), `.github/dependabot.yml`, and pinned test dependencies. Python and npm dependency audits run separately to avoid duplicate CI work.
+- Added `backend/sql/audit_log_immutability.sql`, `backend/sql/application_role_grants.sql` and `docs/audit/DATABASE_OPERATIONS.md`. ORM tests reject audit-log update/delete; the PostgreSQL trigger, runtime grants, database role separation, backup schedule and restore drill are operator actions and remain unverified.
+- Added/maintained `backend/tests/test_tenant_isolation.py`, `test_auth_sessions.py`, `test_jwt_rotation.py`, `test_response_models.py`, `test_security_controls.py`, `test_static_security.py`, `test_log_redaction.py`, `test_body_limit.py`, `test_proxy_header_trust.py`, `test_login_bruteforce.py`, `test_safe_http.py`, `test_api_response_models.py`, `test_route_security_contracts.py`, and expanded `test_input_validation.py`. Sensitive AI usage, organization/subscription creation, invitation, lead, note, activity, login/logout and password-change events now carry actor attribution where applicable.
+- Added `.github/workflows/security-tests.yml`, `.github/workflows/dependency-audit.yml`, `.github/workflows/secret-scan.yml`, `.github/dependabot.yml`, and pinned test dependencies. Python and npm dependency audits run separately to avoid duplicate CI work.
 - Added `docs/audit/TENANT_BOUNDARY_MATRIX.md`, `docs/audit/AI_INPUT_SECURITY.md`, and `docs/audit/DATABASE_OPERATIONS.md`.
-- No backend test suite, Docker/Nginx deployment, Redis integration, PostgreSQL role/trigger, or real attack simulation has been executed locally. GitHub Actions runs were observed queued/in progress; final outcomes are pending.
+- No backend test suite, Docker/Nginx deployment, Redis integration, PostgreSQL role/trigger, or real attack simulation has been executed locally. CI test runs remain queued/pending on the latest branch commits. GitHub Actions runs were observed queued/in progress; final outcomes are pending.
 
 ## Repository policy incident
 
-Two helper files were accidentally created on `main` because the branch argument was omitted on one GitHub file-create operation. They were immediately deleted in compensating commits. The current `main` tree has those files removed, but its history contains these four commits:
+Two helper files were accidentally created on `main` because the branch argument was omitted on one GitHub file-create operation. They were immediately deleted in compensating commits. The current main tree has those files removed, but main history retains the add/delete commits; this is a recorded process violation. The current `main` tree has those files removed, but its history contains these four commits:
 - Added `backend/app/core/logging_security.py`: `f9d78ce69f579e6a63468321b12dee1be8dd3ed6`
 - Added `backend/tests/test_log_redaction.py`: `346819a75bfb8baccf137972a218ffdcd6b94935`
 - Deleted helper module: `010a17619991f9162b2ccac73a821aa9d4115a53`
@@ -155,7 +155,7 @@ This violated the branch-only constraint. No application behavior remains change
 
 ## Latest CI observation
 
-At the time of this update, the branch had active/queued Security CI, Dependency Audit and Secret Scan runs. The earlier diff-only Gitleaks action reported success, which is not sufficient evidence that the historic key was scanned. The secret workflow now also runs pinned Gitleaks CLI against the complete Git history with redacted reporting; expect it to flag the known historical JWT key. Full-history scan result is pending.
+At the time of this update, the branch had active/queued Security CI, Dependency Audit and Secret Scan runs. The earlier diff-only Gitleaks action reported success, which is not sufficient evidence that the historic key was scanned. The current secret workflow runs Gitleaks on PR/push diffs with redacted output. The earlier one-time history scan reported two matches but did not retain per-match metadata; the known historical JWT key is confirmed independently. The full-history scan will not be repeated under the no-rescan rule.
 
 
 
@@ -167,3 +167,14 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 - The completed Dependency Refresh run reported **0 npm vulnerabilities** after lockfile regeneration. The lockfile now resolves Next.js/eslint-config-next 16.4.3, minimatch 11.0.1, @tailwindcss/postcss 4.3.3 and sharp 0.35.5; Axios is absent.
 - Dependency Refresh commit: `747d3bb15790ad531afa930be89448df44aeba2b`.
 - The prior Security Tests/Dependency Audit runs were queued against a pre-lockfile commit; a new verification run must be triggered against the current lockfile head before declaring CI green.
+
+
+## Latest implementation reconciliation (2026-11-01)
+
+- The pre-existing comprehensive tenant suite in backend/tests/test_tenant_isolation.py is the canonical tenant/IDOR suite. Redundant duplicate tenant service/HTTP test files created during resume were removed.
+- The canonical auth/session suite is backend/tests/test_auth_sessions.py plus test_jwt_rotation.py. Redundant duplicate session/enumeration files were removed; test_login_bruteforce.py remains for cross-IP account lockout coverage.
+- The canonical PostgreSQL append-only script is backend/sql/audit_log_immutability.sql. Runtime grants are in backend/sql/application_role_grants.sql and use the same nexusintel_runtime role. A duplicate audit_log_hardening.sql was removed.
+- The canonical tenant matrix is docs/audit/TENANT_BOUNDARY_MATRIX.md. A duplicate TENANT_ISOLATION_MATRIX.md was removed.
+- Invitation and subscription list response models now omit organization foreign keys; audit response omits tenant/actor/resource IDs; user response omits organization_id. The one-time invitation creation response still intentionally returns its bearer token only to the authorized creator.
+- Outbound HTTPS/TLS inspection now pins to validated public DNS addresses and caps response bodies at 2 MB. WHOIS/DNS network egress remains an operator-level residual risk.
+- No further writes to main have been made after the recorded accidental add/delete incident.
