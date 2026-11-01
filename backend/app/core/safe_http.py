@@ -1,61 +1,131 @@
-"""Outbound HTTP safeguards for user-supplied domain intelligence targets.
+"""SSRF-resistant outbound HTTPS client for public domain inspection.
 
-This performs DNS/IP and redirect validation before every request. Production
-deployments must additionally enforce outbound egress restrictions at the
-network boundary to mitigate DNS rebinding and cloud metadata access.
+DNS answers are validated and the connection is pinned to one validated IP,
+while TLS SNI and certificate verification continue to use the original host.
+Redirects are followed manually and revalidated at each hop.
 """
 import ipaddress
 import socket
+import ssl
 from urllib.parse import urljoin, urlsplit
 
-import requests
+import certifi
+from urllib3 import Timeout
+from urllib3.connectionpool import HTTPSConnectionPool
 
 from app.core.input_validation import validate_domain
 
 
-def assert_public_domain(domain: str) -> str:
+def resolve_public_addresses(domain: str) -> tuple[str, list[str]]:
     host = validate_domain(domain)
     try:
         answers = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
     except OSError as exc:
         raise ValueError("Target domain could not be resolved") from exc
-    addresses = {answer[4][0].split("%", 1)[0] for answer in answers}
+    addresses = sorted({answer[4][0].split("%", 1)[0] for answer in answers})
     if not addresses:
         raise ValueError("Target domain has no public address")
     for address in addresses:
-        ip = ipaddress.ip_address(address)
-        if not ip.is_global:
+        if not ipaddress.ip_address(address).is_global:
             raise ValueError("Target domain resolves to a non-public address")
+    return host, addresses
+
+
+def assert_public_domain(domain: str) -> str:
+    host, _addresses = resolve_public_addresses(domain)
     return host
 
 
-def safe_get(domain: str, timeout: int = 10, max_redirects: int = 3):
-    host = assert_public_domain(domain)
+class SafeHTTPResponse:
+    """Small response adapter exposing only the attributes used by services."""
+
+    def __init__(self, response, pool):
+        self._response = response
+        self._pool = pool
+        self.status_code = response.status
+        self.headers = response.headers
+
+    @property
+    def text(self) -> str:
+        return self._response.data.decode("utf-8", errors="replace")
+
+    @property
+    def is_redirect(self) -> bool:
+        return self.status_code in {301, 302, 303, 307, 308}
+
+    @property
+    def is_permanent_redirect(self) -> bool:
+        return self.status_code in {301, 308}
+
+    def close(self) -> None:
+        try:
+            self._response.release_conn()
+        finally:
+            self._pool.close()
+
+
+def _pinned_https_get(host: str, ip_address: str, path: str, timeout: int) -> SafeHTTPResponse:
+    pool = HTTPSConnectionPool(
+        host=ip_address,
+        port=443,
+        maxsize=1,
+        block=True,
+        cert_reqs=ssl.CERT_REQUIRED,
+        ca_certs=certifi.where(),
+        server_hostname=host,
+        assert_hostname=host,
+    )
+    try:
+        response = pool.request(
+            "GET",
+            path,
+            headers={
+                "Host": host,
+                "User-Agent": "SYJ-NexusIntel-AI/1.0",
+                "Accept": "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
+            },
+            redirect=False,
+            retries=False,
+            timeout=Timeout(total=timeout),
+            preload_content=True,
+        )
+        return SafeHTTPResponse(response, pool)
+    except Exception:
+        pool.close()
+        raise
+
+
+def safe_get(domain: str, timeout: int = 10, max_redirects: int = 3) -> SafeHTTPResponse:
+    host, addresses = resolve_public_addresses(domain)
     current_url = f"https://{host}/"
+
     for redirect_count in range(max_redirects + 1):
         parsed = urlsplit(current_url)
         if parsed.scheme != "https" or not parsed.hostname:
             raise ValueError("Only HTTPS public targets are permitted")
         if parsed.username or parsed.password or parsed.port not in (None, 443):
             raise ValueError("Target URL contains unsupported authority details")
-        checked_host = assert_public_domain(parsed.hostname)
-        response = requests.get(
-            current_url,
-            timeout=timeout,
-            allow_redirects=False,
-            headers={"User-Agent": "SYJ-NexusIntel-AI/1.0"},
-        )
-        if response.is_redirect or response.is_permanent_redirect:
+
+        host, addresses = resolve_public_addresses(parsed.hostname)
+        request_path = parsed.path or "/"
+        if parsed.query:
+            request_path += f"?{parsed.query}"
+
+        response = _pinned_https_get(host, addresses[0], request_path, timeout)
+        if response.is_redirect:
             location = response.headers.get("Location")
             response.close()
             if not location or redirect_count >= max_redirects:
                 raise ValueError("Target exceeded the permitted redirect limit")
             next_url = urljoin(current_url, location)
             next_parsed = urlsplit(next_url)
-            if next_parsed.hostname is None:
-                raise ValueError("Invalid redirect target")
-            assert_public_domain(next_parsed.hostname)
+            if next_parsed.scheme != "https" or not next_parsed.hostname:
+                raise ValueError("Redirect target must use HTTPS")
+            if next_parsed.username or next_parsed.password or next_parsed.port not in (None, 443):
+                raise ValueError("Redirect target contains unsupported authority details")
+            resolve_public_addresses(next_parsed.hostname)
             current_url = next_url
             continue
         return response
+
     raise ValueError("Target exceeded the permitted redirect limit")
