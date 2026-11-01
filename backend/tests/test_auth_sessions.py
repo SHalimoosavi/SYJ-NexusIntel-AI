@@ -89,6 +89,7 @@ def test_refresh_rotation_rejects_reuse_and_revokes_session_family(monkeypatch, 
     )
     assert first.status_code == 200
 
+    client.cookies.clear()
     client.cookies.set("refresh_token", old_refresh)
     replay = client.post(
         "/auth/refresh",
