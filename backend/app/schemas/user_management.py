@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel, ConfigDict, EmailStr
 
 
@@ -15,6 +16,6 @@ class UserManagementResponse(BaseModel):
     email: EmailStr
     role_id: int | None = None
     is_active: bool
-    created_at: str | None = None
+    created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
