@@ -77,6 +77,13 @@ def _cookie_options(max_age: int) -> dict:
     }
 
 
+def _delete_session_cookies(response: Response) -> None:
+    options = _cookie_options(0)
+    options.pop("max_age", None)
+    response.delete_cookie(key="access_token", **options)
+    response.delete_cookie(key="refresh_token", **options)
+
+
 def _issue_session(response: Response, user: User, session_version: int) -> None:
     claims = {
         "sub": user.email,
@@ -203,8 +210,7 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
         try:
             rate_limit_manager.revoke_user_sessions(user_id)
             user = db.query(User).filter(User.id == user_id).first()
-            if user is not None:
-                log_event(db, user.organization_id, user.id, "USER_LOGOUT", "USER_SESSION", user.id, "User logged out; sessions revoked")
+
         except RateLimitBackendUnavailable:
             raise HTTPException(
                 status_code=503,
@@ -223,9 +229,7 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
                 description="User logged out",
             )
 
-    options = _cookie_options(0)
-    response.delete_cookie(key="access_token", **options)
-    response.delete_cookie(key="refresh_token", **options)
+    _delete_session_cookies(response)
     return {"success": True}
 
 
@@ -265,7 +269,5 @@ def change_password(
         resource_id=user.id,
         description="User password changed",
     )
-    options = _cookie_options(0)
-    response.delete_cookie(key="access_token", **options)
-    response.delete_cookie(key="refresh_token", **options)
+    _delete_session_cookies(response)
     return {"success": True, "message": "Password changed. Sign in again."}
