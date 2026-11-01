@@ -38,15 +38,75 @@ async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
 export interface Lead {
   id: number;
   business_name: string;
-  contact_person: string;
-  email: string;
-  phone: string;
-  website: string;
-  city: string;
-  category: string;
-  source: string;
-  notes: string;
-  created_at: string;
+  contact_person?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  city?: string | null;
+  category?: string | null;
+  industry?: string | null;
+  company_size?: string | null;
+  source?: string | null;
+  notes?: string | null;
+  status: string;
+  pipeline_stage: string;
+  estimated_value: number;
+  lead_score: number;
+  priority: string;
+  probability: number;
+  actual_revenue: number;
+  last_contacted?: string | null;
+  next_followup?: string | null;
+  created_at?: string | null;
+}
+
+export interface LeadCreatePayload {
+  business_name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  city?: string;
+  category?: string;
+  industry?: string;
+  company_size?: string;
+  source?: string;
+  notes?: string;
+  status?: string;
+  pipeline_stage?: string;
+  estimated_value?: number;
+  last_contacted?: string;
+  next_followup?: string;
+}
+
+export interface LeadUpdatePayload {
+  status: string;
+  pipeline_stage: string;
+  estimated_value: number;
+  probability: number;
+  actual_revenue?: number;
+  last_contacted?: string | null;
+  next_followup?: string | null;
+}
+
+export interface ExecutiveOpportunity {
+  id: number;
+  business_name: string;
+  estimated_value: number;
+  pipeline_stage: string;
+}
+
+export interface ExecutiveRisks {
+  risk_count: number;
+  risks: string[];
+}
+
+export interface IntelligenceReport {
+  overall_score: number;
+  security_score: number;
+  seo_score: number;
+  trust_score: number;
+  recommendations: string[];
 }
 
 export interface RelationshipIntelligence {
@@ -131,7 +191,7 @@ export interface AgentMemory {
    LEADS (JWT PROTECTED)
 ========================= */
 
-export async function getLeads() {
+export async function getLeads(): Promise<Lead[]> {
   const response = await apiFetch(
     `${API_BASE}/leads/`,
     {
@@ -167,7 +227,7 @@ export async function getRelationshipIntelligence(): Promise<RelationshipIntelli
 }
 
 export async function createLead(
-  payload: any
+  payload: LeadCreatePayload
 ) {
   const response = await apiFetch(
     `${API_BASE}/leads/`,
@@ -187,7 +247,7 @@ export async function createLead(
 
 export async function updateLead(
   leadId: number,
-  payload: any
+  payload: LeadUpdatePayload
 ) {
   const response = await apiFetch(
     `${API_BASE}/leads/${leadId}`,
@@ -291,7 +351,7 @@ export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
   return response.json();
 }
 
-export async function getExecutiveOpportunities() {
+export async function getExecutiveOpportunities(): Promise<ExecutiveOpportunity[]> {
   const response = await apiFetch(
     `${API_BASE}/executive-intelligence/opportunities`,
     {
@@ -303,7 +363,7 @@ export async function getExecutiveOpportunities() {
   return response.json();
 }
 
-export async function getExecutiveRisks() {
+export async function getExecutiveRisks(): Promise<ExecutiveRisks> {
   const response = await apiFetch(
     `${API_BASE}/executive-intelligence/risks`,
     {
@@ -349,7 +409,7 @@ export async function getSalesPriorities(): Promise<SalesPriority[]> {
   return response.json();
 }
 
-export async function getIntelligenceReport() {
+export async function getIntelligenceReport(): Promise<IntelligenceReport> {
   const response = await apiFetch(
     `${API_BASE}/intelligence/report`,
     {
