@@ -35,7 +35,11 @@ from app.database.database import SessionLocal
 
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
-from app.core.rate_limit import (\n    RateLimitBackendUnavailable,\n    rate_limit_manager,\n    rate_limit_policy_for_path,\n)
+from app.core.rate_limit import (
+    RateLimitBackendUnavailable,
+    rate_limit_manager,
+    rate_limit_policy_for_path,
+)
 from app.core.api_docs import api_docs_config
 
 from app.services.role_service import (
