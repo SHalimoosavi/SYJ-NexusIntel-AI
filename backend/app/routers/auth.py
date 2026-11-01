@@ -19,6 +19,7 @@ from app.core.security import (
 from app.database.database import get_db
 from app.models.user import User
 from app.schemas.user import UserLogin, PasswordChangeRequest
+from app.schemas.common import AuthSessionResponse, SuccessResponse, PasswordChangedResponse
 from app.services.user_service import authenticate_user, burn_password_check
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
@@ -93,7 +94,7 @@ def _issue_session(response: Response, user: User, session_version: int) -> None
     )
 
 
-@router.post("/login")
+@router.post("/login", response_model=AuthSessionResponse)
 def login(
     credentials: UserLogin,
     request: Request,
@@ -143,7 +144,7 @@ def login(
     return {"success": True, "token_type": "cookie"}
 
 
-@router.post("/refresh")
+@router.post("/refresh", response_model=AuthSessionResponse)
 def refresh_session(
     request: Request,
     response: Response,
@@ -187,7 +188,7 @@ def refresh_session(
     return {"success": True, "token_type": "cookie"}
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=SuccessResponse)
 def logout(request: Request, response: Response):
     if request.cookies.get("access_token") or request.cookies.get("refresh_token"):
         _require_trusted_origin(request)
@@ -212,7 +213,7 @@ def logout(request: Request, response: Response):
     return {"success": True}
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=PasswordChangedResponse)
 def change_password(
     request: PasswordChangeRequest,
     response: Response,
