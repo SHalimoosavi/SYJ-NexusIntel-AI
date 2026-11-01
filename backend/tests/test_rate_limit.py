@@ -38,11 +38,12 @@ def test_production_without_redis_fails_closed():
 @pytest.mark.parametrize(
     ("path", "expected"),
     [
-        ("/auth/login", (5, 900)),
+        ("/auth/login", (10, 900)),
         ("/auth/register", (3, 3600)),
         ("/auth/password-reset", (3, 3600)),
         ("/auth/refresh", (10, 60)),
         ("/auth/logout", (20, 60)),
+        ("/auth/unimplemented-route", (20, 60)),
         ("/invitations/accept", (5, 3600)),
         ("/leads", (120, 60)),
     ],
@@ -61,3 +62,21 @@ def test_login_failures_trigger_temporary_lockout_and_clear():
     assert manager.is_login_locked(key)
     manager.clear_login_failures(key)
     assert not manager.is_login_locked(key)
+
+
+def test_user_and_organization_quotas_use_independent_buckets():
+    manager = RateLimitManager(redis_url=None, app_env="test")
+    assert manager.check("user:101", 1, 60) == (True, 0)
+    assert manager.check("user:101", 1, 60)[0] is False
+    # A different user and the shared organization bucket have independent keys.
+    assert manager.check("user:202", 1, 60) == (True, 0)
+    assert manager.check("organization:55", 1, 60) == (True, 0)
+    assert manager.check("organization:55", 1, 60)[0] is False
+
+
+def test_retry_after_is_returned_when_bucket_is_full():
+    manager = RateLimitManager(redis_url=None, app_env="test")
+    assert manager.check("limited", 1, 60) == (True, 0)
+    allowed, retry_after = manager.check("limited", 1, 60)
+    assert not allowed
+    assert 1 <= retry_after <= 60
