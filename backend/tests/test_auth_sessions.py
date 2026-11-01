@@ -126,3 +126,44 @@ def test_password_change_rotates_password_and_revokes_old_sessions(monkeypatch, 
     assert verify_password("NewPassword123!Secure", user.hashed_password)
     assert not verify_password("OldPassword123!", user.hashed_password)
     assert manager.get_user_session_version(user.id) == 1
+
+
+
+def test_bruteforce_lockout_and_unknown_user_share_generic_error(monkeypatch, auth_session):
+    _db, user = auth_session
+    manager = RateLimitManager(redis_url="", app_env="test")
+    monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
+    monkeypatch.setattr(auth_router.time, "sleep", lambda _seconds: None)
+    client = TestClient(app)
+    headers = {"Origin": "http://localhost:3000"}
+
+    wrong_password = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "WrongPassword123!"},
+        headers=headers,
+    )
+    unknown_user = client.post(
+        "/auth/login",
+        json={"email": "unknown-user@example.invalid", "password": "WrongPassword123!"},
+        headers=headers,
+    )
+    assert wrong_password.status_code == 401
+    assert unknown_user.status_code == 401
+    assert wrong_password.json() == unknown_user.json() == {"detail": "Invalid credentials"}
+
+    for _ in range(4):
+        blocked_attempt = client.post(
+            "/auth/login",
+            json={"email": user.email, "password": "WrongPassword123!"},
+            headers=headers,
+        )
+        assert blocked_attempt.status_code == 401
+        assert blocked_attempt.json() == {"detail": "Invalid credentials"}
+
+    locked_attempt = client.post(
+        "/auth/login",
+        json={"email": user.email, "password": "WrongPassword123!"},
+        headers=headers,
+    )
+    assert locked_attempt.status_code == 401
+    assert locked_attempt.json() == {"detail": "Invalid credentials"}
