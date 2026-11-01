@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
 from app.models.activity import Activity
+from app.services.audit_service import log_event
 
 from app.services.subscription_limit_service import (
     check_lead_limit,
@@ -106,6 +107,7 @@ def create_lead(
     db: Session,
     lead_data,
     organization_id: int,
+    actor_user_id: int | None = None,
 ):
     current_leads = (
         db.query(Lead)
@@ -155,9 +157,10 @@ def create_lead(
         db,
         lead.id,
         "LEAD_CREATED",
-        f"Lead created: {lead.business_name}",
+        "Lead created",
         organization_id,
     )
+    log_event(db, organization_id, actor_user_id, "LEAD_CREATED", "LEAD", lead.id, "Lead created")
 
     return lead
 
@@ -195,6 +198,7 @@ def update_lead_pipeline(
     lead_id: int,
     data,
     organization_id: int,
+    actor_user_id: int | None = None,
 ):
     lead = get_lead(
         db,
@@ -217,6 +221,7 @@ def update_lead_pipeline(
 
     db.commit()
     db.refresh(lead)
+    log_event(db, organization_id, actor_user_id, "LEAD_UPDATED", "LEAD", lead.id, "Lead pipeline updated")
 
     if previous_stage != lead.pipeline_stage:
         create_activity_log(
@@ -234,6 +239,7 @@ def delete_lead(
     db: Session,
     lead_id: int,
     organization_id: int,
+    actor_user_id: int | None = None,
 ):
     lead = get_lead(
         db,
@@ -254,5 +260,6 @@ def delete_lead(
 
     db.delete(lead)
     db.commit()
+    log_event(db, organization_id, actor_user_id, "LEAD_DELETED", "LEAD", lead_id, "Lead deleted")
 
     return True
