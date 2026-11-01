@@ -101,7 +101,10 @@ def test_refresh_rotation_rejects_reuse_and_revokes_session_family(monkeypatch, 
     first_response = Response()
     first = auth_router.refresh_session(refresh_request(), first_response, db)
     assert first == {"success": True, "token_type": "cookie"}
-    assert "refresh_token=" in first_response.headers.get("set-cookie", "")
+    assert any(
+        key == b"set-cookie" and b"refresh_token=" in value
+        for key, value in first_response.raw_headers
+    )
 
     with pytest.raises(HTTPException) as replay:
         auth_router.refresh_session(refresh_request(), Response(), db)
