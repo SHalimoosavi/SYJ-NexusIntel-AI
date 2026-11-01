@@ -33,6 +33,7 @@ def create_invitation_route(
         email=invitation.email,
         role_id=invitation.role_id,
         actor_role_name=current_user["role_name"],
+        actor_user_id=current_user["user_id"],
     )
 
 
