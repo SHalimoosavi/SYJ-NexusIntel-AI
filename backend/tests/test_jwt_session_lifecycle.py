@@ -25,7 +25,9 @@ def test_access_token_is_typed_short_lived_and_verifiable():
 
 def test_token_tampering_is_rejected():
     token = security.create_access_token({"sub": "qa@example.invalid", "user_id": 12})
-    tampered = token[:-1] + ("A" if token[-1] != "A" else "B")
+    header, payload, signature = token.split(".")
+    changed = "A" if signature[0] != "A" else "B"
+    tampered = ".".join((header, payload, changed + signature[1:]))
     assert security.verify_token(tampered) is None
 
 
