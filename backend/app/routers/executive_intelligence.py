@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
+from app.schemas.executive_intelligence import ExecutiveBriefingResponse
 
 from app.core.feature_guard import (
     require_feature,
@@ -34,7 +35,7 @@ router = APIRouter(
 )
 
 
-@router.get("/briefing")
+@router.get("/briefing", response_model=ExecutiveBriefingResponse)
 def executive_briefing(
     db: Session = Depends(get_db),
     current_user=Depends(
