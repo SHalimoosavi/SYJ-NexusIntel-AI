@@ -67,6 +67,9 @@ def test_safe_get_rejects_redirect_to_internal_target(monkeypatch):
         headers = {"Location": "http://127.0.0.1/admin"}
         data = b""
 
+        def read(self, amount, decode_content=True):
+            return b""
+
         def release_conn(self):
             pass
 
