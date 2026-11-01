@@ -29,7 +29,7 @@ def test_invitation_token_is_hashed_at_rest_and_omitted_from_list_schema():
         created = create_invitation(
             session,
             organization.id,
-            "member@example.invalid",
+            "member@example.com",
             role.id,
         )
         stored = session.query(Invitation).filter(
