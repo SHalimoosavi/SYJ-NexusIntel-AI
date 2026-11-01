@@ -21,6 +21,7 @@ from app.models.user import User
 from app.schemas.user import UserLogin, PasswordChangeRequest
 from app.schemas.common import AuthSessionResponse, SuccessResponse, PasswordChangedResponse
 from app.services.user_service import authenticate_user, burn_password_check
+from app.services.audit_service import log_event
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 _LOGIN_FAILURE_THRESHOLD = 5
@@ -189,7 +190,7 @@ def refresh_session(
 
 
 @router.post("/logout", response_model=SuccessResponse)
-def logout(request: Request, response: Response):
+def logout(request: Request, response: Response, db: Session = Depends(get_db)):
     if request.cookies.get("access_token") or request.cookies.get("refresh_token"):
         _require_trusted_origin(request)
 
@@ -205,6 +206,17 @@ def logout(request: Request, response: Response):
                 status_code=503,
                 detail="Session service temporarily unavailable",
                 headers={"Retry-After": "5"},
+            )
+        user = db.query(User).filter(User.id == user_id).first()
+        if user is not None:
+            log_event(
+                db=db,
+                organization_id=user.organization_id,
+                user_id=user.id,
+                event_type="USER_LOGOUT",
+                resource_type="USER",
+                resource_id=user.id,
+                description="User logged out",
             )
 
     options = _cookie_options(0)
@@ -240,6 +252,15 @@ def change_password(
         )
 
     db.commit()
+    log_event(
+        db=db,
+        organization_id=user.organization_id,
+        user_id=user.id,
+        event_type="USER_PASSWORD_CHANGED",
+        resource_type="USER",
+        resource_id=user.id,
+        description="User password changed",
+    )
     options = _cookie_options(0)
     response.delete_cookie(key="access_token", **options)
     response.delete_cookie(key="refresh_token", **options)
