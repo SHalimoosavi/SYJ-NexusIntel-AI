@@ -177,6 +177,7 @@ def refresh_session(
         if not rate_limit_manager.consume_refresh_jti(jti, _REFRESH_TOKEN_TTL_SECONDS):
             # Reuse of a rotated refresh token revokes the complete user session family.
             rate_limit_manager.revoke_user_sessions(user.id)
+            log_event(db, user.organization_id, user.id, "REFRESH_TOKEN_REUSE", "USER_SESSION", user.id, "Refresh token reuse detected; sessions revoked")
             raise HTTPException(status_code=401, detail="Refresh session reuse detected")
 
         _issue_session(response, user, current_version)
