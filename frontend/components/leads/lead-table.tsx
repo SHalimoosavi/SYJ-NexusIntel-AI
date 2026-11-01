@@ -1,6 +1,6 @@
 "use client";
 
-import { Lead } from "@/types/lead";
+import type { Lead } from "@/types/lead";
 import { deleteLead as deleteLeadRequest } from "@/lib/api";
 
 type Props = {
