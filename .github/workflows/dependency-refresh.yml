@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: dependency-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   refresh-npm-lock:
     runs-on: ubuntu-latest
@@ -36,7 +40,16 @@ jobs:
           if ! git diff --quiet -- frontend/package-lock.json; then
             git add frontend/package-lock.json
             git commit -m "build(deps): refresh npm lockfile for security fixes"
-            git push origin HEAD:feat/security-hardening
+            for attempt in 1 2 3; do
+              git fetch origin feat/security-hardening
+              git rebase origin/feat/security-hardening
+              if git push origin HEAD:feat/security-hardening; then
+                exit 0
+              fi
+              sleep 2
+            done
+            echo "Could not push lockfile update after three retries" >&2
+            exit 1
           else
             echo "No lockfile changes required"
           fi
