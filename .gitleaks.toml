@@ -23,3 +23,10 @@ description = "JWT-shaped literal assigned in source"
 regex = '''(?i)(?:token|jwt|access_token)\s*[:=]\s*["'](eyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,})["']'''
 secretGroup = 1
 keywords = ["eyJ"]
+
+[[rules]]
+id = "syj-legacy-jwt-secret-assignment"
+description = "Legacy hardcoded JWT signing key assignment"
+regex = '''(?i)\bSECRET_KEY\s*=\s*["']([^"']{8,})["']'''
+secretGroup = 1
+keywords = ["SECRET_KEY"]
