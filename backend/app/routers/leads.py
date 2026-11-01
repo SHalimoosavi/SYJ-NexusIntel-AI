@@ -28,7 +28,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", response_model=LeadResponse)
 def add_lead(
     lead: LeadCreate,
     db: Session = Depends(get_db),
@@ -45,7 +45,7 @@ def add_lead(
     )
 
 
-@router.get("")
+@router.get("", response_model=list[LeadResponse])
 def list_leads(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -60,7 +60,7 @@ def list_leads(
     )
 
 
-@router.put("/{lead_id}")
+@router.put("/{lead_id}", response_model=LeadResponse)
 def update_pipeline(
     lead_id: int,
     data: LeadUpdate,
