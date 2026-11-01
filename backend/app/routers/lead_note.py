@@ -76,6 +76,7 @@ def delete_note_route(
         db,
         note_id,
         current_user["organization_id"],
+        current_user["user_id"],
     )
 
     return {
