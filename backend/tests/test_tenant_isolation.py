@@ -434,3 +434,19 @@ def test_owner_cannot_escalate_staff_or_use_superadmin_endpoints(tenant_db):
         ).status_code == 403
     finally:
         app.dependency_overrides.clear()
+
+
+
+def test_audit_log_rows_are_append_only_at_orm_layer(tenant_db):
+    db = tenant_db["db"]
+    audit = tenant_db["audit_a"]
+    audit.description = "tampered"
+    with pytest.raises(ValueError, match="append-only"):
+        db.commit()
+    db.rollback()
+
+    audit = db.query(AuditLog).filter(AuditLog.id == tenant_db["audit_a"].id).one()
+    with pytest.raises(ValueError, match="append-only"):
+        db.delete(audit)
+        db.commit()
+    db.rollback()
