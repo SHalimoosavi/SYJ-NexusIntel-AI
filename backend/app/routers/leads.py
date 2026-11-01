@@ -6,10 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead import (
-    LeadCreate,
-    LeadUpdate,
-)
+from app.schemas.lead import LeadCreate, LeadUpdate, LeadResponse
 
 from app.services.lead_service import (
     create_lead,
