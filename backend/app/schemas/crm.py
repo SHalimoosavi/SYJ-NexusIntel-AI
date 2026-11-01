@@ -40,3 +40,23 @@ class CRMPipelineResponse(BaseModel):
     won: int
 
     lost: int
+
+
+class OrganizationDashboardResponse(BaseModel):
+    organization: str | None = None
+    plan: str | None = None
+    users: int
+    leads: int
+    invitations: int
+
+
+class ExecutiveDashboardResponse(BaseModel):
+    users: int
+    active_users: int
+    leads: int
+    invitations: int
+    accepted_invitations: int
+    ai_usage: int
+    subscription: str | None = None
+    crm: CRMStatsResponse
+    forecast: dict
