@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.report import (
-    ReportRequest,
-)
+from app.schemas.report import ReportRequest, ReportGenerationResponse
 
 from app.services.report_service import (
     generate_pdf_report,
