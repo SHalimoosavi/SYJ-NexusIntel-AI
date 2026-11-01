@@ -1,6 +1,9 @@
 from pydantic import BaseModel, field_validator
 
 from app.core.input_validation import validate_domain
+from app.schemas.intelligence import IntelligenceResponse
+from app.schemas.opportunity import OpportunityResponse
+from app.schemas.sales_agent import SalesPitchResponse
 
 
 class MultiAgentRequest(BaseModel):
@@ -18,8 +21,8 @@ class ExecutiveAgentSummary(BaseModel):
 
 
 class MultiAgentResponse(BaseModel):
-    research_agent: dict
-    opportunity_agent: dict
-    sales_agent: dict
+    research_agent: IntelligenceResponse
+    opportunity_agent: OpportunityResponse
+    sales_agent: SalesPitchResponse
     executive_agent: ExecutiveAgentSummary
     memory_saved: bool
