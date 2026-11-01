@@ -5,10 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead_note import (
-    LeadNoteCreate,
-    LeadNoteResponse,
-)
+from app.schemas.lead_note import LeadNoteCreate, LeadNoteResponse
+from app.schemas.common import SuccessResponse
 
 from app.services.lead_note_service import (
     create_note,
