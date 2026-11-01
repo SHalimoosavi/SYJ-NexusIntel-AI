@@ -7,6 +7,7 @@ from fastapi import Request
 from fastapi.responses import JSONResponse
 
 from app.core.redaction import RedactingLogFilter
+from app.core.body_limit import RequestBodyLimitMiddleware
 from app.schemas.common import HealthResponse, ReadinessResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -185,6 +186,11 @@ async def generic_unhandled_exception_handler(request: Request, exc: Exception):
         status_code=500,
         content={"detail": "An internal server error occurred."},
     )
+
+app.add_middleware(
+    RequestBodyLimitMiddleware,
+    max_body_bytes=int(os.getenv("MAX_REQUEST_BODY_BYTES", str(10 * 1024 * 1024))),
+)
 
 app.add_middleware(
     ProxyHeadersMiddleware,
