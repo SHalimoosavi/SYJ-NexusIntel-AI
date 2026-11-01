@@ -40,7 +40,11 @@ def get_current_user(
             raise HTTPException(status_code=403, detail="Untrusted request origin")
 
     payload = verify_token(token)
-    if not payload or not isinstance(payload.get("user_id"), int):
+    if (
+        not payload
+        or payload.get("token_type") != "access"
+        or not isinstance(payload.get("user_id"), int)
+    ):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
     user = db.query(User).filter(User.id == payload["user_id"]).first()
@@ -54,6 +58,10 @@ def get_current_user(
         raise HTTPException(status_code=403, detail="User role is unavailable")
 
     try:
+        current_session_version = rate_limit_manager.get_user_session_version(user.id)
+        if payload.get("session_version") != current_session_version:
+            raise HTTPException(status_code=401, detail="Session expired. Please sign in again.")
+
         user_allowed, user_retry = rate_limit_manager.check(
             f"user:{user.id}",
             300,
