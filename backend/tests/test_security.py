@@ -13,7 +13,10 @@ from app.core import security
 def test_new_tokens_include_active_kid_and_verify():
     token = security.create_access_token({"user_id": 17, "sub": "qa@example.invalid"})
     assert jwt.get_unverified_header(token)["kid"] == "test-v1"
-    assert security.verify_token(token)["user_id"] == 17
+    claims = security.verify_token(token)
+    assert claims["user_id"] == 17
+    assert claims["token_type"] == "access"
+    assert claims["jti"]
 
 
 def test_unknown_or_missing_kid_is_rejected():
@@ -24,6 +27,9 @@ def test_unknown_or_missing_kid_is_rejected():
         "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
         "iss": security.JWT_ISSUER,
         "aud": security.JWT_AUDIENCE,
+        "jti": "test-refresh-id",
+        "token_type": "refresh",
+        "session_version": 0,
     }
     unknown = jwt.encode(
         claims,
