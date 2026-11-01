@@ -19,7 +19,7 @@ def create_organization_route(
     db: Session = Depends(get_db),
     current_user=Depends(require_roles(["SUPER_ADMIN"])),
 ):
-    return create_organization(db, organization)
+    return create_organization(db, organization, current_user["user_id"])
 
 
 @router.get("", response_model=list[OrganizationResponse])
