@@ -194,6 +194,9 @@ def test_http_user_organization_subscription_and_invitation_idor(tenant_client):
     user_b = tenant_client["user_b"]
     org_b = tenant_client["b"]
 
+    user_list = client.get("/users")
+    assert user_list.status_code == 200
+    assert [row["email"] for row in user_list.json()] == ["http-owner-a@example.invalid"]
     assert client.get(f"/users/{user_b.id}").status_code == 404
     assert client.put(
         f"/users/{user_b.id}/status",
@@ -204,7 +207,11 @@ def test_http_user_organization_subscription_and_invitation_idor(tenant_client):
         json={"role_id": 2},
     ).status_code == 404
     assert client.delete(f"/users/{user_b.id}").status_code == 404
+    organization_list = client.get("/organizations")
+    assert organization_list.status_code == 200
+    assert [row["slug"] for row in organization_list.json()] == ["http-tenant-a"]
     assert client.get(f"/organizations/{org_b.id}").status_code == 404
+    assert client.get(f"/subscriptions/{tenant_client["a"].id}").status_code == 200
     assert client.get(f"/subscriptions/{org_b.id}").status_code == 404
 
     invitations = client.get("/invitations")
@@ -285,3 +292,23 @@ def test_http_rbac_prevents_owner_from_using_super_admin_routes(tenant_client):
         "/organizations",
         json={"name": "Unauthorized", "slug": "unauthorized"},
     ).status_code == 403
+
+
+def test_http_viewer_cannot_bypass_owner_or_admin_routes(tenant_client):
+    viewer = {
+        "user_id": tenant_client["user_a"].id,
+        "sub": tenant_client["user_a"].email,
+        "organization_id": tenant_client["a"].id,
+        "role_id": 2,
+        "role_name": "VIEWER",
+    }
+    app.dependency_overrides[get_current_user] = lambda: viewer
+    client = tenant_client["client"]
+
+    assert client.get("/users").status_code == 403
+    assert client.get("/audit/logs").status_code == 403
+    assert client.post(
+        "/invitations",
+        json={"email": "attacker@example.invalid", "role_id": 2},
+    ).status_code == 403
+    assert client.get(f"/organizations/{tenant_client['a'].id}").status_code == 200
