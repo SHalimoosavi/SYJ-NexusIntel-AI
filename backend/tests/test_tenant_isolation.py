@@ -65,7 +65,7 @@ def tenant_db():
 
     user_a = User(
         full_name="Owner A",
-        email="owner-a@example.invalid",
+        email="owner-a@example.com",
         hashed_password="test-hash",
         organization_id=org_a.id,
         role_id=owner.id,
@@ -73,7 +73,7 @@ def tenant_db():
     )
     user_b = User(
         full_name="Owner B",
-        email="owner-b@example.invalid",
+        email="owner-b@example.com",
         hashed_password="test-hash",
         organization_id=org_b.id,
         role_id=owner.id,
@@ -132,14 +132,14 @@ def tenant_db():
     subscription_b = Subscription(organization_id=org_b.id, plan_name="FREE")
     invitation_a = Invitation(
         organization_id=org_a.id,
-        email="invite-a@example.invalid",
+        email="invite-a@example.com",
         role_id=manager.id,
         token="digest-a",
         expires_at=datetime.utcnow() + timedelta(hours=1),
     )
     invitation_b = Invitation(
         organization_id=org_b.id,
-        email="invite-b@example.invalid",
+        email="invite-b@example.com",
         role_id=manager.id,
         token="digest-b",
         expires_at=datetime.utcnow() + timedelta(hours=1),
@@ -387,7 +387,7 @@ def test_owner_cannot_escalate_staff_or_use_superadmin_endpoints(tenant_db):
     actor = tenant_db["user_a"]
     staff = User(
         full_name="Staff A",
-        email="staff-a@example.invalid",
+        email="staff-a@example.com",
         hashed_password="test-hash",
         organization_id=org_a.id,
         role_id=manager.id,
