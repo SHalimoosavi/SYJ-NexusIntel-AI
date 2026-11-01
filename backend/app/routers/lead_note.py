@@ -39,6 +39,7 @@ def create_note_route(
         db,
         note,
         current_user["organization_id"],
+        current_user["user_id"],
     )
 
 
@@ -62,6 +63,7 @@ def get_notes_route(
 
 @router.delete(
     "/{note_id}",
+    response_model=SuccessResponse,
 )
 def delete_note_route(
     note_id: int,
