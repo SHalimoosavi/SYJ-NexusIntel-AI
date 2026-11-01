@@ -138,3 +138,16 @@ def test_redis_failure_falls_back_only_in_local_mode(monkeypatch):
     production = RateLimitManager(redis_url="redis://localhost/0", app_env="production")
     with pytest.raises(RateLimitBackendUnavailable):
         production.check("production", 1, 60)
+
+
+def test_user_session_version_revokes_all_prior_tokens():
+    manager = RateLimitManager(redis_url="", app_env="test")
+    assert manager.get_user_session_version(44) == 0
+    assert manager.revoke_user_sessions(44) == 1
+    assert manager.get_user_session_version(44) == 1
+
+
+def test_refresh_jti_can_be_consumed_only_once():
+    manager = RateLimitManager(redis_url="", app_env="test")
+    assert manager.consume_refresh_jti("one-time-jti", 3600)
+    assert not manager.consume_refresh_jti("one-time-jti", 3600)
