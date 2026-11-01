@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 os.environ.setdefault("JWT_ACTIVE_KID", "test-v1")
 os.environ.setdefault("JWT_SIGNING_KEYS", json.dumps({"test-v1": "T" * 64}))
 
-from jose import jwt
+import jwt
 
 from app.core import security
 
