@@ -6,7 +6,7 @@ from app.services.feature_flag_service import seed_default_features
 from app.services.subscription_service import create_subscription
 
 
-def create_organization(db: Session, organization_data):
+def create_organization(db: Session, organization_data, actor_user_id: int | None = None):
     organization = Organization(**organization_data.model_dump())
     db.add(organization)
     db.commit()
@@ -16,7 +16,7 @@ def create_organization(db: Session, organization_data):
     log_event(
         db=db,
         organization_id=organization.id,
-        user_id=None,
+        user_id=actor_user_id,
         event_type="ORGANIZATION_CREATED",
         resource_type="ORGANIZATION",
         resource_id=organization.id,
