@@ -17,3 +17,25 @@ class SalesPitchRequest(BaseModel):
 class FollowUpRequest(BaseModel):
     business_name: str
     pipeline_stage: str
+
+
+class SalesPriorityResponse(BaseModel):
+    id: int
+    business_name: str
+    estimated_value: int
+    pipeline_stage: str
+    score: int
+    priority: str
+    next_followup: str | None = None
+
+
+class SalesPitchResponse(BaseModel):
+    business_name: str
+    priority: str
+    sales_pitch: str
+
+
+class FollowUpResponse(BaseModel):
+    business_name: str
+    pipeline_stage: str
+    recommended_action: str
