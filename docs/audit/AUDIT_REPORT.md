@@ -102,6 +102,7 @@ Evidence: `backend/app/database/database.py:7-31`; `backend/app/main.py:124-129`
 |---|---|---|
 | `SECRET_KEY` | HS256 JWT signing key; required at import | `backend/app/core/security.py:7-15` |
 | `DATABASE_URL` | SQLite default or PostgreSQL connection | `backend/app/database/database.py:7-27` |
+| `AI_LIMIT_BYPASS` | Bypasses AI usage quota when set to the literal string `true` | `backend/app/services/ai_usage_service.py` (environment switch in `enforce_ai_limit`); production must enforce this is unset/false |
 | Railway API URL | Hardcoded frontend API origin | `frontend/lib/api.ts:3`, `frontend/lib/auth.ts:1-2` |
 | Vercel origin | Explicit CORS allow-origin | `backend/app/main.py:144-148` |
 | Google DNS / Cloudflare DNS | External DNS resolution | `backend/app/services/osint_service.py` |
@@ -121,10 +122,11 @@ No configurable LLM provider or model integration is evident in the dependency l
 | SEC-06 | **HIGH** | PDF output filename is constructed from user-supplied domain. Validate host syntax and use a generated safe identifier; store outside web/static roots. | `backend/app/services/report_service.py:49-65` |
 | SEC-07 | **HIGH** | JWT claim dependency does not reload User or reject `is_active=False`; token remains valid until expiry unless signing key is rotated. | `backend/app/core/dependencies.py:19-42`; `backend/app/models/user.py` |
 | SEC-08 | **HIGH** | No rate limiter/login throttling is evident in routes or dependencies; OSINT and report endpoints can trigger expensive outbound work. | `backend/app/routers/auth.py:27-51`; `backend/app/routers/osint.py:34-67`; no limiter in dependency list |
-| SEC-09 | **MEDIUM** | CORS uses wildcard methods and headers with a fixed origin allowlist; tighten methods/headers to required values. | `backend/app/main.py:144-148` |
-| SEC-10 | **MEDIUM** | No secret-scanning workflow or verified repository-wide secret scan is present. The historical JWT leak demonstrates why this gate is required. | Baseline tree has no `.github/workflows`; historical commit above |
-| SEC-11 | **UNVERIFIED** | SQL injection and XSS across every route/component were not exhaustively dynamically tested. ORM usage was seen in inspected paths; no proof of global safety. | Static-only scope |
-| SEC-12 | **UNVERIFIED** | Dependency CVE status was not scanned because dependency resolution/network was unavailable. | `backend/requirements.txt`, `frontend/package-lock.json` |
+| SEC-09 | **HIGH** | `AI_LIMIT_BYPASS=true` disables AI request quota enforcement. Add production startup guard and config validation. | `backend/app/services/ai_usage_service.py` |
+| SEC-10 | **MEDIUM** | CORS uses wildcard methods and headers with a fixed origin allowlist; tighten methods/headers to required values. | `backend/app/main.py:144-148` |
+| SEC-11 | **MEDIUM** | No secret-scanning workflow or verified repository-wide secret scan is present. The historical JWT leak demonstrates why this gate is required. | Baseline tree has no `.github/workflows`; historical commit above |
+| SEC-12 | **UNVERIFIED** | SQL injection and XSS across every route/component were not exhaustively dynamically tested. ORM usage was seen in inspected paths; no proof of global safety. | Static-only scope |
+| SEC-13 | **UNVERIFIED** | Dependency CVE status was not scanned because dependency resolution/network was unavailable. | `backend/requirements.txt`, `frontend/package-lock.json` |
 
 ### SQL injection, XSS and CSRF
 
@@ -139,6 +141,7 @@ No actual external LLM SDK/provider integration was identified in `backend/requi
 - **HIGH:** `Base.metadata.create_all` executes on import/startup; no migration history or controlled upgrade path.
 - **HIGH:** synchronous SQLAlchemy engine/session and synchronous ORM calls are used in FastAPI route/service paths. This can block the event loop if converted to async endpoints without moving DB I/O to a threadpool or adopting async SQLAlchemy.
 - **HIGH:** health route reports success without checking database connectivity; no readiness/liveness split.
+- **HIGH:** `AI_LIMIT_BYPASS=true` skips subscription AI usage enforcement; ensure production configuration cannot enable this accidentally and add a startup guard/alert.
 - **MEDIUM:** no structured logging, request correlation IDs, metrics, tracing, retry policy or background job queue found.
 - **MEDIUM:** lead service commits lead and activity separately; partial failure can leave lead created without activity log. Use transaction boundaries.
 - **MEDIUM:** nullable tenant IDs on some records and absent global tenant enforcement increase the risk of orphaned/unscoped data.
