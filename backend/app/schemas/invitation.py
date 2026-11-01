@@ -15,7 +15,6 @@ class InvitationAccept(BaseModel):
 
 class InvitationResponse(BaseModel):
     id: int
-    organization_id: int
     email: EmailStr
     role_id: int
     is_used: bool
