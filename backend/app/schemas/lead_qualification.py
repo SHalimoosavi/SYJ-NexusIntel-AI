@@ -10,3 +10,12 @@ class LeadQualificationRequest(BaseModel):
     @classmethod
     def validate_public_domain(cls, value: str) -> str:
         return validate_domain(value)
+
+
+class LeadQualificationResponse(BaseModel):
+    domain: str
+    lead_score: int
+    priority: str
+    technologies: list[str]
+    recommendations: list[str]
+    sales_recommendation: str
