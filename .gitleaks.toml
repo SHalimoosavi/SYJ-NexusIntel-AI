@@ -30,3 +30,19 @@ description = "Legacy hardcoded JWT signing key assignment"
 regex = '''(?i)\bSECRET_KEY\s*=\s*["']([^"']{8,})["']'''
 secretGroup = 1
 keywords = ["SECRET_KEY"]
+
+# Only exact, verified dummy placeholders in the two checked-in environment
+# examples are allowlisted. The AND condition requires both a matching path
+# and an exact placeholder value; no source, workflow, or deployment file is exempt.
+[allowlist]
+description = "Verified non-secret placeholders in root/backend .env.example only"
+condition = "AND"
+paths = [
+  '''^\.env\.example$''',
+  '''^backend/\.env\.example$''',
+]
+regexes = [
+  '''^USER:PASSWORD$''',
+  '''^REPLACE_PASSWORD$''',
+  '''^REPLACE_WITH_AT_LEAST_32_RANDOM_BYTES$''',
+]

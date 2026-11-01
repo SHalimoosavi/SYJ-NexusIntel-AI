@@ -5,3 +5,4 @@ repos:
       - id: gitleaks
         name: Scan staged changes for secrets
         args: ["--redact"]
+        stages: [pre-commit]
