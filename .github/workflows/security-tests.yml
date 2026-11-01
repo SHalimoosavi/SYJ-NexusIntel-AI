@@ -20,7 +20,7 @@ jobs:
       APP_ENV: test
       DATABASE_URL: sqlite://
       JWT_ACTIVE_KID: test-v1
-      JWT_SIGNING_KEYS: '{"test-v1":"TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT"}'
+      JWT_SIGNING_KEYS: '{"test-v1":"unit-test-fixture-only-2026-11-01-0123456789abcdef"}'
       REDIS_URL: ""
       CORS_ORIGINS: http://localhost:3000
     steps:

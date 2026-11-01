@@ -48,6 +48,13 @@ _PLACEHOLDER_MARKERS = (
     "default_secret",
     "sample_secret",
     "dummy_secret",
+    "password",
+    "secret",
+    "test-secret",
+    "dev-secret",
+    "default",
+    "sample",
+    "dummy",
 )
 
 
