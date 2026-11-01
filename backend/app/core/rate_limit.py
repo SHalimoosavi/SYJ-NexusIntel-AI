@@ -210,7 +210,7 @@ def rate_limit_policy_for_path(path: str) -> tuple[int, int]:
         "/auth/refresh": (10, 60),
         "/invitations/accept": (5, 3600),
     }
-    return policies.get(normalized, (120, 60))
+    if normalized.startswith("/auth/"):\n        return (20, 60)\n    return policies.get(normalized, (120, 60))
 
 
 rate_limit_manager = RateLimitManager()
