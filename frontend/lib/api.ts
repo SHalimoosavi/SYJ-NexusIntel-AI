@@ -4,6 +4,33 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   "https://syj-nexusintel-ai-production.up.railway.app";
 
+async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  const options: RequestInit = {
+    ...init,
+    credentials: "include",
+    cache: init.cache ?? "no-store",
+  };
+  const firstResponse = await fetch(input, options);
+  const requestUrl = String(input);
+  if (
+    firstResponse.status !== 401 ||
+    requestUrl.includes("/auth/login") ||
+    requestUrl.includes("/auth/refresh") ||
+    requestUrl.includes("/auth/logout") ||
+    requestUrl.includes("/invitations/accept")
+  ) {
+    return firstResponse;
+  }
+
+  const refreshed = await fetch(`${API_BASE}/auth/refresh`, {
+    method: "POST",
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!refreshed.ok) return firstResponse;
+  return fetch(input, options);
+}
+
 /* =========================
    TYPES
 ========================= */
@@ -105,7 +132,7 @@ export interface AgentMemory {
 ========================= */
 
 export async function getLeads() {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/`,
     {
       headers: authHeaders(),
@@ -122,7 +149,7 @@ export async function getLeads() {
 }
 
 export async function getRelationshipIntelligence(): Promise<RelationshipIntelligence> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/relationship-intelligence`,
     {
       headers: authHeaders(),
@@ -142,7 +169,7 @@ export async function getRelationshipIntelligence(): Promise<RelationshipIntelli
 export async function createLead(
   payload: any
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/`,
     {
       method: "POST",
@@ -162,7 +189,7 @@ export async function updateLead(
   leadId: number,
   payload: any
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/${leadId}`,
     {
       method: "PUT",
@@ -181,7 +208,7 @@ export async function updateLead(
 export async function deleteLead(
   leadId: number
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/${leadId}`,
     {
       method: "DELETE",
@@ -201,7 +228,7 @@ export async function deleteLead(
 ========================= */
 
 export async function getCRMStats(): Promise<CRMStats> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/stats`,
     {
       headers: authHeaders(),
@@ -217,7 +244,7 @@ export async function getCRMStats(): Promise<CRMStats> {
 }
 
 export async function getCRMRevenue(): Promise<CRMRevenue> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/revenue`,
     {
       headers: authHeaders(),
@@ -233,7 +260,7 @@ export async function getCRMRevenue(): Promise<CRMRevenue> {
 }
 
 export async function getCRMPipeline(): Promise<CRMPipeline> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/pipeline`,
     {
       headers: authHeaders(),
@@ -249,7 +276,7 @@ export async function getCRMPipeline(): Promise<CRMPipeline> {
 }
 
 export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/briefing`,
     {
       headers: authHeaders(),
@@ -265,7 +292,7 @@ export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
 }
 
 export async function getExecutiveOpportunities() {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/opportunities`,
     {
       headers: authHeaders(),
@@ -277,7 +304,7 @@ export async function getExecutiveOpportunities() {
 }
 
 export async function getExecutiveRisks() {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/risks`,
     {
       headers: authHeaders(),
@@ -291,7 +318,7 @@ export async function getExecutiveRisks() {
 export async function getMemoryHistory(
   domain: string
 ): Promise<AgentMemory[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/agent-memory/history/${domain}`,
     {
       headers: authHeaders(),
@@ -307,7 +334,7 @@ export async function getMemoryHistory(
 }
 
 export async function getSalesPriorities(): Promise<SalesPriority[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/sales-agent/priorities`,
     {
       headers: authHeaders(),
@@ -323,7 +350,7 @@ export async function getSalesPriorities(): Promise<SalesPriority[]> {
 }
 
 export async function getIntelligenceReport() {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/intelligence/report`,
     {
       method: "POST",
@@ -347,7 +374,7 @@ export async function getIntelligenceReport() {
 export async function getLeadActivities(
   leadId: number
 ): Promise<Activity[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/activities/${leadId}`,
     {
       headers: authHeaders(),
