@@ -137,10 +137,16 @@ try:
 finally:
     db.close()
 
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+ENABLE_API_DOCS = APP_ENV not in {"production", "prod"}
+
 app = FastAPI(
     title="SYJ NexusIntel AI",
     description="AI Powered Business Intelligence, Lead Discovery and OSINT Platform",
     version="1.0.0",
+    docs_url="/docs" if ENABLE_API_DOCS else None,
+    redoc_url="/redoc" if ENABLE_API_DOCS else None,
+    openapi_url="/openapi.json" if ENABLE_API_DOCS else None,
 )
 
 app.add_middleware(
