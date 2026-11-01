@@ -1,3 +1,5 @@
+from typing import Any
+
 from pydantic import BaseModel, field_validator
 
 from app.core.input_validation import validate_domain
@@ -10,9 +12,6 @@ class DomainRequest(BaseModel):
     @classmethod
     def validate_public_domain(cls, value: str) -> str:
         return validate_domain(value)
-
-
-from typing import Any
 
 
 class OSINTAnalysisResponse(BaseModel):
