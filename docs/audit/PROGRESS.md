@@ -33,11 +33,11 @@ Repository `main` history currently contains 64 commits, oldest `c06218f640b5765
 ### Task 1 — secret and API exposure
 - [x] Resume branch and audit-doc inventory checked.
 - [x] Create this progress log before continuing.
-- [ ] Publish final evidence-based secret register and rotation checklist.
-- [ ] Fix scanner patterns/flags and add Gitleaks CI.
-- [ ] Add pre-commit secret scanning hook.
-- [ ] Disable production OpenAPI/docs endpoints or require admin authentication.
-- [ ] Test production docs exposure behavior.
+- [x] Publish evidence-based secret register and rotation checklist (one confirmed historical JWT secret; other credential classes not confirmed in reviewed commits; 16 older commits remain UNVERIFIED).
+- [x] Add Gitleaks default + targeted high-entropy assignment/JWT/private-key rules and redacted GitHub Actions scan. Scanner execution is pending CI.
+- [x] Add pre-commit Gitleaks hook with redacted output.
+- [x] Disable /docs, /redoc and /openapi.json by default in production; development enables them.
+- [x] Add unit tests for production/prod/dev docs configuration; execution remains pending.
 
 ### Task 2 — rate limiting
 - [ ] Redis-backed shared limiter with local in-memory fallback.
@@ -69,6 +69,6 @@ Repository `main` history currently contains 64 commits, oldest `c06218f640b5765
 - [ ] Isolated attack simulations (no real production data/credentials).
 - [ ] `SECURITY_POSTURE.md` with controls, evidence and residual risks.
 
-## Validation status
+## Task 1 completion record (2026-11-01)\n\n- Confirmed hardcoded JWT signing key location: `backend/app/core/security.py:6` in commit `97d29d73178c44a0efd8da2c3d0e94298734b086`. No value recorded.\n- Added `docs/audit/SECRET_EXPOSURE_REGISTER.md` with rotation actions and explicit UNVERIFIED coverage boundary.\n- Added `.gitleaks.toml`, `.github/workflows/secret-scan.yml`, `.pre-commit-config.yaml`. Prior naive keyword scan was over-broad; the new custom rule requires a literal assignment and minimum length/entropy; Gitleaks default rules remain enabled. CI scans full Git history and is expected to flag the known historical key until the exposure is addressed through a separately approved history policy. Output is configured redacted.\n- Added `backend/app/core/api_docs.py` and wired it into `backend/app/main.py`; production/prod disables docs, ReDoc and OpenAPI schema. Added `backend/tests/test_api_docs.py`.\n- Commits for Task 1: `ab8123bb02942537fa4666fa3891b856b4e4f690`, `7a8060e920f45caf3066f4019a7aaf6b8f957014`, `e883b3a34dce1acc3181132410af67161060e5c1`, `c1531664e5a41505f15050a5e9b24d0c65d2ffbb`, `08f19f6bd17019049d4327663aa271169ed2df77`, `896bfbaab88d6e16c9e82a20ec644d9621203e56`, `6727a39970143706041086871e24afe342d77946`, `520e562a248ac6a8fae1c8d976d69178fe9740d5`.\n- Tests have been authored but not executed. Gitleaks CI has not yet run.\n\n## Validation status
 
 No app runtime, production service, production data, or production credentials have been used in this resumed session. Runtime tests and attack simulations remain UNVERIFIED until run in an isolated test environment. Never claim full security.
