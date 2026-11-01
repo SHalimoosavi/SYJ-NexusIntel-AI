@@ -24,6 +24,7 @@ def create_subscription_route(
         db,
         subscription.organization_id,
         subscription.plan_name,
+        current_user["user_id"],
     )
 
 
