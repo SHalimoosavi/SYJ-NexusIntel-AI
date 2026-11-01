@@ -9,7 +9,7 @@ The application does accept user-supplied domains, business fields, notes and st
 ## Controls currently present
 
 - Domain strings are normalized/validated by `backend/app/core/input_validation.py`.
-- `backend/app/core/safe_http.py` rejects non-public DNS answers, restricts to HTTPS, validates each redirect target and limits redirect count/timeouts.
+- `backend/app/core/safe_http.py` rejects non-public DNS answers, pins outbound HTTPS connections to a validated IP while preserving hostname SNI/certificate verification, restricts to HTTPS, manually validates each redirect and limits redirect count/timeouts.
 - Report filenames are generated from random identifiers, not user-controlled domain strings.
 - PDF text is HTML-escaped before it is rendered by ReportLab.
 - Pydantic request models reject unexpected fields and constrain lengths/ranges on lead, note, activity, invitation, report and agent-memory endpoints.
@@ -18,11 +18,11 @@ The application does accept user-supplied domains, business fields, notes and st
 
 ## SSRF residual risk
 
-DNS is checked before a request and again for redirect hosts, but the HTTP client resolves the hostname independently when it opens the connection. A DNS answer can theoretically change between validation and connection (DNS rebinding). Production must enforce outbound egress policy at the network layer:
+The shared HTTPS fetch and TLS-inspection paths connect to a pinned public IP selected from validated DNS answers, preventing the ordinary DNS-rebinding race for those paths. The WHOIS library and DNS resolver still perform separate outbound operations. Production must enforce outbound egress policy at the network layer:
 - Deny loopback, private, link-local, multicast, reserved and cloud metadata ranges for IPv4 and IPv6.
 - Permit outbound TCP 443 only where required; block direct access to metadata endpoints and internal control planes.
 - Apply the same restrictions to WHOIS, DNS, TLS inspection and all future integrations.
-- Consider a pinned-IP outbound HTTP transport with preserved Host/SNI and certificate validation before accepting high-risk deployments.
+- Retain the pinned-IP outbound HTTP transport with preserved Host/SNI and certificate validation; add network egress filtering for WHOIS/DNS and any future outbound integration.
 
 This risk is not represented as fully solved by application DNS validation alone.
 
