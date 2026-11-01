@@ -15,3 +15,8 @@ class ReportRequest(BaseModel):
 class ReportGenerationResponse(BaseModel):
     success: bool
     report_id: str
+
+
+class ReportResponse(BaseModel):
+    success: bool
+    report_id: str
