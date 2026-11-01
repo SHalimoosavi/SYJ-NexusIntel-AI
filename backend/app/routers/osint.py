@@ -66,6 +66,7 @@ def analyze_domain(
         db,
         organization_id,
         "OSINT_SCAN",
+        current_user["user_id"],
     )
 
     return result
