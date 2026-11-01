@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 function buildCsp(nonce: string, apiOrigin: string) {
-  return [
+  const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`,
     `style-src 'self' 'nonce-${nonce}'`,
@@ -13,8 +13,9 @@ function buildCsp(nonce: string, apiOrigin: string) {
     "base-uri 'self'",
     "form-action 'self'",
     "frame-ancestors 'none'",
-    "upgrade-insecure-requests",
-  ].join("; ");
+  ];
+  if (process.env.NODE_ENV === "production") directives.push("upgrade-insecure-requests");
+  return directives.join("; ");
 }
 
 export function proxy(request: NextRequest) {
