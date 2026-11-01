@@ -376,3 +376,61 @@ def test_analytics_service_reads_are_scoped_to_the_supplied_organization(tenant_
     assert "Lead B" not in rendered
     assert "B private note" not in rendered
     assert "B_EVENT" not in rendered
+
+
+
+def test_owner_cannot_escalate_staff_or_use_superadmin_endpoints(tenant_db):
+    db = tenant_db["db"]
+    org_a = tenant_db["org_a"]
+    owner = tenant_db["owner"]
+    manager = tenant_db["manager"]
+    actor = tenant_db["user_a"]
+    staff = User(
+        full_name="Staff A",
+        email="staff-a@example.invalid",
+        hashed_password="test-hash",
+        organization_id=org_a.id,
+        role_id=manager.id,
+        is_active=True,
+    )
+    db.add(staff)
+    db.commit()
+    db.refresh(staff)
+
+    with pytest.raises(HTTPException) as role_error:
+        update_user_role(
+            db,
+            staff.id,
+            owner.id,
+            org_a.id,
+            actor.id,
+            "ORGANIZATION_OWNER",
+        )
+    assert role_error.value.status_code == 403
+    assert db.query(User).filter(User.id == staff.id).one().role_id == manager.id
+
+    def override_db():
+        yield db
+
+    current_user = {
+        "user_id": actor.id,
+        "sub": actor.email,
+        "organization_id": org_a.id,
+        "role_id": owner.id,
+        "role_name": "ORGANIZATION_OWNER",
+    }
+    app.dependency_overrides[get_db] = override_db
+    app.dependency_overrides[get_current_user] = lambda: current_user
+    try:
+        client = TestClient(app)
+        assert client.get("/subscriptions").status_code == 403
+        assert client.post(
+            "/organizations",
+            json={"name": "Unauthorized Org", "slug": "unauthorized-org"},
+        ).status_code == 403
+        assert client.post(
+            "/subscriptions",
+            json={"organization_id": tenant_db["org_b"].id, "plan_name": "FREE"},
+        ).status_code == 403
+    finally:
+        app.dependency_overrides.clear()
