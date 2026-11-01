@@ -89,3 +89,52 @@ def test_retry_after_is_returned_when_bucket_is_full():
     allowed, retry_after = manager.check("limited", 1, 60)
     assert not allowed
     assert 1 <= retry_after <= 60
+
+
+def test_redis_backend_uses_hashed_keys_and_atomic_eval(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    calls = []
+
+    class FakeRedis:
+        def ping(self):
+            return True
+
+        def eval(self, script, key_count, key, *args):
+            calls.append((script, key_count, key, args))
+            return [1, 0]
+
+    fake = FakeRedis()
+    monkeypatch.setitem(
+        sys.modules,
+        "redis",
+        SimpleNamespace(Redis=SimpleNamespace(from_url=lambda *_args, **_kwargs: fake)),
+    )
+    manager = RateLimitManager(redis_url="redis://localhost/0", app_env="production")
+    assert manager.check("user:private-identifier", 50, 60) == (True, 0)
+    assert calls
+    assert calls[0][1] == 1
+    assert calls[0][2].startswith("syj:rl:")
+    assert "private-identifier" not in calls[0][2]
+
+
+def test_redis_failure_falls_back_only_in_local_mode(monkeypatch):
+    import sys
+    from types import SimpleNamespace
+
+    class UnavailableRedis:
+        def ping(self):
+            raise OSError("test-only Redis outage")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "redis",
+        SimpleNamespace(Redis=SimpleNamespace(from_url=lambda *_args, **_kwargs: UnavailableRedis())),
+    )
+    local = RateLimitManager(redis_url="redis://localhost/0", app_env="desktop")
+    assert local.check("local", 1, 60) == (True, 0)
+
+    production = RateLimitManager(redis_url="redis://localhost/0", app_env="production")
+    with pytest.raises(RateLimitBackendUnavailable):
+        production.check("production", 1, 60)
