@@ -58,18 +58,28 @@ def test_safe_get_rejects_redirect_to_internal_target(monkeypatch):
 
     monkeypatch.setattr(
         safe_http,
-        "assert_public_domain",
-        lambda host: host if host == "public-company.com" else validate_domain(host),
+        "resolve_public_addresses",
+        lambda host: (host, ["93.184.216.34"]),
     )
 
     class RedirectResponse:
-        is_redirect = True
-        is_permanent_redirect = False
+        status = 302
         headers = {"Location": "http://127.0.0.1/admin"}
+        data = b""
+
+        def release_conn(self):
+            pass
+
+    class FakePool:
+        def __init__(self, host, **_kwargs):
+            assert host == "93.184.216.34"
+
+        def request(self, *_args, **_kwargs):
+            return RedirectResponse()
 
         def close(self):
-            return None
+            pass
 
-    monkeypatch.setattr(safe_http.requests, "get", lambda *_args, **_kwargs: RedirectResponse())
+    monkeypatch.setattr(safe_http, "HTTPSConnectionPool", FakePool)
     with pytest.raises(ValueError):
         safe_http.safe_get("public-company.com")
