@@ -57,7 +57,7 @@ These tests are authored but have not yet been confirmed passing in GitHub Actio
 2. **Two Gitleaks matches lack retained metadata.** The known JWT exposure is confirmed; the other match details remain UNVERIFIED.
 3. **Redis holds session-version and consumed-refresh-JTI state.** Redis persistence and backup must be enabled in hosted production. Redis data loss could reset revocation/replay state; this needs a durable persistence/restore design or database-backed session state before high-assurance production.
 4. **Vercel + Railway split hosting does not make the backend private.** Railway public ingress remains directly reachable. CORS is not an access-control boundary. A private BFF/ingress architecture is required to prevent direct API reachability.
-5. **The shared HTTPS fetch and TLS-inspection paths pin the connection to validated public DNS addresses, closing the ordinary DNS-rebinding gap there. WHOIS/DNS operations still require network egress restrictions blocking private, loopback, link-local, reserved and metadata IP ranges.
+5. **SSRF/egr ess:** The shared HTTPS fetch and TLS-inspection paths pin connections to validated public DNS addresses and cap response bodies at 2 MB, closing the ordinary DNS-rebinding gap there. WHOIS/DNS operations still require network egress restrictions blocking private, loopback, link-local, reserved and metadata IP ranges.
 6. **No PostgreSQL Row-Level Security is enabled.** Tenant isolation is application-level. RLS is recommended defense-in-depth after transaction-scoped tenant context and migration design are approved.
 7. **Database role separation, audit trigger and backup/restore drills are not applied or verified.** Runtime DB user must not own tables or have update/delete/truncate privileges on audit logs.
 8. **No independent immutable audit sink exists.** A database owner/superuser can still alter triggers and data; export high-value events to separately administered append-only storage.
@@ -72,7 +72,7 @@ These tests are authored but have not yet been confirmed passing in GitHub Actio
 
 - Auth brute force, credential stuffing, enumeration, refresh replay, logout/password-change revocation, JWT algorithm/kid/signature tampering and cookie/CSRF behavior.
 - Cross-tenant IDOR and RBAC bypass across every route, including guessed IDs, list/search filters, exports, reports, invitations and caches.
-- SSRF, DNS rebinding, redirect chains, IPv4/IPv6 special ranges, cloud metadata and internal service access.
+- SSRF, DNS rebinding, redirect chains, oversized responses, IPv4/IPv6 special ranges, cloud metadata and internal service access.
 - Proxy trust and spoofed forwarding headers, TLS downgrade, oversized/slow request bodies, rate-limit evasion and connection exhaustion.
 - XSS/CSP bypass, CORS misuse, error/log leakage, report generation path traversal and file access.
 - Database least privilege, audit tampering, backup confidentiality and restore integrity.
