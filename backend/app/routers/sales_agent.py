@@ -70,6 +70,7 @@ def pitch(
         db,
         organization_id,
         "SALES_PITCH",
+        current_user["user_id"],
     )
 
     return result
@@ -101,6 +102,7 @@ def followup(
         db,
         organization_id,
         "SALES_FOLLOWUP",
+        current_user["user_id"],
     )
 
     return result
