@@ -6,7 +6,8 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import InvalidTokenError
 from passlib.context import CryptContext
 
 ALGORITHM = "HS256"
@@ -122,9 +123,7 @@ def verify_token(token: str) -> dict[str, Any] | None:
             issuer=JWT_ISSUER,
             audience=JWT_AUDIENCE,
             options={
-                "require_exp": True,
-                "require_iat": True,
-                "require_nbf": True,
+                "require": ["exp", "iat", "nbf"],
             },
         )
         if (
@@ -135,5 +134,5 @@ def verify_token(token: str) -> dict[str, Any] | None:
         ):
             return None
         return payload
-    except (JWTError, TypeError, ValueError):
+    except (InvalidTokenError, TypeError, ValueError):
         return None
