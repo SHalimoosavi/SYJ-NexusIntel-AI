@@ -113,7 +113,7 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 
 ## Task 5 — verification
 
-- [ ] Add all security tests to CI.
+- [x] Add backend security regression suite and frontend lint/build workflow in `.github/workflows/security-tests.yml`.
 - [ ] Run isolated brute-force, token tampering, IDOR, oversized payload and forwarded-header spoof simulations.
 - [ ] Produce `docs/audit/SECURITY_POSTURE.md` with evidence and residual risks.
 
@@ -126,7 +126,7 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 
 ## Validation status
 
-All Task 4 tests and source changes are authored but have not been executed. Docker, Redis, database and attack simulation runtime validation remains UNVERIFIED. Never claim fully secure.
+Task 4 tests and source changes are authored. GitHub Actions runs have been triggered for the current branch; results are still pending. No local test suite has been executed. Docker, Redis, database and attack simulation runtime validation remains UNVERIFIED. Never claim fully secure.
 
 
 ## Task 4 implementation record (2026-11-01)
