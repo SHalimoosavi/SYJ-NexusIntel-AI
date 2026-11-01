@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.schemas.executive_intelligence import (\n    ExecutiveBriefingResponse,\n    OpportunitySummaryResponse,\n    ExecutiveRisksResponse,\n)
+from app.schemas.executive_intelligence import ExecutiveBriefingResponse, OpportunitySummaryResponse, ExecutiveRisksResponse
 
 from app.core.feature_guard import (
     require_feature,
