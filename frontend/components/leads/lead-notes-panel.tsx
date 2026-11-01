@@ -1,102 +1,86 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-const API_BASE =
-  "https://syj-nexusintel-ai-production.up.railway.app";
-
-type Note = {
-  id: number;
-  lead_id: number;
-  note: string;
-  created_at: string;
-};
+import { createLeadNote, getLeadNotes, type LeadNote } from "@/lib/api";
 
 type Props = {
   leadId: number;
 };
 
-export default function LeadNotesPanel({
-  leadId,
-}: Props) {
-  const [notes, setNotes] = useState<
-    Note[]
-  >([]);
-
-  const [newNote, setNewNote] =
-    useState("");
-
-  async function loadNotes() {
-    try {
-      const response =
-        await fetch(
-          `${API_BASE}/lead-notes/${leadId}`
-        );
-
-      const data =
-        await response.json();
-
-      setNotes(data);
-    } catch (error) {
-      console.error(error);
-    }
-  }
-
-  async function addNote() {
-    if (!newNote.trim()) {
-      return;
-    }
-
-    try {
-      await fetch(
-        `${API_BASE}/lead-notes`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            lead_id: leadId,
-            note: newNote,
-          }),
-        }
-      );
-
-      setNewNote("");
-
-      loadNotes();
-    } catch (error) {
-      console.error(error);
-    }
-  }
+export default function LeadNotesPanel({ leadId }: Props) {
+  const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [newNote, setNewNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadNotes();
+    let active = true;
+
+    getLeadNotes(leadId)
+      .then((data) => {
+        if (active) setNotes(data);
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load notes"
+          );
+        }
+      });
+
+    return () => {
+      active = false;
+    };
   }, [leadId]);
+
+  async function addNote() {
+    const noteText = newNote.trim();
+    if (!noteText || saving) return;
+
+    setSaving(true);
+    setError("");
+    try {
+      await createLeadNote(leadId, noteText);
+      setNewNote("");
+      setNotes(await getLeadNotes(leadId));
+    } catch (saveError: unknown) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save note"
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="glass rounded-3xl p-6">
-      <h2 className="text-2xl font-black mb-4">
-        Sales Journal
-      </h2>
+      <h2 className="text-2xl font-black mb-4">Sales Journal</h2>
 
       <textarea
         value={newNote}
-        onChange={(e) =>
-          setNewNote(
-            e.target.value
-          )
-        }
+        onChange={(event) => setNewNote(event.target.value)}
         placeholder="Add sales note..."
+        maxLength={10000}
         className="w-full rounded-xl bg-black/20 p-3 mb-4"
       />
 
+      {error && (
+        <p role="alert" className="text-sm text-red-400 mb-3">
+          {error}
+        </p>
+      )}
+
       <button
+        type="button"
         onClick={addNote}
-        className="px-4 py-2 rounded-xl bg-cyan-600"
+        disabled={saving || !newNote.trim()}
+        className="px-4 py-2 rounded-xl bg-cyan-600 disabled:opacity-50"
       >
-        Save Note
+        {saving ? "Saving..." : "Save Note"}
       </button>
 
       <div className="mt-6 space-y-3">
@@ -106,11 +90,8 @@ export default function LeadNotesPanel({
             className="rounded-xl bg-black/20 p-3"
           >
             <p>{note.note}</p>
-
             <p className="text-xs text-slate-400 mt-2">
-              {new Date(
-                note.created_at
-              ).toLocaleString()}
+              {new Date(note.created_at).toLocaleString()}
             </p>
           </div>
         ))}
