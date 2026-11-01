@@ -64,7 +64,13 @@ class SafeHTTPResponse:
             self._pool.close()
 
 
-def _pinned_https_get(host: str, ip_address: str, path: str, timeout: int) -> SafeHTTPResponse:
+def _pinned_https_get(
+    host: str,
+    ip_address: str,
+    path: str,
+    timeout: int,
+    max_response_bytes: int,
+) -> SafeHTTPResponse:
     pool = HTTPSConnectionPool(
         host=ip_address,
         port=443,
@@ -88,15 +94,26 @@ def _pinned_https_get(host: str, ip_address: str, path: str, timeout: int) -> Sa
             redirect=False,
             retries=False,
             timeout=Timeout(total=timeout),
-            preload_content=True,
+            preload_content=False,
         )
+        body = response.read(max_response_bytes + 1, decode_content=True)
+        if len(body) > max_response_bytes:
+            response.close()
+            pool.close()
+            raise ValueError("Target response exceeded the permitted size")
+        response.data = body
         return SafeHTTPResponse(response, pool)
     except Exception:
         pool.close()
         raise
 
 
-def safe_get(domain: str, timeout: int = 10, max_redirects: int = 3) -> SafeHTTPResponse:
+def safe_get(
+    domain: str,
+    timeout: int = 10,
+    max_redirects: int = 3,
+    max_response_bytes: int = 2 * 1024 * 1024,
+) -> SafeHTTPResponse:
     host, addresses = resolve_public_addresses(domain)
     current_url = f"https://{host}/"
 
@@ -112,7 +129,7 @@ def safe_get(domain: str, timeout: int = 10, max_redirects: int = 3) -> SafeHTTP
         if parsed.query:
             request_path += f"?{parsed.query}"
 
-        response = _pinned_https_get(host, addresses[0], request_path, timeout)
+        response = _pinned_https_get(host, addresses[0], request_path, timeout, max_response_bytes)
         if response.is_redirect:
             location = response.headers.get("Location")
             response.close()
