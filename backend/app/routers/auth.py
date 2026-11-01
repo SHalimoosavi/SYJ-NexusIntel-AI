@@ -209,8 +209,6 @@ def logout(request: Request, response: Response, db: Session = Depends(get_db)):
     if isinstance(user_id, int):
         try:
             rate_limit_manager.revoke_user_sessions(user_id)
-            user = db.query(User).filter(User.id == user_id).first()
-
         except RateLimitBackendUnavailable:
             raise HTTPException(
                 status_code=503,
