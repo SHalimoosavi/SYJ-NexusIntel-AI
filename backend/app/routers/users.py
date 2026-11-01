@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.rbac import require_roles
 from app.database.database import get_db
+from app.schemas.common import SuccessResponse
 from app.schemas.user_management import (
     UserRoleUpdate,
     UserStatusUpdate,
@@ -80,7 +81,7 @@ def update_status_route(
     )
 
 
-@router.delete("/{user_id}")
+@router.delete("/{user_id}", response_model=SuccessResponse)
 def delete_user_route(
     user_id: int,
     db: Session = Depends(get_db),
