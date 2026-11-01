@@ -84,15 +84,14 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 ### Input, SSRF, JWT and audit
 
 - [x] Source review confirms ORM parameterized queries in reviewed service paths; no raw SQL string construction found in reviewed code.
-- [x] Domain validator blocks local/IP literals; outbound helper validates DNS answers and every redirect, limits redirects and disables automatic redirect following.
+- [x] Domain validator blocks local/IP literals; outbound HTTPS pins connections to validated public DNS IPs, preserves hostname TLS validation, and manually revalidates redirects.
 - [x] PDF output filenames are UUID-derived; HTML text is escaped.
 - [x] JWT pins HS256, requires `kid`, issuer/audience, exp/iat/nbf, typed tokens and short access-token lifetime; refresh JTI is single-use; session version is revoked on logout/password change.
 - [x] Added JWT tests for tampering, unknown kid, algorithm mismatch, refresh JTI replay and session-version revocation.
 - [x] Audit events attribute actors for lead, note, activity, invitation, organization, subscription and AI-usage mutations; user-management mutations already log events.
 - [x] SQLAlchemy audit ORM events reject update/delete; PostgreSQL trigger and app-role privilege script supplied.
 - [ ] Apply DB role/trigger using DBA identity and test tamper attempts against PostgreSQL; ORM-only hooks are not a DB security boundary.
-- [ ] Enforce audit-table DB role restrictions or DB-level append-only trigger/external sink.
-- [ ] Add immutable audit event coverage for all sensitive mutations.
+- [x] Add actor-attributed audit events for sensitive tenant mutations and AI usage; PostgreSQL trigger/role enforcement remains pending DBA application.
 
 ### Dependencies and database
 
@@ -103,7 +102,16 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 - [x] Documented least-privilege roles, PostgreSQL TLS, backup and isolated restore drill.
 - [ ] Execute dependency audit workflow; provision DB roles and run backup/restore drill.
 
-## Task 4 completion record (2026-11-01)\n\n- Added two-tenant service regression coverage for IDOR/guessed IDs across organizations, leads, notes, activities, users, invitations, subscriptions, audit logs, agent memory and dashboards. Added route dependency/response-model contract tests. These are committed but not executed.\n- Added explicit Pydantic response models across all documented API routes; added a static contract test to fail if a documented route lacks a response model or database-auth dependency (except explicitly public auth/invitation routes).\n- Added generic 500 handler, log redaction, actor-attributed audit events, UUID report identifiers, input size/extra-field constraints and pinned-DNS outbound HTTPS.\n- Added PostgreSQL audit trigger SQL, DB operations/backup guide, Dependabot and dependency audit workflow. The SQL is supplied but not applied.\n- Task 4 code commits include `7d04bf33b9d7ca1f2463a798892283026dd59d0a`, `48d8f1d8ab44cef2cf714b737a1f3223b16095f8`, `fe5ec1d0e8456bd0822237ef7fbbe989e594d3b7`, `2127c734b07d7a89a03c3d8f922061a264c985df`, `f0d0c9ea2fe6e8d975a5d0a29629fcaeb9a0b8bc`, `dff6dbdea8f3db4649eea6c17f5d136b10369af1`, `48d3db53f17e8aefad81f7f5ff135dfedcb12e4c`, `c4c79933aa265800bb5500695487589b952846e4`, `d59397b4339a6bba248eee4191b4b18be1ea6fa9`, `54d8c8359ed0dfa84ac64d44c9f5a21257c521e7`, `0d1040010ca5caf99a7eb74dcf8ec384446b2a9a`, `cd37ba8234fd0a8ee384798c3c616d1a61fd26d7`.\n- Remaining explicit risks: no full HTTP IDOR test run, no PostgreSQL DBA application of trigger/privileges, no egress firewall, no app-level streaming body cap, and no automated backup schedule.\n\n## Task 5 — verification
+## Task 4 completion record (2026-11-01)
+
+- Added two-tenant service regression coverage for IDOR/guessed IDs across organizations, leads, notes, activities, users, invitations, subscriptions, audit logs, agent memory and dashboards. Added route dependency/response-model contract tests. These are committed but not executed.
+- Added explicit Pydantic response models across all documented API routes; added a static contract test to fail if a documented route lacks a response model or database-auth dependency (except explicitly public auth/invitation routes).
+- Added generic 500 handler, log redaction, actor-attributed audit events, UUID report identifiers, input size/extra-field constraints and pinned-DNS outbound HTTPS.
+- Added PostgreSQL audit trigger SQL, DB operations/backup guide, Dependabot and dependency audit workflow. The SQL is supplied but not applied.
+- Task 4 code commits include `7d04bf33b9d7ca1f2463a798892283026dd59d0a`, `48d8f1d8ab44cef2cf714b737a1f3223b16095f8`, `fe5ec1d0e8456bd0822237ef7fbbe989e594d3b7`, `2127c734b07d7a89a03c3d8f922061a264c985df`, `f0d0c9ea2fe6e8d975a5d0a29629fcaeb9a0b8bc`, `dff6dbdea8f3db4649eea6c17f5d136b10369af1`, `48d3db53f17e8aefad81f7f5ff135dfedcb12e4c`, `c4c79933aa265800bb5500695487589b952846e4`, `d59397b4339a6bba248eee4191b4b18be1ea6fa9`, `54d8c8359ed0dfa84ac64d44c9f5a21257c521e7`, `0d1040010ca5caf99a7eb74dcf8ec384446b2a9a`, `cd37ba8234fd0a8ee384798c3c616d1a61fd26d7`.
+- Remaining explicit risks: no full HTTP IDOR test run, no PostgreSQL DBA application of trigger/privileges, no egress firewall, no app-level streaming body cap, and no automated backup schedule.
+
+## Task 5 — verification
 
 - [ ] Add all security tests to CI.
 - [ ] Run isolated brute-force, token tampering, IDOR, oversized payload and forwarded-header spoof simulations.
