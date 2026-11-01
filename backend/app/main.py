@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 from pathlib import Path
 import os
 import logging
+from urllib.parse import urlsplit
 from fastapi import Request
 from fastapi.responses import JSONResponse
 
@@ -151,24 +152,47 @@ app = FastAPI(
 
 app.add_middleware(
     ProxyHeadersMiddleware,
-    trusted_hosts=os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1").split(","),
+    trusted_hosts=TRUSTED_PROXY_HOSTS,
 )
 
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+_raw_cors_origins = os.getenv("CORS_ORIGINS", "")
+if not _raw_cors_origins and APP_ENV not in {"development", "dev", "local", "desktop", "test"}:
+    raise RuntimeError("CORS_ORIGINS must be explicitly configured in production")
+
 CORS_ORIGINS = [
-    origin.strip()
-    for origin in os.getenv(
-        "CORS_ORIGINS",
-        "https://syj-nexus-intel-ai.vercel.app,http://localhost:3000",
-    ).split(",")
+    origin.strip().rstrip("/")
+    for origin in _raw_cors_origins.split(",")
     if origin.strip()
 ]
+if not CORS_ORIGINS and APP_ENV in {"development", "dev", "local", "desktop", "test"}:
+    CORS_ORIGINS = ["http://localhost:3000"]
+for origin in CORS_ORIGINS:
+    parsed_origin = urlsplit(origin)
+    if (
+        parsed_origin.scheme not in ({"https"} if APP_ENV not in {"development", "dev", "local", "desktop", "test"} else {"http", "https"})
+        or not parsed_origin.netloc
+        or parsed_origin.path
+        or parsed_origin.query
+        or parsed_origin.fragment
+        or origin == "*"
+    ):
+        raise RuntimeError("CORS_ORIGINS contains an invalid or unsafe origin")
+
+TRUSTED_PROXY_HOSTS = [
+    host.strip()
+    for host in os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1,::1").split(",")
+    if host.strip()
+]
+if "*" in TRUSTED_PROXY_HOSTS:
+    raise RuntimeError("Wildcard trusted proxies are forbidden")
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-CSRF-Token"],
 )
 
 app.include_router(auth_router)
@@ -288,6 +312,28 @@ async def apply_route_rate_limits(request: Request, call_next):
             headers={"Retry-After": str(retry_after)},
         )
     return await call_next(request)
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=()",
+    )
+    if APP_ENV not in {"development", "dev", "local", "desktop", "test"}:
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'",
+    )
+    return response
+
 
 @app.get("/")
 def root():
