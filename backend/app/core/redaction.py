@@ -8,6 +8,7 @@ _JWT = re.compile(r"\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}
 _SECRET_ASSIGNMENT = re.compile(
     r"(?i)\b(secret|token|password|api[_-]?key|private[_-]?key|authorization|cookie)\s*[:=]\s*[^\s,;]+"
 )
+_IPV4 = re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w.])")
 _PHONE = re.compile(r"(?<!\w)(?:\+?\d[\d .()/-]{7,}\d)(?!\w)")
 
 
@@ -23,8 +24,7 @@ def redact_text(value: str | None) -> str | None:
 
 
 def redact_log_message(value: object) -> str:
-    rendered = str(value)
-    return (redact_text(rendered) or "")[:4000]
+    return (redact_text(str(value)) or "")[:4000]
 
 
 class RedactingLogFilter(logging.Filter):
