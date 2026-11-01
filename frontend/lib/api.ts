@@ -125,6 +125,14 @@ export interface Activity {
   created_at: string;
 }
 
+export interface LeadNote {
+  id: number;
+  lead_id: number;
+  note: string;
+  note_type: string;
+  created_at: string;
+}
+
 export interface CRMStats {
   total_leads: number;
   hot_leads: number;
@@ -448,5 +456,42 @@ export async function getLeadActivities(
     );
   }
 
+  return response.json();
+}
+
+
+export async function getLeadNotes(leadId: number): Promise<LeadNote[]> {
+  const response = await apiFetch(
+    `${API_BASE}/lead-notes/${leadId}`,
+    {
+      headers: authHeaders(),
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch lead notes");
+  }
+  return response.json();
+}
+
+export async function createLeadNote(
+  leadId: number,
+  note: string
+): Promise<LeadNote> {
+  const response = await apiFetch(
+    `${API_BASE}/lead-notes`,
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        lead_id: leadId,
+        note,
+        note_type: "GENERAL",
+      }),
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to save lead note");
+  }
   return response.json();
 }
