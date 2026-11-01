@@ -3,6 +3,14 @@ node_modules
 out
 .env
 .env.*
-!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
 .git
 *.log
