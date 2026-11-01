@@ -1,12 +1,14 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.input_validation import validate_domain
 
 
 class SalesPitchRequest(BaseModel):
-    business_name: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    business_name: str = Field(min_length=1, max_length=160)
     domain: str
-    lead_score: int
+    lead_score: int = Field(ge=0, le=100)
 
     @field_validator("domain")
     @classmethod
@@ -15,8 +17,10 @@ class SalesPitchRequest(BaseModel):
 
 
 class FollowUpRequest(BaseModel):
-    business_name: str
-    pipeline_stage: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    business_name: str = Field(min_length=1, max_length=160)
+    pipeline_stage: str = Field(min_length=1, max_length=32)
 
 
 class SalesPriorityResponse(BaseModel):
