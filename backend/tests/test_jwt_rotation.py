@@ -59,3 +59,11 @@ def test_token_with_unknown_kid_or_wrong_algorithm_is_rejected():
         headers={"kid": JWT_ACTIVE_KID},
     )
     assert verify_token(wrong_algorithm) is None
+
+
+
+def test_tampered_signature_is_rejected():
+    token = create_access_token({"sub": "qa@example.invalid", "user_id": 101})
+    header, payload, signature = token.split(".")
+    replacement = ("A" if signature[0] != "A" else "B") + signature[1:]
+    assert verify_token(".".join((header, payload, replacement))) is None
