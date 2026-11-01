@@ -204,7 +204,7 @@ def rate_limit_policy_for_path(path: str) -> tuple[int, int]:
     """Return (limit, window seconds); unmatched routes still receive a global IP limit."""
     normalized = path.rstrip("/") or "/"
     policies = {
-        "/auth/login": (5, 900),
+        "/auth/login": (10, 900),
         "/auth/register": (3, 3600),
         "/auth/password-reset": (3, 3600),
         "/auth/refresh": (10, 60),
