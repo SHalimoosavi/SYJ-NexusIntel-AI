@@ -67,6 +67,11 @@ server {
 
     proxy_hide_header Server;
     proxy_hide_header X-Powered-By;
+    proxy_hide_header Strict-Transport-Security;
+    proxy_hide_header X-Content-Type-Options;
+    proxy_hide_header X-Frame-Options;
+    proxy_hide_header Referrer-Policy;
+    proxy_hide_header Permissions-Policy;
 
     location ~ ^/api/auth/(login|register|password-reset|refresh)$ {
         limit_req zone=auth_per_ip burst=5 nodelay;
