@@ -62,6 +62,7 @@ def executive_briefing(
         db,
         organization_id,
         "EXECUTIVE_BRIEFING",
+        current_user["user_id"],
     )
 
     return result
@@ -94,6 +95,7 @@ def opportunities(
         db,
         organization_id,
         "EXECUTIVE_OPPORTUNITIES",
+        current_user["user_id"],
     )
 
     return result
@@ -126,6 +128,7 @@ def risks(
         db,
         organization_id,
         "EXECUTIVE_RISKS",
+        current_user["user_id"],
     )
 
     return result
