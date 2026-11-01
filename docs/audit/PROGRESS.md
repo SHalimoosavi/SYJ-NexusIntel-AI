@@ -67,17 +67,19 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 - [x] Source review of registered router families and their auth/tenant dependencies.
 - [x] `docs/audit/TENANT_ISOLATION_MATRIX.md` documents route families, scoping controls, test status and residual concerns.
 - [x] `backend/tests/test_tenant_isolation_services.py` adds isolated two-tenant SQLite tests for guessed organization, lead, note, activity, user, subscription, invitation and audit IDs; cross-tenant create/update/delete/read behavior; memory history; dashboard counts; and ORM audit-log immutability.
-- [ ] Full HTTP endpoint/RBAC matrix tests across every registered route.
-- [ ] Execute service and endpoint tests.
+- [x] Static route contract test added: every documented non-public API route must include get_current_user directly or through RBAC/feature dependencies; all documented API routes must declare response_model.
+- [ ] Full HTTP-level two-tenant IDOR/RBAC tests and execution remain pending.
 
 ### Response schemas, errors and logging
 
 - [x] Lead routes use explicit `LeadResponse`.
 - [x] User/admin, organization, subscription, invitation, activity, note and audit-log routes already use explicit Pydantic response models.
 - [x] Report generation no longer returns an absolute server filesystem path; it returns a report ID.
-- [ ] Add explicit response models to remaining analytics/AI endpoints; inspect nested payloads for sensitive fields.
-- [ ] Add generic production exception handler and application-wide log redaction.
-- [ ] Verify no stack traces, password hashes, tokens, or PII in API responses/logs.
+- [x] Explicit response models added across all registered documented API routes, including nested multi-agent, OSINT, analytics, auth and mutation responses. Contract test asserts complete coverage.
+- [x] Report generation returns a report ID rather than an absolute filesystem path; legacy JSON bearer-token response schema removed.
+- [x] Generic unhandled-exception response added; exception text/stack data suppressed from logs and log messages redacted for bearer/JWT/secret/email/IP/phone patterns.
+- [x] Response-model tests assert password hashes, session tokens and tenant IDs are absent from the relevant user/lead contracts.
+- [ ] Execute response and log-redaction tests; invitation create response still returns a one-time invitation token to the authorized creator (intentional, documented exception).
 
 ### Input, SSRF, JWT and audit
 
@@ -85,19 +87,23 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 - [x] Domain validator blocks local/IP literals; outbound helper validates DNS answers and every redirect, limits redirects and disables automatic redirect following.
 - [x] PDF output filenames are UUID-derived; HTML text is escaped.
 - [x] JWT pins HS256, requires `kid`, issuer/audience, exp/iat/nbf, typed tokens and short access-token lifetime; refresh JTI is single-use; session version is revoked on logout/password change.
-- [x] Audit ORM events reject update/delete; service descriptions are redacted and failure logs emit exception type only.
-- [ ] Verify file-upload surface and LLM prompt-injection/data-exfiltration paths; network egress protections for DNS rebinding.
+- [x] Added JWT tests for tampering, unknown kid, algorithm mismatch, refresh JTI replay and session-version revocation.
+- [x] Audit events attribute actors for lead, note, activity, invitation, organization, subscription and AI-usage mutations; user-management mutations already log events.
+- [x] SQLAlchemy audit ORM events reject update/delete; PostgreSQL trigger and app-role privilege script supplied.
+- [ ] Apply DB role/trigger using DBA identity and test tamper attempts against PostgreSQL; ORM-only hooks are not a DB security boundary.
 - [ ] Enforce audit-table DB role restrictions or DB-level append-only trigger/external sink.
 - [ ] Add immutable audit event coverage for all sensitive mutations.
 
 ### Dependencies and database
 
 - [x] PostgreSQL-only hosted config and TLS `sslmode=require` default are present; local SQLite restricted to local/test modes.
-- [ ] Add pinned dev/security audit dependencies and run `pip-audit`, `npm audit`.
-- [ ] Add Dependabot configuration.
-- [ ] Document least-privilege DB role and backup/restore procedure.
+- [x] Added pinned development tooling (`requirements-dev.txt`) and pinned PostgreSQL driver.
+- [x] Added weekly pip/npm/GitHub Actions Dependabot updates.
+- [x] Added dependency audit workflow for pip-audit and npm audit.
+- [x] Documented least-privilege roles, PostgreSQL TLS, backup and isolated restore drill.
+- [ ] Execute dependency audit workflow; provision DB roles and run backup/restore drill.
 
-## Task 5 — verification
+## Task 4 completion record (2026-11-01)\n\n- Added two-tenant service regression coverage for IDOR/guessed IDs across organizations, leads, notes, activities, users, invitations, subscriptions, audit logs, agent memory and dashboards. Added route dependency/response-model contract tests. These are committed but not executed.\n- Added explicit Pydantic response models across all documented API routes; added a static contract test to fail if a documented route lacks a response model or database-auth dependency (except explicitly public auth/invitation routes).\n- Added generic 500 handler, log redaction, actor-attributed audit events, UUID report identifiers, input size/extra-field constraints and pinned-DNS outbound HTTPS.\n- Added PostgreSQL audit trigger SQL, DB operations/backup guide, Dependabot and dependency audit workflow. The SQL is supplied but not applied.\n- Task 4 code commits include `7d04bf33b9d7ca1f2463a798892283026dd59d0a`, `48d8f1d8ab44cef2cf714b737a1f3223b16095f8`, `fe5ec1d0e8456bd0822237ef7fbbe989e594d3b7`, `2127c734b07d7a89a03c3d8f922061a264c985df`, `f0d0c9ea2fe6e8d975a5d0a29629fcaeb9a0b8bc`, `dff6dbdea8f3db4649eea6c17f5d136b10369af1`, `48d3db53f17e8aefad81f7f5ff135dfedcb12e4c`, `c4c79933aa265800bb5500695487589b952846e4`, `d59397b4339a6bba248eee4191b4b18be1ea6fa9`, `54d8c8359ed0dfa84ac64d44c9f5a21257c521e7`, `0d1040010ca5caf99a7eb74dcf8ec384446b2a9a`, `cd37ba8234fd0a8ee384798c3c616d1a61fd26d7`.\n- Remaining explicit risks: no full HTTP IDOR test run, no PostgreSQL DBA application of trigger/privileges, no egress firewall, no app-level streaming body cap, and no automated backup schedule.\n\n## Task 5 — verification
 
 - [ ] Add all security tests to CI.
 - [ ] Run isolated brute-force, token tampering, IDOR, oversized payload and forwarded-header spoof simulations.
