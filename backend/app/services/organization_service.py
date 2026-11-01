@@ -11,7 +11,7 @@ def create_organization(db: Session, organization_data, actor_user_id: int | Non
     db.add(organization)
     db.commit()
     db.refresh(organization)
-    create_subscription(db=db, organization_id=organization.id, plan_name="FREE")
+    create_subscription(db=db, organization_id=organization.id, plan_name="FREE", actor_user_id=actor_user_id)
     seed_default_features(db, organization.id)
     log_event(
         db=db,
