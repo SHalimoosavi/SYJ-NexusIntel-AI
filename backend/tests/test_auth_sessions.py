@@ -1,5 +1,7 @@
 import pytest
+from fastapi import HTTPException, Response
 from fastapi.testclient import TestClient
+from starlette.requests import Request
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -74,28 +76,36 @@ def test_logout_revokes_access_and_refresh_session_family(monkeypatch, auth_sess
 
 
 def test_refresh_rotation_rejects_reuse_and_revokes_session_family(monkeypatch, auth_session):
-    _db, user = auth_session
+    db, user = auth_session
     manager = RateLimitManager(redis_url="", app_env="test")
     monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
     old_refresh = create_refresh_token(
         {"sub": user.email, "user_id": user.id, "session_version": 0}
     )
-    client = TestClient(app)
-    client.cookies.set("refresh_token", old_refresh)
 
-    first = client.post(
-        "/auth/refresh",
-        headers={"Origin": "http://localhost:3000"},
-    )
-    assert first.status_code == 200
+    def refresh_request():
+        return Request({
+            "type": "http",
+            "method": "POST",
+            "scheme": "http",
+            "path": "/auth/refresh",
+            "query_string": b"",
+            "headers": [
+                (b"origin", b"http://localhost:3000"),
+                (b"cookie", f"refresh_token={old_refresh}".encode("ascii")),
+            ],
+            "client": ("127.0.0.1", 12345),
+            "server": ("testserver", 80),
+        })
 
-    client.cookies.clear()
-    client.cookies.set("refresh_token", old_refresh)
-    replay = client.post(
-        "/auth/refresh",
-        headers={"Origin": "http://localhost:3000"},
-    )
-    assert replay.status_code == 401
+    first_response = Response()
+    first = auth_router.refresh_session(refresh_request(), first_response, db)
+    assert first == {"success": True, "token_type": "cookie"}
+    assert "refresh_token=" in first_response.headers.get("set-cookie", "")
+
+    with pytest.raises(HTTPException) as replay:
+        auth_router.refresh_session(refresh_request(), Response(), db)
+    assert replay.value.status_code == 401
     assert manager.get_user_session_version(user.id) == 1
 
 
