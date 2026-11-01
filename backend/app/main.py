@@ -1,5 +1,9 @@
 from dotenv import load_dotenv
 from pathlib import Path
+import os
+import time
+from fastapi import Request
+from fastapi.responses import JSONResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -30,6 +34,8 @@ from app.models.invitation import Invitation
 from app.database.database import SessionLocal
 
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+
+from app.core.rate_limit import limiter
 
 from app.services.role_service import (
     seed_roles,
@@ -137,17 +143,26 @@ app = FastAPI(
     version="1.0.0",
 )
 
-app.add_middleware(ProxyHeadersMiddleware)
+app.add_middleware(
+    ProxyHeadersMiddleware,
+    trusted_hosts=os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1").split(","),
+)
+
+CORS_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv(
+        "CORS_ORIGINS",
+        "https://syj-nexus-intel-ai.vercel.app,http://localhost:3000",
+    ).split(",")
+    if origin.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://syj-nexus-intel-ai.vercel.app",
-        "http://localhost:3000",
-    ],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
 )
 
 app.include_router(auth_router)
@@ -235,6 +250,32 @@ app.include_router(
 app.include_router(
     agent_memory_router
 )
+
+@app.middleware("http")
+async def apply_route_rate_limits(request: Request, call_next):
+    path = request.url.path
+    limits = {
+        "/auth/login": (8, 60),
+        "/osint/domain": (15, 60),
+        "/reports/generate": (8, 60),
+        "/intelligence/report": (15, 60),
+        "/technology/detect": (15, 60),
+        "/lead-qualification/analyze": (15, 60),
+        "/multi-agent/analyze": (8, 60),
+        "/opportunity/analyze": (15, 60),
+    }
+    policy = limits.get(path)
+    if policy:
+        client_ip = request.client.host if request.client else "unknown"
+        identity = f"{path}:{client_ip}"
+        if not limiter.allow(identity, policy[0], policy[1]):
+            return JSONResponse(
+                status_code=429,
+                content={"detail": "Rate limit exceeded. Please retry later."},
+                headers={"Retry-After": str(policy[1])},
+            )
+    return await call_next(request)
+
 
 @app.get("/")
 def root():
