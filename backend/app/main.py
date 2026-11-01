@@ -5,6 +5,9 @@ import logging
 from urllib.parse import urlsplit
 from fastapi import Request
 from fastapi.responses import JSONResponse
+from fastapi import HTTPException
+
+from app.core.redaction import RedactingLogFilter
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -156,6 +159,32 @@ app = FastAPI(
     version="1.0.0",
     **api_docs_config(),
 )
+
+# Apply redaction to existing handlers. The production process must configure
+# handlers through the standard logging setup before importing this module.
+_redacting_filter = RedactingLogFilter()
+_root_logger = logging.getLogger()
+_root_logger.addFilter(_redacting_filter)
+for _handler in _root_logger.handlers:
+    _handler.addFilter(_redacting_filter)
+for _logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"):
+    _named_logger = logging.getLogger(_logger_name)
+    _named_logger.addFilter(_redacting_filter)
+    for _handler in _named_logger.handlers:
+        _handler.addFilter(_redacting_filter)
+
+@app.exception_handler(Exception)
+async def generic_unhandled_exception_handler(request: Request, exc: Exception):
+    logging.getLogger("security.application").error(
+        "unhandled_exception method=%s path_group=%s error_type=%s",
+        request.method,
+        request.url.path.split("/", 2)[1] if request.url.path.count("/") >= 1 else "root",
+        type(exc).__name__,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred."},
+    )
 
 app.add_middleware(
     ProxyHeadersMiddleware,
