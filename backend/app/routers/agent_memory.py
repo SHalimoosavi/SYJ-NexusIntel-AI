@@ -7,6 +7,8 @@ from app.database.database import (
     get_db,
 )
 
+from app.core.input_validation import validate_domain
+
 from app.core.dependencies import (
     get_current_user,
 )
@@ -48,6 +50,7 @@ def history(
         get_current_user
     ),
 ):
+    domain = validate_domain(domain)
     return get_history(
         db,
         domain,
@@ -65,6 +68,7 @@ def latest(
         get_current_user
     ),
 ):
+    domain = validate_domain(domain)
     return get_latest(
         db,
         domain,
