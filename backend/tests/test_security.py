@@ -61,6 +61,9 @@ def test_rotation_accepts_previous_key_only_while_configured(monkeypatch):
         "exp": datetime.now(timezone.utc) + timedelta(minutes=5),
         "iss": security.JWT_ISSUER,
         "aud": security.JWT_AUDIENCE,
+        "jti": "prior-session-id",
+        "token_type": "access",
+        "session_version": 0,
     }
     prior = jwt.encode(
         claims,
