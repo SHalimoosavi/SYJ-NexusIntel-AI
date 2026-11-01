@@ -113,3 +113,33 @@ Repository `main` history contains 64 commits, oldest `c06218f640b5765746cf98916
 ## Validation status
 
 All Task 4 tests and source changes are authored but have not been executed. Docker, Redis, database and attack simulation runtime validation remains UNVERIFIED. Never claim fully secure.
+
+
+## Task 4 implementation record (2026-11-01)
+
+- Added tenant A/B fixture coverage for organizations, leads, users, notes, activities, agent memory, invitations, subscriptions and audit logs; API-level guessed-ID tests exercise leads, notes, activities, users, organizations and subscriptions.
+- Added recursive FastAPI dependency inventory asserting every non-public API route depends on the current-user dependency. Added analytics-service tests and owner role-escalation/super-admin route tests. Full endpoint coverage limits are explicit in `TENANT_BOUNDARY_MATRIX.md`.
+- Added explicit response models/constraints for leads and agent memory; activity/note response schemas are constrained; existing dashboard, CRM, OSINT, technology, intelligence, sales, audit, user, invitation, subscription and report response models were reviewed. Removed tenant/actor foreign keys from user/invitation/audit responses and removed absolute PDF path from report response. Invitation creation still returns a one-time opaque invitation bearer token to the authorized creator; list responses omit it.
+- Added `RedactingLogFilter` and generic 500 handling in `backend/app/main.py`; redaction covers email, phone, bearer/JWT and credential assignments. No exception trace is emitted to client or application log.
+- Added AST guard against f-string/format-built SQL, static upload endpoint guard, frontend raw-HTML injection guard, and SSRF tests for private DNS and redirects. Source review shows deterministic multi-agent orchestration and no current external LLM SDK integration; future LLM safety requirements and DNS-rebinding risk are in `AI_INPUT_SECURITY.md`.
+- Added JWT lifecycle route tests for logout revocation, refresh-token replay detection and password-change revocation; added brute-force lockout and generic unknown/wrong credential response tests.
+- Added `backend/sql/audit_log_immutability.sql` and `docs/audit/DATABASE_OPERATIONS.md`. The trigger, runtime grants, database role separation, backup schedule and restore drill are operator actions and remain unverified.
+- Added `backend/tests/test_tenant_isolation.py`, `test_auth_sessions.py`, `test_jwt_rotation.py`, `test_response_models.py`, `test_security_controls.py`, `test_static_security.py`, `test_log_redaction.py`, and expanded `test_input_validation.py`.
+- Added `.github/workflows/security-ci.yml`, `.github/workflows/dependency-audit.yml` (already present on branch), `.github/dependabot.yml`, and pinned test dependencies. Python and npm dependency audits run separately to avoid duplicate CI work.
+- Added `docs/audit/TENANT_BOUNDARY_MATRIX.md`, `docs/audit/AI_INPUT_SECURITY.md`, and `docs/audit/DATABASE_OPERATIONS.md`.
+- No backend test suite, Docker/Nginx deployment, Redis integration, PostgreSQL role/trigger, or real attack simulation has been executed locally. GitHub Actions runs were observed queued/in progress; final outcomes are pending.
+
+## Repository policy incident
+
+Two helper files were accidentally created on `main` because the branch argument was omitted on one GitHub file-create operation. They were immediately deleted in compensating commits. The current `main` tree has those files removed, but its history contains these four commits:
+- Added `backend/app/core/logging_security.py`: `f9d78ce69f579e6a63468321b12dee1be8dd3ed6`
+- Added `backend/tests/test_log_redaction.py`: `346819a75bfb8baccf137972a218ffdcd6b94935`
+- Deleted helper module: `010a17619991f9162b2ccac73a821aa9d4115a53`
+- Deleted test file: `e51373d276b443581367f2c19aa291ebf2a042d3`
+
+This violated the branch-only constraint. No application behavior remains changed on `main` from those files; the commit history is not rewritten. No further writes to `main` will be made. All subsequent changes are explicitly targeted to `feat/security-hardening`.
+
+## Latest CI observation
+
+At the time of this update, the branch had active/queued Security CI, Dependency Audit and Secret Scan runs. The earlier diff-only Gitleaks action reported success, which is not sufficient evidence that the historic key was scanned. The secret workflow now also runs pinned Gitleaks CLI against the complete Git history with redacted reporting; expect it to flag the known historical JWT key. Full-history scan result is pending.
+
