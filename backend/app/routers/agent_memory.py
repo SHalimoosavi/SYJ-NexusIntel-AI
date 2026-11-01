@@ -3,9 +3,8 @@ from fastapi import Depends
 
 from sqlalchemy.orm import Session
 
-from app.database.database import (
-    get_db,
-)
+from app.database.database import get_db
+from app.schemas.agent_memory import AgentMemoryResponse
 
 from app.core.input_validation import validate_domain
 from app.schemas.agent_memory import AgentMemoryCreate, AgentMemoryResponse
