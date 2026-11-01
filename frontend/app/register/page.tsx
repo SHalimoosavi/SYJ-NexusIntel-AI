@@ -37,10 +37,11 @@ export default function RegisterPage() {
       );
 
       router.push("/login");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(
-        err?.message ||
-          "Invitation acceptance failed"
+        err instanceof Error
+          ? err.message
+          : "Invitation acceptance failed"
       );
     } finally {
       setLoading(false);

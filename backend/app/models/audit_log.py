@@ -4,7 +4,7 @@ from sqlalchemy import Column
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, event
 
 from app.database.database import Base
 
@@ -57,3 +57,13 @@ class AuditLog(Base):
         DateTime,
         default=datetime.utcnow,
     )
+
+
+@event.listens_for(AuditLog, "before_update")
+def prevent_audit_log_update(_mapper, _connection, _target):
+    raise ValueError("Audit log records are append-only")
+
+
+@event.listens_for(AuditLog, "before_delete")
+def prevent_audit_log_delete(_mapper, _connection, _target):
+    raise ValueError("Audit log records are append-only")

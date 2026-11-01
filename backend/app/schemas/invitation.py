@@ -1,32 +1,36 @@
-from pydantic import BaseModel
-from pydantic import EmailStr
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class InvitationCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
     email: EmailStr
-    role_id: int
+    role_id: int = Field(gt=0)
 
 
 class InvitationAccept(BaseModel):
-    full_name: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    full_name: str = Field(min_length=1, max_length=120)
     email: EmailStr
-    password: str
-    invitation_token: str
+    password: str = Field(min_length=12, max_length=128)
+    invitation_token: str = Field(min_length=32, max_length=256)
 
 
 class InvitationResponse(BaseModel):
     id: int
-
-    organization_id: int
-
     email: EmailStr
+    is_used: bool
+    expires_at: datetime
 
-    role_id: int
+    model_config = ConfigDict(from_attributes=True)
 
+
+class InvitationCreatedResponse(InvitationResponse):
     token: str
 
-    is_used: bool
 
-    model_config = {
-        "from_attributes": True
-    }
+class InvitationAcceptResponse(BaseModel):
+    success: bool

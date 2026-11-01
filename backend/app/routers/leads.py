@@ -6,10 +6,8 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead import (
-    LeadCreate,
-    LeadUpdate,
-)
+from app.schemas.lead import LeadCreate, LeadUpdate, LeadResponse
+from app.schemas.common import SuccessResponse
 
 from app.services.lead_service import (
     create_lead,
@@ -28,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", response_model=LeadResponse)
 def add_lead(
     lead: LeadCreate,
     db: Session = Depends(get_db),
@@ -39,13 +37,12 @@ def add_lead(
     return create_lead(
         db,
         lead,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
 
-@router.get("")
+@router.get("", response_model=list[LeadResponse])
 def list_leads(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -60,7 +57,7 @@ def list_leads(
     )
 
 
-@router.put("/{lead_id}")
+@router.put("/{lead_id}", response_model=LeadResponse)
 def update_pipeline(
     lead_id: int,
     data: LeadUpdate,
@@ -73,9 +70,8 @@ def update_pipeline(
         db,
         lead_id,
         data,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
     if not lead:
@@ -87,7 +83,7 @@ def update_pipeline(
     return lead
 
 
-@router.delete("/{lead_id}")
+@router.delete("/{lead_id}", response_model=SuccessResponse)
 def remove_lead(
     lead_id: int,
     db: Session = Depends(get_db),
@@ -98,9 +94,8 @@ def remove_lead(
     deleted = delete_lead(
         db,
         lead_id,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
     if not deleted:

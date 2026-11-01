@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.multi_agent import (
-    MultiAgentRequest,
-)
+from app.schemas.multi_agent import MultiAgentRequest, MultiAgentResponse
 
 from app.services.multi_agent_service import (
     run_multi_agent_analysis,
@@ -36,7 +34,7 @@ router = APIRouter(
 )
 
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=MultiAgentResponse)
 def analyze(
     request: MultiAgentRequest,
     db: Session = Depends(get_db),
@@ -65,6 +63,7 @@ def analyze(
         db,
         organization_id,
         "MULTI_AGENT",
+        current_user["user_id"],
     )
 
     return result

@@ -1,0 +1,97 @@
+server_tokens off;
+
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+limit_req_zone $binary_remote_addr zone=api_per_ip:10m rate=15r/s;
+limit_req_zone $binary_remote_addr zone=auth_per_ip:10m rate=1r/s;
+limit_conn_zone $binary_remote_addr zone=connections_per_ip:10m;
+
+client_header_timeout 10s;
+client_body_timeout 30s;
+send_timeout 30s;
+keepalive_timeout 30s;
+client_max_body_size 10m;
+limit_req_status 429;
+limit_conn_status 429;
+
+gzip on;
+gzip_vary on;
+gzip_min_length 1024;
+gzip_comp_level 5;
+gzip_types application/json application/javascript application/xml text/css text/plain image/svg+xml;
+
+upstream syj_frontend {
+    server frontend:3000;
+    keepalive 32;
+}
+
+upstream syj_backend {
+    server backend:8000;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name ${DOMAIN};
+
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+        default_type text/plain;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:TLS:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()" always;
+
+    proxy_hide_header Server;
+    proxy_hide_header X-Powered-By;
+    proxy_hide_header Strict-Transport-Security;
+    proxy_hide_header X-Content-Type-Options;
+    proxy_hide_header X-Frame-Options;
+    proxy_hide_header Referrer-Policy;
+    proxy_hide_header Permissions-Policy;
+
+    location ~ ^/api/auth/(login|register|password-reset|refresh)$ {
+        limit_req zone=auth_per_ip burst=5 nodelay;
+        limit_conn connections_per_ip 10;
+        rewrite ^/api(/.*)$ $1 break;
+        proxy_pass http://syj_backend;
+        include /etc/nginx/proxy_params;
+    }
+
+    location /api/ {
+        limit_req zone=api_per_ip burst=30 nodelay;
+        limit_conn connections_per_ip 20;
+        rewrite ^/api(/.*)$ $1 break;
+        proxy_pass http://syj_backend;
+        include /etc/nginx/proxy_params;
+    }
+
+    location / {
+        limit_conn connections_per_ip 20;
+        proxy_pass http://syj_frontend;
+        include /etc/nginx/proxy_params;
+    }
+}

@@ -13,6 +13,7 @@ def create_subscription(
     db: Session,
     organization_id: int,
     plan_name: str = "FREE",
+    actor_user_id: int | None = None,
 ):
     plan = get_plan(plan_name)
 
@@ -45,7 +46,7 @@ def create_subscription(
     log_event(
         db=db,
         organization_id=organization_id,
-        user_id=None,
+        user_id=actor_user_id,
         event_type="SUBSCRIPTION_CREATED",
         resource_type="SUBSCRIPTION",
         resource_id=subscription.id,

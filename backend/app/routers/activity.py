@@ -40,6 +40,7 @@ def create_activity_route(
         db,
         activity,
         current_user["organization_id"],
+        current_user["user_id"],
     )
 
 

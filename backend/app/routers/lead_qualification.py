@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead_qualification import (
-    LeadQualificationRequest,
-)
+from app.schemas.lead_qualification import LeadQualificationRequest, LeadQualificationResponse
 
 from app.services.lead_qualification_service import (
     qualify_lead,
@@ -28,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=LeadQualificationResponse)
 def analyze_lead(
     request: LeadQualificationRequest,
     db: Session = Depends(get_db),
@@ -53,6 +51,7 @@ def analyze_lead(
         db,
         organization_id,
         "LEAD_QUALIFICATION",
+        current_user["user_id"],
     )
 
     return result

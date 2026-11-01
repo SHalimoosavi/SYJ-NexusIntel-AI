@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.technology import (
-    TechnologyRequest,
-)
+from app.schemas.technology import TechnologyRequest, TechnologyResponse
 
 from app.services.technology_service import (
     detect_technologies,
@@ -28,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.post("/detect")
+@router.post("/detect", response_model=TechnologyResponse)
 def technology_detection(
     request: TechnologyRequest,
     db: Session = Depends(get_db),
@@ -53,6 +51,7 @@ def technology_detection(
         db,
         organization_id,
         "TECHNOLOGY_DETECTION",
+        current_user["user_id"],
     )
 
     return result

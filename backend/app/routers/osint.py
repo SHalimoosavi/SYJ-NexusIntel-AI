@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.osint import DomainRequest
+from app.schemas.osint import DomainRequest, OSINTAnalysisResponse
 
 from app.services.osint_service import (
     get_dns,
@@ -31,7 +31,7 @@ router = APIRouter(
 )
 
 
-@router.post("/domain")
+@router.post("/domain", response_model=OSINTAnalysisResponse)
 def analyze_domain(
     request: DomainRequest,
     db: Session = Depends(get_db),
@@ -66,6 +66,7 @@ def analyze_domain(
         db,
         organization_id,
         "OSINT_SCAN",
+        current_user["user_id"],
     )
 
     return result

@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.report import (
-    ReportRequest,
-)
+from app.schemas.report import ReportRequest, ReportGenerationResponse
 
 from app.services.report_service import (
     generate_pdf_report,
@@ -32,7 +30,7 @@ router = APIRouter(
 )
 
 
-@router.post("/generate")
+@router.post("/generate", response_model=ReportGenerationResponse)
 def generate_report(
     request: ReportRequest,
     db: Session = Depends(get_db),
@@ -59,6 +57,7 @@ def generate_report(
         db,
         organization_id,
         "PDF_REPORT",
+        current_user["user_id"],
     )
 
     return result

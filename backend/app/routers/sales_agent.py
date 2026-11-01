@@ -5,10 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.sales_agent import (
-    SalesPitchRequest,
-    FollowUpRequest,
-)
+from app.schemas.sales_agent import SalesPitchRequest, FollowUpRequest, SalesPitchResponse, FollowUpResponse, SalesPriorityResponse
 
 from app.services.sales_agent_service import (
     get_sales_priorities,
@@ -31,7 +28,7 @@ router = APIRouter(
 )
 
 
-@router.get("/priorities")
+@router.get("/priorities", response_model=list[SalesPriorityResponse])
 def priorities(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -46,7 +43,7 @@ def priorities(
     )
 
 
-@router.post("/pitch")
+@router.post("/pitch", response_model=SalesPitchResponse)
 def pitch(
     request: SalesPitchRequest,
     db: Session = Depends(get_db),
@@ -73,12 +70,13 @@ def pitch(
         db,
         organization_id,
         "SALES_PITCH",
+        current_user["user_id"],
     )
 
     return result
 
 
-@router.post("/followup")
+@router.post("/followup", response_model=FollowUpResponse)
 def followup(
     request: FollowUpRequest,
     db: Session = Depends(get_db),
@@ -104,6 +102,7 @@ def followup(
         db,
         organization_id,
         "SALES_FOLLOWUP",
+        current_user["user_id"],
     )
 
     return result

@@ -49,6 +49,7 @@ def update_user_role(
     role_id: int,
     organization_id: int,
     actor_user_id: int,
+    actor_role_name: str = "ORGANIZATION_OWNER",
 ):
     user = get_user(
         db,
@@ -57,10 +58,11 @@ def update_user_role(
     )
 
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found",
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_target_role = db.query(Role).filter(Role.id == user.role_id).first()
+    if actor_role_name != "SUPER_ADMIN" and current_target_role and current_target_role.name == "SUPER_ADMIN":
+        raise HTTPException(status_code=403, detail="Target user role cannot be modified")
 
     role = (
         db.query(Role)
@@ -76,6 +78,16 @@ def update_user_role(
             detail="Role not found",
         )
 
+    if user.id == actor_user_id:
+        raise HTTPException(status_code=400, detail="Cannot change your own role")
+
+    if actor_role_name != "SUPER_ADMIN" and role.name not in {
+        "MANAGER",
+        "SALES_REPRESENTATIVE",
+        "VIEWER",
+    }:
+        raise HTTPException(status_code=403, detail="Role assignment is not permitted")
+
     user.role_id = role_id
 
     db.commit()
@@ -90,8 +102,7 @@ def update_user_role(
         resource_type="USER",
         resource_id=user.id,
         description=(
-            f"Role changed for "
-            f"{user.email}"
+            "User role updated"
         ),
     )
 
@@ -104,6 +115,7 @@ def update_user_status(
     is_active: bool,
     organization_id: int,
     actor_user_id: int,
+    actor_role_name: str = "ORGANIZATION_OWNER",
 ):
     user = get_user(
         db,
@@ -112,10 +124,11 @@ def update_user_status(
     )
 
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found",
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_role = db.query(Role).filter(Role.id == user.role_id).first()
+    if actor_role_name != "SUPER_ADMIN" and target_role and target_role.name in {"SUPER_ADMIN", "ORGANIZATION_OWNER"}:
+        raise HTTPException(status_code=403, detail="Target user status cannot be changed")
 
     if user.id == actor_user_id:
         raise HTTPException(
@@ -137,8 +150,7 @@ def update_user_status(
         resource_type="USER",
         resource_id=user.id,
         description=(
-            f"Status changed for "
-            f"{user.email}"
+            "User status updated"
         ),
     )
 
@@ -150,6 +162,7 @@ def delete_user(
     user_id: int,
     organization_id: int,
     actor_user_id: int,
+    actor_role_name: str = "ORGANIZATION_OWNER",
 ):
     user = get_user(
         db,
@@ -158,10 +171,11 @@ def delete_user(
     )
 
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="User not found",
-        )
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target_role = db.query(Role).filter(Role.id == user.role_id).first()
+    if actor_role_name != "SUPER_ADMIN" and target_role and target_role.name in {"SUPER_ADMIN", "ORGANIZATION_OWNER"}:
+        raise HTTPException(status_code=403, detail="Target user cannot be deleted")
 
     if user.id == actor_user_id:
         raise HTTPException(
@@ -181,8 +195,7 @@ def delete_user(
         resource_type="USER",
         resource_id=user_id,
         description=(
-            f"Deleted user "
-            f"{user.email}"
+            "User deleted"
         ),
     )
 

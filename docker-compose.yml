@@ -1,0 +1,116 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: production
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the deployment environment}
+      REDIS_URL: redis://redis:6379/0
+      JWT_SIGNING_KEYS: ${JWT_SIGNING_KEYS:?Set JWT_SIGNING_KEYS in the deployment environment}
+      JWT_ACTIVE_KID: ${JWT_ACTIVE_KID:?Set JWT_ACTIVE_KID in the deployment environment}
+      CORS_ORIGINS: https://${DOMAIN:?Set DOMAIN}
+      TRUSTED_PROXY_HOSTS: 172.30.0.2
+      COOKIE_SECURE: "true"
+      COOKIE_SAMESITE: lax
+      REPORTS_DIR: /tmp/nexusintel-reports
+    expose:
+      - "8000"
+    networks:
+      edge:
+        ipv4_address: 172.30.0.3
+      data: {}
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_BASE_URL: /api
+    expose:
+      - "3000"
+    networks:
+      edge:
+        ipv4_address: 172.30.0.4
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  redis:
+    image: redis:7.4-alpine
+    command: ["redis-server", "--appendonly", "yes", "--save", "60", "1000"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.29-alpine
+    profiles: ["tls"]
+    environment:
+      DOMAIN: ${DOMAIN:?Set DOMAIN}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+      - ./deploy/nginx/proxy_params:/etc/nginx/proxy_params:ro
+      - certbot_www:/var/www/certbot:ro
+      - letsencrypt:/etc/letsencrypt:ro
+    networks:
+      edge:
+        ipv4_address: 172.30.0.2
+    depends_on:
+      - frontend
+      - backend
+    command: ["/bin/sh", "-c", "while :; do sleep 6h; nginx -s reload; done & exec nginx -g 'daemon off;'"]
+    restart: unless-stopped
+
+  nginx-bootstrap:
+    image: nginx:1.29-alpine
+    profiles: ["bootstrap"]
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/nginx.bootstrap.conf:/etc/nginx/conf.d/default.conf:ro
+      - certbot_www:/var/www/certbot:ro
+    restart: unless-stopped
+
+  certbot-renew:
+    image: certbot/certbot:v4.2.0
+    profiles: ["renewal"]
+    volumes:
+      - certbot_www:/var/www/certbot
+      - letsencrypt:/etc/letsencrypt
+    entrypoint: ["/bin/sh", "-c"]
+    command: "while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h; done"
+    restart: unless-stopped
+
+networks:
+  edge:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  data:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.31.0.0/24
+
+volumes:
+  redis_data:
+  certbot_www:
+  letsencrypt:

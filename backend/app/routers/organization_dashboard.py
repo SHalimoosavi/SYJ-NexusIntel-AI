@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
+from app.schemas.crm import OrganizationDashboardResponse
 
 from app.core.dependencies import (
     get_current_user,
@@ -19,7 +20,7 @@ router = APIRouter(
 )
 
 
-@router.get("")
+@router.get("", response_model=OrganizationDashboardResponse)
 def organization_dashboard(
     db: Session = Depends(get_db),
     current_user=Depends(

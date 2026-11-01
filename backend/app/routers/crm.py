@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
+from app.schemas.crm import CRMStatsResponse, CRMRevenueResponse, CRMPipelineResponse
 
 from app.core.dependencies import (
     get_current_user,
@@ -21,7 +22,7 @@ router = APIRouter(
 )
 
 
-@router.get("/stats")
+@router.get("/stats", response_model=CRMStatsResponse)
 def crm_stats(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -36,7 +37,7 @@ def crm_stats(
     )
 
 
-@router.get("/revenue")
+@router.get("/revenue", response_model=CRMRevenueResponse)
 def crm_revenue(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -51,7 +52,7 @@ def crm_revenue(
     )
 
 
-@router.get("/pipeline")
+@router.get("/pipeline", response_model=CRMPipelineResponse)
 def crm_pipeline(
     db: Session = Depends(get_db),
     current_user=Depends(

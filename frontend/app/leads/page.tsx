@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import CreateLeadForm from "@/components/leads/create-lead-form";
 import LeadTable from "@/components/leads/lead-table";
 import CRMKPICards from "@/components/leads/crm-kpi-cards";
@@ -9,33 +12,79 @@ import RelationshipIntelligence from "@/components/leads/relationship-intelligen
 import ActivityTimeline from "@/components/leads/activity-timeline";
 import LeadNotesPanel from "@/components/leads/lead-notes-panel";
 
+import type { Lead } from "@/lib/api";
+
 import {
   getLeads,
   getCRMRevenue,
   getRelationshipIntelligence,
 } from "@/lib/api";
 
-export default async function LeadsPage() {
-  const leads = await getLeads();
+type LeadsPageData = {
+  leads: Lead[];
+  revenue: Awaited<ReturnType<typeof getCRMRevenue>>;
+  relationship: Awaited<ReturnType<typeof getRelationshipIntelligence>>;
+};
 
-  const revenue =
-    await getCRMRevenue();
+export default function LeadsPage() {
+  const [data, setData] = useState<LeadsPageData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const relationship =
-    await getRelationshipIntelligence();
+  useEffect(() => {
+    let active = true;
+    Promise.all([
+      getLeads(),
+      getCRMRevenue(),
+      getRelationshipIntelligence(),
+    ])
+      .then(([leads, revenue, relationship]) => {
+        if (active) setData({ leads, revenue, relationship });
+      })
+      .catch((loadError: unknown) => {
+        if (active) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load CRM data"
+          );
+        }
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <main className="gradient-bg min-h-screen p-8">Loading CRM...</main>;
+  }
+  if (error || !data) {
+    return (
+      <main className="gradient-bg min-h-screen p-8">
+        <p role="alert" className="text-red-400">
+          {error || "CRM data is unavailable"}
+        </p>
+      </main>
+    );
+  }
+
+  const { leads, revenue, relationship } = data;
 
   const hotLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "HOT"
   ).length;
 
   const warmLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "WARM"
   ).length;
 
   const coldLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "COLD"
   ).length;
 
@@ -45,7 +94,7 @@ export default async function LeadsPage() {
           leads.reduce(
             (
               sum: number,
-              lead: any
+              lead: Lead
             ) =>
               sum +
               (lead.lead_score || 0),
@@ -64,7 +113,7 @@ export default async function LeadsPage() {
     );
 
   const overdueFollowups =
-    leads.filter((lead: any) => {
+    leads.filter((lead: Lead) => {
       if (!lead.next_followup) {
         return false;
       }

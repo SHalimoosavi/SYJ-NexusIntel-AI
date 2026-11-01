@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.business_discovery import (
-    BusinessSearchRequest,
-)
+from app.schemas.business_discovery import BusinessSearchRequest, BusinessDiscoveryResponse
 
 from app.services.business_discovery_service import (
     search_businesses,
@@ -23,7 +21,7 @@ router = APIRouter(
 )
 
 
-@router.post("/search")
+@router.post("/search", response_model=BusinessDiscoveryResponse)
 def discover_businesses(
     request: BusinessSearchRequest,
     db: Session = Depends(get_db),
