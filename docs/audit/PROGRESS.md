@@ -196,3 +196,12 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 - Draft PR #2 was created to trigger review/CI, then closed without merge immediately after the divergence was detected: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/2. It remains closed and unmerged.
 - No force-push, branch rewrite, rebase or cherry-pick has been performed. Do not attempt to merge PR #2. A clean backport/rebase strategy requires explicit owner approval after investigating why 413 commits are not reachable from main.
 - PR #1 (Phase 1 audit docs) remains open and unmerged.
+
+
+## Current checkpoint (2026-11-01)
+
+- Latest code cleanup commit: 14e705d61a004912029660046c5fd9205390bc5e.
+- The four failures observed on the older 310479 commit have been addressed in subsequent commits. The corrected current-head suite has **not** been executed by CI or locally, so no green claim is made.
+- Draft PR #2 is closed/unmerged because of the 413-ahead / 4-behind history divergence. No history rewrite or force push has been attempted.
+- No changes were made to main after the recorded accidental helper-file add/delete incident.
+- Phase 2 code and documentation remain on feat/security-hardening; licensing and packaging have not started.
