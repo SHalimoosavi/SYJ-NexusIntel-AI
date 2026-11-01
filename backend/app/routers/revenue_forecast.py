@@ -4,6 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
+from app.schemas.revenue_forecast import RevenueForecastResponse
 
 from app.core.dependencies import (
     get_current_user,
@@ -19,7 +20,7 @@ router = APIRouter(
 )
 
 
-@router.get("/dashboard")
+@router.get("/dashboard", response_model=RevenueForecastResponse)
 def revenue_dashboard(
     db: Session = Depends(get_db),
     current_user=Depends(
