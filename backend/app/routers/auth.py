@@ -23,6 +23,12 @@ def _login_attempt_key(client_ip: str, email: str) -> str:
     return f"login-attempt:{digest}"
 
 
+def _account_attempt_key(email: str) -> str:
+    normalized = email.strip().lower()
+    digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
+    return f"account-login-attempt:{digest}"
+
+
 def _invalid_credentials() -> HTTPException:
     return HTTPException(status_code=401, detail="Invalid credentials")
 
@@ -36,9 +42,10 @@ def login(
 ):
     client_ip = request.client.host if request.client else "unknown"
     attempt_key = _login_attempt_key(client_ip, credentials.email)
+    account_key = _account_attempt_key(credentials.email)
 
     try:
-        if rate_limit_manager.is_login_locked(attempt_key):
+        if rate_limit_manager.is_login_locked(attempt_key) or rate_limit_manager.is_login_locked(account_key):
             burn_password_check(credentials.password)
             time.sleep(0.5)
             raise _invalid_credentials()
@@ -50,6 +57,11 @@ def login(
                 threshold=_LOGIN_FAILURE_THRESHOLD,
                 lockout_seconds=_LOGIN_LOCKOUT_SECONDS,
             )
+            rate_limit_manager.record_login_failure(
+                account_key,
+                threshold=10,
+                lockout_seconds=_LOGIN_LOCKOUT_SECONDS,
+            )
             # Progressive delay is capped to avoid tying up workers indefinitely.
             time.sleep(min(0.25 * (2 ** min(failures - 1, 3)), 2.0))
             raise _invalid_credentials()
@@ -58,6 +70,7 @@ def login(
             raise _invalid_credentials()
 
         rate_limit_manager.clear_login_failures(attempt_key)
+        rate_limit_manager.clear_login_failures(account_key)
     except RateLimitBackendUnavailable:
         raise HTTPException(
             status_code=503,
