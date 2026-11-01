@@ -67,6 +67,9 @@ def test_current_user_uses_database_tenant_and_role(monkeypatch, db_session):
         "verify_token",
         lambda _value: {
             "user_id": user.id,
+            "token_type": "access",
+            "jti": "test-jti",
+            "session_version": 0,
             "organization_id": 99999,
             "role_id": 99999,
         },
@@ -86,7 +89,7 @@ def test_inactive_user_is_rejected(monkeypatch, db_session):
     monkeypatch.setattr(
         dependencies,
         "verify_token",
-        lambda _value: {"user_id": user.id},
+        lambda _value: {"user_id": user.id, "token_type": "access", "jti": "test-jti", "session_version": 0},
     )
     request = SimpleNamespace(cookies={}, method="GET", headers={})
     credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="test")
