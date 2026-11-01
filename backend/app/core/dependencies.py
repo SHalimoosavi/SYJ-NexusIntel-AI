@@ -52,6 +52,31 @@ def get_current_user(
     if role is None:
         raise HTTPException(status_code=403, detail="User role is unavailable")
 
+    try:
+        user_allowed, user_retry = rate_limit_manager.check(
+            f"user:{user.id}",
+            300,
+            60,
+        )
+        organization_allowed, organization_retry = rate_limit_manager.check(
+            f"organization:{user.organization_id}",
+            1800,
+            60,
+        )
+    except RateLimitBackendUnavailable:
+        raise HTTPException(
+            status_code=503,
+            detail="Rate limiting service unavailable",
+            headers={"Retry-After": "5"},
+        )
+
+    if not user_allowed or not organization_allowed:
+        raise HTTPException(
+            status_code=429,
+            detail="Rate limit exceeded. Please retry later.",
+            headers={"Retry-After": str(max(1, user_retry, organization_retry))},
+        )
+
     return {
         "user_id": user.id,
         "sub": user.email,
