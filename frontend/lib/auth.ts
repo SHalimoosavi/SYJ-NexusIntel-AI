@@ -1,6 +1,4 @@
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://syj-nexusintel-ai-production.up.railway.app";
+import { API_BASE } from "./config";
 
 /**
  * Browser authentication is held in an HttpOnly cookie scoped to the API.
