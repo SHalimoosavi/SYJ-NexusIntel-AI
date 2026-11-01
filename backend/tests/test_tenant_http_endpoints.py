@@ -245,6 +245,24 @@ def test_http_dashboard_and_analytics_use_only_current_tenant(tenant_client):
     assert crm.status_code == 200
     assert crm.json()["total_leads"] == 1
 
+    revenue = client.get("/crm/revenue")
+    assert revenue.status_code == 200
+    assert revenue.json()["pipeline_value"] == 100
+
+    pipeline = client.get("/crm/pipeline")
+    assert pipeline.status_code == 200
+    assert pipeline.json()["new"] == 1
+    assert pipeline.json()["won"] == 0
+
+    executive = client.get("/dashboard/executive")
+    assert executive.status_code == 200
+    assert executive.json()["leads"] == 1
+    assert executive.json()["crm"]["total_leads"] == 1
+
+    relationship = client.get("/relationship-intelligence")
+    assert relationship.status_code == 200
+    assert relationship.json()["total_leads"] == 1
+
     forecast = client.get("/revenue-forecast/dashboard")
     assert forecast.status_code == 200
     assert forecast.json()["pipeline_value"] == 100
