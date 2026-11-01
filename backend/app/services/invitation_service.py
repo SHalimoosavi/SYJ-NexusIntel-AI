@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.models.invitation import Invitation
 from app.models.user import User
+from app.models.role import Role
 from app.core.security import hash_password
 from app.services.audit_service import log_event
 
@@ -26,7 +27,20 @@ def create_invitation(
     organization_id: int,
     email: str,
     role_id: int,
+    actor_role_name: str = "ORGANIZATION_OWNER",
 ):
+    target_role = db.query(Role).filter(Role.id == role_id).first()
+    if target_role is None:
+        raise HTTPException(status_code=404, detail="Role not found")
+    allowed_for_owner = {"MANAGER", "SALES_REPRESENTATIVE", "VIEWER"}
+    allowed_for_manager = {"SALES_REPRESENTATIVE", "VIEWER"}
+    if actor_role_name == "ORGANIZATION_OWNER" and target_role.name not in allowed_for_owner:
+        raise HTTPException(status_code=403, detail="Role assignment is not permitted")
+    if actor_role_name == "MANAGER" and target_role.name not in allowed_for_manager:
+        raise HTTPException(status_code=403, detail="Role assignment is not permitted")
+    if actor_role_name not in {"SUPER_ADMIN", "ORGANIZATION_OWNER", "MANAGER"}:
+        raise HTTPException(status_code=403, detail="Invitation creation is not permitted")
+
     normalized_email = email.strip().lower()
     existing = (
         db.query(Invitation)
