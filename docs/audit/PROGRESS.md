@@ -187,3 +187,12 @@ At the time of this update, the branch had active/queued Security CI, Dependency
 - Dependency Audit and Secret Scan both passed at commit 310479203dd765f8ff5fa09c5ee1e8e0e59abe7f. An earlier dependency audit on older PyJWT 2.10.1 failed with advisories; requirements now pin PyJWT 2.15.0 and the subsequent dependency audit passed.
 - An earlier secret scan run passed; it is PR/push diff-scoped, not a replacement for the one-time history ledger. Do not repeat the historical scan.
 - The latest branch tests remain **NOT VERIFIED** until Security Tests passes on the current head. Docker/Nginx, PostgreSQL grants/trigger, Redis multi-replica and live proxy attack tests remain pending.
+
+
+## Branch/PR reconciliation (2026-11-01)
+
+- Current main head: e51373d276b443581367f2c19aa291ebf2a042d3. Current security branch head: fdc04b028963a28bb0f7dd75310a94f231d29ec2.
+- Compare reports the security branch is 413 commits ahead and 4 commits behind main; the diff spans 148 files. This is not a safe small PR and GitHub reports the PR mergeability as false.
+- Draft PR #2 was created to trigger review/CI, then closed without merge immediately after the divergence was detected: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/2. It remains closed and unmerged.
+- No force-push, branch rewrite, rebase or cherry-pick has been performed. Do not attempt to merge PR #2. A clean backport/rebase strategy requires explicit owner approval after investigating why 413 commits are not reachable from main.
+- PR #1 (Phase 1 audit docs) remains open and unmerged.
