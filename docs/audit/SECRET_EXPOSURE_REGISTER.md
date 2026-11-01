@@ -34,3 +34,10 @@ The later commit `827aad3701b3e25843d56804e6ee21e8e2dab55f` moved the setting to
 ## Scanner interpretation
 
 The earlier ad-hoc keyword scan produced false positives for ordinary variable names, Pydantic schema fields, OpenAPI JSON, docs and API contract strings. A keyword match is not a secret finding. The maintained scanner uses Gitleaks defaults plus assignment-shaped, high-entropy literal patterns and private-key/JWT-specific patterns. Every hit still requires human classification.
+
+
+## Automated full-history scan observation (2026-11-01)
+
+A one-time Gitleaks CLI scan ran against the branch's complete Git history and reported **2 matches across 322 commits**. The job's JSON report was written to the ephemeral runner filesystem and was not uploaded or summarized with path/commit/line metadata. The only independently confirmed credential exposure remains the historical JWT signing key listed above. The second match, and whether the two matches represent distinct values or repeated occurrences, is **UNVERIFIED**. Do not infer an additional credential type from the count.
+
+The full-history scan will not be repeated under the no-rescan rule. Continuous CI now scans new changes/diffs only. The scan result is a release blocker until the finding metadata is available through an already-retained report or a separately authorized targeted investigation. The historical JWT key remains compromised regardless of whether it was deployed.
