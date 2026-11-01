@@ -29,6 +29,13 @@ from app.services.activity_service import (
 )
 from app.services.agent_memory_service import get_history, get_latest
 from app.services.audit_dashboard_service import get_audit_logs, get_event_summary
+from app.services.crm_service import get_crm_stats, get_revenue_metrics, get_pipeline_metrics
+from app.services.executive_dashboard_service import get_executive_dashboard
+from app.services.executive_intelligence_service import get_top_opportunities, get_risks
+from app.services.organization_dashboard_service import get_organization_dashboard
+from app.services.relationship_intelligence import get_relationship_intelligence
+from app.services.revenue_forecast_service import calculate_forecast
+from app.services.sales_agent_service import get_sales_priorities
 from app.services.invitation_service import get_invitations
 from app.services.lead_note_service import create_note, delete_note, get_lead_notes
 from app.services.lead_service import delete_lead, get_all_leads, get_lead, update_lead_pipeline
@@ -347,3 +354,25 @@ def test_api_idor_guessed_ids_are_blocked_for_tenant_a(tenant_db):
         assert all("organization_id" not in row for row in memory_response.json())
     finally:
         app.dependency_overrides.clear()
+
+
+
+def test_analytics_service_reads_are_scoped_to_the_supplied_organization(tenant_db):
+    db = tenant_db["db"]
+    organization_id = tenant_db["org_a"].id
+    analytics = [
+        get_crm_stats(db, organization_id),
+        get_revenue_metrics(db, organization_id),
+        get_pipeline_metrics(db, organization_id),
+        get_executive_dashboard(db, organization_id),
+        get_top_opportunities(db, organization_id),
+        get_risks(db, organization_id),
+        get_organization_dashboard(db, organization_id),
+        get_relationship_intelligence(db, organization_id),
+        calculate_forecast(db, organization_id),
+        get_sales_priorities(db, organization_id),
+    ]
+    rendered = repr(analytics)
+    assert "Lead B" not in rendered
+    assert "B private note" not in rendered
+    assert "B_EVENT" not in rendered
