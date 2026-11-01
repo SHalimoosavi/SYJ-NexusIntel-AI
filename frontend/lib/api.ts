@@ -1,8 +1,7 @@
 import { authHeaders } from "./auth";
+import { API_BASE } from "./config";
 
-export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  "https://syj-nexusintel-ai-production.up.railway.app";
+export { API_BASE };
 
 async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
   const options: RequestInit = {
