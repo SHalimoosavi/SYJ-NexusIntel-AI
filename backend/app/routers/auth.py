@@ -192,8 +192,9 @@ def logout(request: Request, response: Response):
     if request.cookies.get("access_token") or request.cookies.get("refresh_token"):
         _require_trusted_origin(request)
 
-    token = request.cookies.get("access_token") or request.cookies.get("refresh_token")
-    payload = verify_token(token) if token else None
+    access_payload = verify_token(request.cookies.get("access_token", ""))
+    refresh_payload = verify_token(request.cookies.get("refresh_token", ""))
+    payload = access_payload or refresh_payload
     user_id = payload.get("user_id") if payload else None
     if isinstance(user_id, int):
         try:
@@ -225,9 +226,10 @@ def change_password(
         raise HTTPException(status_code=400, detail="New password must be different")
 
     user.hashed_password = hash_password(request.new_password)
-    db.commit()
 
     try:
+        # Revoke existing tokens before committing the new password. If Redis
+        # is unavailable, the password update is not committed.
         rate_limit_manager.revoke_user_sessions(user.id)
     except RateLimitBackendUnavailable:
         raise HTTPException(
@@ -236,6 +238,7 @@ def change_password(
             headers={"Retry-After": "5"},
         )
 
+    db.commit()
     options = _cookie_options(0)
     response.delete_cookie(key="access_token", **options)
     response.delete_cookie(key="refresh_token", **options)
