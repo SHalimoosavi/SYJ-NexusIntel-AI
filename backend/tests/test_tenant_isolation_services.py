@@ -193,3 +193,26 @@ def test_audit_rows_are_append_only_through_orm(tenant_db):
     with pytest.raises(ValueError, match="append-only"):
         db.delete(audit)
         db.flush()
+
+
+def test_sensitive_note_and_activity_mutations_are_audited_with_actor(tenant_db):
+    db, org, user, lead = tenant_db.db, tenant_db.a, tenant_db.user_a, tenant_db.lead_a
+    create_note(
+        db,
+        SimpleNamespace(lead_id=lead.id, note="Audit test note", note_type="GENERAL"),
+        org.id,
+        user.id,
+    )
+    create_activity(
+        db,
+        SimpleNamespace(lead_id=lead.id, activity_type="CALL", description="Audit test"),
+        org.id,
+        user.id,
+    )
+    rows = get_audit_logs(db, org.id)
+    actor_events = {
+        (row.event_type, row.user_id)
+        for row in rows
+    }
+    assert ("LEAD_NOTE_CREATED", user.id) in actor_events
+    assert ("ACTIVITY_CREATED", user.id) in actor_events
