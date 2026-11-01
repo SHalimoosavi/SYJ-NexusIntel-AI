@@ -57,6 +57,7 @@ def generate_report(
         db,
         organization_id,
         "PDF_REPORT",
+        current_user["user_id"],
     )
 
     return result
