@@ -9,6 +9,8 @@ import RelationshipIntelligence from "@/components/leads/relationship-intelligen
 import ActivityTimeline from "@/components/leads/activity-timeline";
 import LeadNotesPanel from "@/components/leads/lead-notes-panel";
 
+import type { Lead } from "@/lib/api";
+
 import {
   getLeads,
   getCRMRevenue,
@@ -25,7 +27,7 @@ export default async function LeadsPage() {
     await getRelationshipIntelligence();
 
   const hotLeads = leads.filter(
-    (l: any) =>
+    (l: Lead) =>
       l.priority === "HOT"
   ).length;
 
@@ -45,7 +47,7 @@ export default async function LeadsPage() {
           leads.reduce(
             (
               sum: number,
-              lead: any
+              lead: Lead
             ) =>
               sum +
               (lead.lead_score || 0),
