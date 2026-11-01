@@ -16,6 +16,49 @@ REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 JWT_ISSUER = os.getenv("JWT_ISSUER", "syj-nexusintel-ai")
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "syj-nexusintel-ai-client")
 _KID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_KNOWN_PLACEHOLDER_SECRETS = {
+    "secret",
+    "password",
+    "changeme",
+    "change-me",
+    "your-secret",
+    "your-secret-key",
+    "your-key",
+    "replace-me",
+    "placeholder",
+    "development-secret",
+    "default-secret",
+    "test-secret",
+    "jwt-secret",
+    "secret-key",
+    "secretkey",
+    "12345678901234567890123456789012",
+}
+_PLACEHOLDER_MARKERS = (
+    "replace_with",
+    "replace-with",
+    "your_secret",
+    "your-secret",
+    "your_key",
+    "your-key",
+    "change_me",
+    "change-me",
+    "placeholder",
+    "example_secret",
+    "default_secret",
+    "sample_secret",
+    "dummy_secret",
+)
+
+
+def _is_placeholder_secret(secret: str) -> bool:
+    normalized = secret.strip().casefold()
+    if normalized in _KNOWN_PLACEHOLDER_SECRETS:
+        return True
+    if any(marker in normalized for marker in _PLACEHOLDER_MARKERS):
+        return True
+    # Reject obvious repeated-character fixtures such as "TTTT...".
+    return len(set(normalized)) < 8
 
 
 def _load_signing_keys() -> tuple[dict[str, str], str]:
@@ -38,6 +81,10 @@ def _load_signing_keys() -> tuple[dict[str, str], str]:
             raise RuntimeError("JWT_SIGNING_KEYS contains an invalid key ID.")
         if not isinstance(secret, str) or len(secret.encode("utf-8")) < 32:
             raise RuntimeError(f"JWT key '{kid}' must contain at least 32 UTF-8 bytes.")
+        if _is_placeholder_secret(secret):
+            raise RuntimeError(
+                f"JWT key '{kid}' is a known placeholder/default or has insufficient entropy."
+            )
         keys[kid] = secret
     if active_kid not in keys:
         raise RuntimeError("JWT_ACTIVE_KID must identify a configured signing key.")

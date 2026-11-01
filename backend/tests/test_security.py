@@ -2,6 +2,8 @@ import json
 import os
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 os.environ.setdefault("JWT_ACTIVE_KID", "test-v1")
 os.environ.setdefault("JWT_SIGNING_KEYS", json.dumps({"test-v1": "T" * 64}))
 
@@ -74,3 +76,36 @@ def test_rotation_accepts_previous_key_only_while_configured(monkeypatch):
     assert security.verify_token(prior)["user_id"] == 23
     monkeypatch.setattr(security, "JWT_SIGNING_KEYS", {"active-new": active})
     assert security.verify_token(prior) is None
+
+
+@pytest.mark.parametrize(
+    "secret",
+    [
+        "REPLACE_WITH_AT_LEAST_32_RANDOM_BYTES",
+        "change-me-" + ("Q" * 48),
+        "T" * 64,
+        "password",
+    ],
+)
+def test_placeholder_or_low_entropy_signing_key_fails_startup(monkeypatch, secret):
+    monkeypatch.setenv(
+        "JWT_SIGNING_KEYS",
+        json.dumps({"candidate": secret}),
+    )
+    monkeypatch.setenv("JWT_ACTIVE_KID", "candidate")
+    with pytest.raises(RuntimeError, match="placeholder/default|entropy"):
+        security._load_signing_keys()
+
+
+def test_signing_key_shorter_than_32_utf8_bytes_fails_startup(monkeypatch):
+    monkeypatch.setenv("JWT_SIGNING_KEYS", json.dumps({"candidate": "S" * 31}))
+    monkeypatch.setenv("JWT_ACTIVE_KID", "candidate")
+    with pytest.raises(RuntimeError, match="at least 32 UTF-8 bytes"):
+        security._load_signing_keys()
+
+
+def test_missing_signing_key_fails_startup(monkeypatch):
+    monkeypatch.delenv("JWT_SIGNING_KEYS", raising=False)
+    monkeypatch.setenv("JWT_ACTIVE_KID", "candidate")
+    with pytest.raises(RuntimeError, match="must be configured"):
+        security._load_signing_keys()
