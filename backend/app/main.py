@@ -9,6 +9,8 @@ from fastapi.responses import JSONResponse
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -133,17 +135,13 @@ from app.routers.users import (
     router as users_router
 )
 
-Base.metadata.create_all(bind=engine)
-
-db = SessionLocal()
-
-try:
-    seed_roles(db)
-
-finally:
-    db.close()
-
-APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
+if APP_ENV in {"development", "dev", "local", "desktop", "test"}:
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_roles(db)
+    finally:
+        db.close()
 TRUSTED_PROXY_HOSTS = [
     host.strip()
     for host in os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1,::1").split(",")
