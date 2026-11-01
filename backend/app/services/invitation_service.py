@@ -28,6 +28,7 @@ def create_invitation(
     email: str,
     role_id: int,
     actor_role_name: str = "ORGANIZATION_OWNER",
+    actor_user_id: int | None = None,
 ):
     target_role = db.query(Role).filter(Role.id == role_id).first()
     if target_role is None:
@@ -69,7 +70,7 @@ def create_invitation(
     log_event(
         db=db,
         organization_id=organization_id,
-        user_id=None,
+        user_id=actor_user_id,
         event_type="INVITATION_CREATED",
         resource_type="INVITATION",
         resource_id=invitation.id,
