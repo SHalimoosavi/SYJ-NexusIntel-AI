@@ -38,9 +38,6 @@ def test_https_connection_is_pinned_to_validated_ip_and_host(monkeypatch):
         def read(self, amount, decode_content=True):
             return self.data[:amount]
 
-        def read(self, amount, decode_content=True):
-            return self.data[:amount]
-
         def release_conn(self):
             pass
 
@@ -74,6 +71,9 @@ def test_redirect_to_metadata_or_private_ip_is_rejected(monkeypatch):
         status = 302
         headers = {"Location": "http://169.254.169.254/latest/meta-data"}
         data = b""
+
+        def read(self, amount, decode_content=True):
+            return b""
 
         def release_conn(self):
             pass
@@ -110,6 +110,9 @@ def test_dns_rebinding_after_initial_resolution_cannot_change_pinned_destination
         status = 200
         headers = {}
         data = b"ok"
+
+        def read(self, amount, decode_content=True):
+            return self.data[:amount]
 
         def release_conn(self):
             pass
@@ -160,4 +163,4 @@ def test_outbound_response_size_is_bounded(monkeypatch):
     monkeypatch.setattr(socket, "getaddrinfo", lambda *_args, **_kwargs: [_addr("93.184.216.34")])
     monkeypatch.setattr(safe_http, "HTTPSConnectionPool", FakePool)
     with pytest.raises(ValueError, match="response exceeded"):
-        safe_http.safe_get("public-example.com", max_response_bytes=32)
+        safe_get("public-example.com", max_response_bytes=32)
