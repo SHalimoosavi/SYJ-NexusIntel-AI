@@ -37,9 +37,8 @@ def add_lead(
     return create_lead(
         db,
         lead,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
 
@@ -71,9 +70,8 @@ def update_pipeline(
         db,
         lead_id,
         data,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
     if not lead:
@@ -96,9 +94,8 @@ def remove_lead(
     deleted = delete_lead(
         db,
         lead_id,
-        current_user[
-            "organization_id"
-        ],
+        current_user["organization_id"],
+        current_user["user_id"],
     )
 
     if not deleted:
