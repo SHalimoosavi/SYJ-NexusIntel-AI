@@ -10,3 +10,16 @@ class DomainRequest(BaseModel):
     @classmethod
     def validate_public_domain(cls, value: str) -> str:
         return validate_domain(value)
+
+
+from typing import Any
+
+
+class OSINTAnalysisResponse(BaseModel):
+    domain: str
+    ip: str | None = None
+    whois: dict[str, Any]
+    dns: list[str] | dict[str, Any]
+    ssl: dict[str, Any]
+    security_headers: dict[str, Any]
+    seo: dict[str, Any]
