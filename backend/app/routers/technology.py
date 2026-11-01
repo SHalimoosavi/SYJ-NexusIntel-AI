@@ -51,6 +51,7 @@ def technology_detection(
         db,
         organization_id,
         "TECHNOLOGY_DETECTION",
+        current_user["user_id"],
     )
 
     return result
