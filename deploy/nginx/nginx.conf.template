@@ -1,5 +1,10 @@
 server_tokens off;
 
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
 limit_req_zone $binary_remote_addr zone=api_per_ip:10m rate=15r/s;
 limit_req_zone $binary_remote_addr zone=auth_per_ip:10m rate=1r/s;
 limit_conn_zone $binary_remote_addr zone=connections_per_ip:10m;
@@ -71,7 +76,7 @@ server {
         include /etc/nginx/proxy_params;
     }
 
-    location ^~ /api/ {
+    location /api/ {
         limit_req zone=api_per_ip burst=30 nodelay;
         limit_conn connections_per_ip 20;
         rewrite ^/api(/.*)$ $1 break;
