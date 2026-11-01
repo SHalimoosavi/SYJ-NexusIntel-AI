@@ -1,4 +1,6 @@
-from fastapi import Depends, HTTPException
+import os
+
+from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
@@ -8,16 +10,34 @@ from app.models.role import Role
 from app.models.user import User
 
 security = HTTPBearer(auto_error=False)
+_UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
+
+
+def allowed_origins() -> set[str]:
+    configured = os.getenv(
+        "CORS_ORIGINS",
+        "https://syj-nexus-intel-ai.vercel.app,http://localhost:3000",
+    )
+    return {origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()}
 
 
 def get_current_user(
+    request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
     db: Session = Depends(get_db),
 ):
-    if credentials is None:
+    bearer_token = credentials.credentials if credentials else None
+    cookie_token = request.cookies.get("access_token")
+    token = bearer_token or cookie_token
+    if not token:
         raise HTTPException(status_code=401, detail="Authentication required")
 
-    payload = verify_token(credentials.credentials)
+    if cookie_token and not bearer_token and request.method in _UNSAFE_METHODS:
+        origin = request.headers.get("origin", "").rstrip("/")
+        if not origin or origin not in allowed_origins():
+            raise HTTPException(status_code=403, detail="Untrusted request origin")
+
+    payload = verify_token(token)
     if not payload or not isinstance(payload.get("user_id"), int):
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
@@ -31,7 +51,6 @@ def get_current_user(
     if role is None:
         raise HTTPException(status_code=403, detail="User role is unavailable")
 
-    # Authorization context comes from current DB state, not stale JWT claims.
     return {
         "user_id": user.id,
         "sub": user.email,
