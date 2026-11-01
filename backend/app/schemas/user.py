@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field, EmailStr
-from pydantic import EmailStr
 
 
 class UserLogin(BaseModel):
