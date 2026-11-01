@@ -4,7 +4,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
-from app.schemas.executive_intelligence import ExecutiveBriefingResponse
+from app.schemas.executive_intelligence import (\n    ExecutiveBriefingResponse,\n    OpportunitySummaryResponse,\n    ExecutiveRisksResponse,\n)
 
 from app.core.feature_guard import (
     require_feature,
@@ -67,7 +67,7 @@ def executive_briefing(
     return result
 
 
-@router.get("/opportunities")
+@router.get("/opportunities", response_model=list[OpportunitySummaryResponse])
 def opportunities(
     db: Session = Depends(get_db),
     current_user=Depends(
@@ -99,7 +99,7 @@ def opportunities(
     return result
 
 
-@router.get("/risks")
+@router.get("/risks", response_model=ExecutiveRisksResponse)
 def risks(
     db: Session = Depends(get_db),
     current_user=Depends(
