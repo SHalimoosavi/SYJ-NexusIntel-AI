@@ -32,7 +32,7 @@ router = APIRouter(
 )
 
 
-@router.post("/generate")
+@router.post("/generate", response_model=ReportGenerationResponse)
 def generate_report(
     request: ReportRequest,
     db: Session = Depends(get_db),
