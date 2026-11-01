@@ -4,7 +4,7 @@ import ssl
 import dns.resolver
 from bs4 import BeautifulSoup
 
-from app.core.safe_http import assert_public_domain, safe_get
+from app.core.safe_http import assert_public_domain, resolve_public_addresses, safe_get
 
 
 def get_whois(domain: str):
@@ -39,19 +39,19 @@ def get_dns(domain: str):
 
 def get_ip(domain: str):
     try:
-        host = assert_public_domain(domain)
-        return socket.gethostbyname(host)
+        _host, addresses = resolve_public_addresses(domain)
+        return addresses[0]
     except Exception:
         return None
 
 
 def get_ssl_info(domain: str):
     try:
-        host = assert_public_domain(domain)
+        host, addresses = resolve_public_addresses(domain)
         context = ssl.create_default_context()
         with context.wrap_socket(socket.socket(), server_hostname=host) as sock:
             sock.settimeout(5)
-            sock.connect((host, 443))
+            sock.connect((addresses[0], 443))
             cert = sock.getpeercert()
         return {"valid": True, "issuer": str(cert.get("issuer"))}
     except Exception:
