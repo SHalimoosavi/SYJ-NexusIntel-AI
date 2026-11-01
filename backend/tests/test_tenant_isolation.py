@@ -327,7 +327,7 @@ def test_api_idor_guessed_ids_are_blocked_for_tenant_a(tenant_db):
         assert all(row["event_type"] == "A_EVENT" for row in audit_response.json())
         invitation_response = client.get("/invitations")
         assert invitation_response.status_code == 200
-        assert all(row["organization_id"] == org_a.id for row in invitation_response.json())
+        assert all("organization_id" not in row for row in invitation_response.json())
         memory_response = client.get("/agent-memory/history/a.example")
         assert memory_response.status_code == 200
         assert all(row["id"] == tenant_db["memory_a"].id for row in memory_response.json())
