@@ -15,7 +15,7 @@ Create a dedicated login role through the database provider's secret-management 
 
 Do not grant UPDATE, DELETE, TRUNCATE, ALTER, DROP, CREATE or ownership on `audit_logs`. SQLAlchemy `before_update`/`before_delete` hooks are a second line of defense only; DB privileges are the authoritative boundary.
 
-The `backend/sql/audit_log_immutability.sql` script adds a PostgreSQL trigger that rejects row UPDATE/DELETE. Apply it using a migration/DBA role after confirming the table and application role name.
+Apply `backend/sql/application_role_grants.sql` and `backend/sql/audit_log_immutability.sql` using a migration/DBA role. Confirm the runtime role is `nexusintel_runtime`, is not table owner, and has only SELECT/INSERT on audit_logs.
 
 ## Backup
 
