@@ -51,6 +51,7 @@ def opportunity_analysis(
         db,
         organization_id,
         "OPPORTUNITY_ANALYSIS",
+        current_user["user_id"],
     )
 
     return result
