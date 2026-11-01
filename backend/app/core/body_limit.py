@@ -1,6 +1,4 @@
 """Pure ASGI request-body size limit for hosted and direct API ingress."""
-from collections.abc import Awaitable, Callable
-
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 
