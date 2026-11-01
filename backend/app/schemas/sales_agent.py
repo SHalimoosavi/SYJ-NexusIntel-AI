@@ -27,7 +27,7 @@ class SalesPriorityResponse(BaseModel):
     id: int
     business_name: str
     estimated_value: int
-    pipeline_stage: str
+    pipeline_stage: str | None = None
     score: int
     priority: str
     next_followup: str | None = None
