@@ -51,6 +51,7 @@ def analyze_lead(
         db,
         organization_id,
         "LEAD_QUALIFICATION",
+        current_user["user_id"],
     )
 
     return result
