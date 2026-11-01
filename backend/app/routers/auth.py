@@ -40,6 +40,15 @@ def login(
     response: Response,
     db: Session = Depends(get_db),
 ):
+    origin = request.headers.get("origin")
+    configured_origins = {
+        value.strip().rstrip("/")
+        for value in os.getenv("CORS_ORIGINS", "").split(",")
+        if value.strip()
+    }
+    if origin and origin.rstrip("/") not in configured_origins:
+        raise HTTPException(status_code=403, detail="Untrusted request origin")
+
     client_ip = request.client.host if request.client else "unknown"
     attempt_key = _login_attempt_key(client_ip, credentials.email)
     account_key = _account_attempt_key(credentials.email)
@@ -97,7 +106,16 @@ def login(
 
 
 @router.post("/logout")
-def logout(response: Response):
+def logout(request: Request, response: Response):
+    if request.cookies.get("access_token"):
+        origin = request.headers.get("origin", "").rstrip("/")
+        allowed = {
+            value.strip().rstrip("/")
+            for value in os.getenv("CORS_ORIGINS", "").split(",")
+            if value.strip()
+        }
+        if not origin or origin not in allowed:
+            raise HTTPException(status_code=403, detail="Untrusted request origin")
     response.delete_cookie(
         key="access_token",
         path="/",
