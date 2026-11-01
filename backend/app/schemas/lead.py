@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
@@ -56,6 +58,6 @@ class LeadResponse(BaseModel):
     actual_revenue: int
     last_contacted: str | None = None
     next_followup: str | None = None
-    created_at: str | None = None
+    created_at: datetime | None = None
 
     model_config = ConfigDict(from_attributes=True)
