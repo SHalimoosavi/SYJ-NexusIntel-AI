@@ -102,7 +102,7 @@ def tenant_db():
     )
     memory_a = AgentMemory(
         organization_id=org_a.id,
-        domain="a.example",
+        domain="a.example.com",
         overall_score=80,
         priority="HOT",
         estimated_value="100",
@@ -110,7 +110,7 @@ def tenant_db():
     )
     memory_b = AgentMemory(
         organization_id=org_b.id,
-        domain="a.example",
+        domain="a.example.com",
         overall_score=90,
         priority="HOT",
         estimated_value="200",
@@ -234,8 +234,8 @@ def test_notes_and_activities_are_tenant_scoped(tenant_db):
 
 def test_agent_memory_audit_invitation_and_subscription_are_scoped(tenant_db):
     db, org_a, org_b = tenant_db["db"], tenant_db["org_a"], tenant_db["org_b"]
-    assert [row.id for row in get_history(db, "a.example", org_a.id)] == [tenant_db["memory_a"].id]
-    assert get_latest(db, "a.example", org_a.id).id == tenant_db["memory_a"].id
+    assert [row.id for row in get_history(db, "a.example.com", org_a.id)] == [tenant_db["memory_a"].id]
+    assert get_latest(db, "a.example.com", org_a.id).id == tenant_db["memory_a"].id
     assert [row.event_type for row in get_audit_logs(db, org_a.id)] == ["A_EVENT"]
     assert get_event_summary(db, org_a.id) == {"A_EVENT": 1}
     assert [row.id for row in get_invitations(db, org_a.id)] == [tenant_db["invitation_a"].id]
@@ -348,7 +348,7 @@ def test_api_idor_guessed_ids_are_blocked_for_tenant_a(tenant_db):
         assert invitation_response.status_code == 200
         assert all("organization_id" not in row and "token" not in row for row in invitation_response.json())
 
-        memory_response = client.get("/agent-memory/history/a.example")
+        memory_response = client.get("/agent-memory/history/a.example.com")
         assert memory_response.status_code == 200
         assert all(row["id"] == tenant_db["memory_a"].id for row in memory_response.json())
         assert all("organization_id" not in row for row in memory_response.json())
