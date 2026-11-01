@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.intelligence import (
-    IntelligenceRequest,
-)
+from app.schemas.intelligence import IntelligenceRequest, IntelligenceResponse
 
 from app.services.intelligence_service import (
     generate_intelligence_report,
@@ -28,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.post("/report")
+@router.post("/report", response_model=IntelligenceResponse)
 def intelligence_report(
     request: IntelligenceRequest,
     db: Session = Depends(get_db),
