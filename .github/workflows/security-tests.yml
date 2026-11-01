@@ -16,6 +16,7 @@ jobs:
   backend-security-tests:
     runs-on: ubuntu-latest
     env:
+      PYTHONPATH: ${{ github.workspace }}/backend
       APP_ENV: test
       DATABASE_URL: sqlite://
       JWT_ACTIVE_KID: test-v1
@@ -53,4 +54,6 @@ jobs:
         run: npm run lint
       - name: Build frontend
         working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
         run: npm run build
