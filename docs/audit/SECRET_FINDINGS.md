@@ -65,7 +65,7 @@ The current backend example uses a local SQLite URL and a clearly marked JWT pla
 
 The line assigns the output of a Python secrets.token_urlsafe(48) command substitution to a shell variable. The original broad custom regex captured part of the shell expression as though it were a literal. The full-history scan initially reported two matches; the second match was traced to this command. The rule was narrowed to accept only static literal characters in commit 28e0b81126ad1eadeca5a89e606cacefc6998a6d.
 
-The subsequent full-history scan run 41335108048 completed successfully and reported exactly one finding: the confirmed historical JWT key at backend/app/core/security.py:6, commit c06218f640b5765746cf98916f3a92792992dfb7. The false positive no longer appears.
+The subsequent full-history scan run 41335108048 completed successfully and reported exactly one finding: the confirmed historical JWT key at backend/app/core/security.py:6, commit c06218f640b5765746cf98916f3a92792992dfb7. The final-branch full-history audit run 41335412531 on head 7cb814a454d6e708e550f1da10a34ba93803a5ac also completed successfully and reported exactly that one historical JWT finding; the dynamic-command false positive no longer appears.
 
 ## 4. Current secret hygiene controls
 
@@ -94,5 +94,5 @@ The subsequent full-history scan run 41335108048 completed successfully and repo
 
 1. Owner: rotate the historical JWT key and invalidate all outstanding tokens/sessions; record date/environment only.
 2. Owner: rotate/retire the historical PostgreSQL username/password unless positively confirmed synthetic and never reused.
-3. Recheck the latest CI run after commit 4198d384e64be43210771f7eb0548ae122964fc8; earlier test run failure was caused by a static fixture being mistakenly included in the negative test set and was corrected in that commit.
+3. Final source-head CI at 7cb814a454d6e708e550f1da10a34ba93803a5ac passed: backend pytest 104 passed; frontend lint and Next.js build passed; dependency audit and diff Gitleaks scan passed. Backend lint/type-check remain unconfigured and therefore UNVERIFIED.
 4. History purge remains a separate decision and is **NOT APPROVED** by this task. Do not rewrite history or delete tags/branches.

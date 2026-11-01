@@ -10,9 +10,9 @@
 - main remains at e51373d276b443581367f2c19aa291ebf2a042d3; no commit was made to main.
 - main was merged into feat/security-hardening with a normal merge commit: 5418ae47489777208f8de430f719d9bf9d1c4610.
 - Merge PR #3: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/3 — merged. GitHub reported zero changed files after refresh; no conflicts or conflict resolutions occurred. Both merge parents are preserved.
-- After merge and hygiene commits through source checkpoint 4198d384e64be43210771f7eb0548ae122964fc8, feat/security-hardening is 430 commits ahead / 0 behind main; merge base is now main at e51373d276b443581367f2c19aa291ebf2a042d3.
+- After merge and hygiene commits plus audit-document checkpoint 7cb814a454d6e708e550f1da10a34ba93803a5ac, feat/security-hardening is 431 commits ahead / 0 behind main; merge base is now main at e51373d276b443581367f2c19aa291ebf2a042d3.
 - audit/baseline was not changed. No branch or tag was deleted. No rebase, squash, force-push, cherry-pick or history rewrite was performed.
-- A final review PR from feat/security-hardening to main is still to be opened after the final documentation/CI checkpoint. It must remain unmerged.
+- Final review PR #4 from feat/security-hardening to main is open and unmerged: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/4. GitHub reports mergeable=true. It must remain unmerged.
 
 ## Step A — secret exposure and hygiene
 
@@ -38,9 +38,8 @@ The full findings, evidence, limitations and rotation actions are in docs/audit/
 ### Gitleaks historical rescan
 
 - Full-history metadata workflow run 41334988672 initially reported two matches. The second was identified from repository evidence as the dynamic command in docs/audit/AUDIT_REPORT.md:199, commit 6b66d83191f99fce235aa7262c0863e8a17e5077, rule syj-legacy-jwt-secret-assignment; it was not a credential literal.
-- After narrowing the rule, run 41335108048 completed successfully and reported one finding only: the confirmed historical JWT key at backend/app/core/security.py:6, commit c06218f640b5765746cf98916f3a92792992dfb7.
-- The latest code/test fixture update at 4198d384e64be43210771f7eb0548ae122964fc8 triggered another full-history scan, run 41335252458; its final status is pending at this checkpoint.
-- Diff Gitleaks run 41335108022 passed at commit 28e0b81126ad1eadeca5a89e606cacefc6998a6d. Latest push scan run 41335252481 is pending at this checkpoint.
+- After narrowing the rule, run 41335108048 completed successfully and reported one finding only: the confirmed historical JWT key at backend/app/core/security.py:6, commit c06218f640b5765746cf98916f3a92792992dfb7. Final-branch run 41335412531 repeated this result on head 7cb814a454d6e708e550f1da10a34ba93803a5ac.
+- Final full-history Gitleaks run 41335412531 passed and reported one historical finding (the JWT key above). Diff Gitleaks push run 41335412600 and PR run 41335433831 both passed.
 - No credential was tested against a live service. No history purge was performed or approved.
 
 ## Rotation status — owner action required
@@ -54,16 +53,20 @@ Follow docs/audit/KEY_ROTATION.md. Never paste keys/passwords into ChatGPT, GitH
 
 ## Verification status
 
-CI was triggered by the hygiene commits. The latest run set at source commit 4198d384e64be43210771f7eb0548ae122964fc8 was queued at the time of this checkpoint:
+Final CI on PR #4 head 7cb814a454d6e708e550f1da10a34ba93803a5ac:
 
-- Security Tests: run 41335252469 — pending.
-- Dependency Audit: run 41335252480 — pending.
-- Secret Scan: run 41335252481 — pending.
-- Gitleaks Full-History Metadata Audit: run 41335252458 — pending.
+- Backend security regression suite: **104 passed, 209 warnings in 2.66s** (push run 41335412532; PR run 41335433884 passed).
+- Frontend ESLint: **passed** (push run 41335412532; PR run 41335433884 passed).
+- Frontend Next.js production build / TypeScript build validation: **passed** (same runs).
+- Dependency audit: **passed** (push run 41335412509; PR run 41335433890 passed).
+- Diff Gitleaks scan: **passed** (push run 41335412600; PR run 41335433831 passed).
+- Full-history Gitleaks metadata audit: **passed as a workflow**; one expected historical JWT finding remains (run 41335412531).
+- Backend lint/type-check: **UNVERIFIED** — the repository does not define a backend lint/type-check command or pinned backend lint/type-check tools.
+- Explicit frontend tsc --noEmit: not configured separately; Next.js production build passed and is the existing TypeScript validation path.
 
-An earlier Security Tests run 41335108080 failed because a static test fixture was inadvertently used as a negative test case; the correction is committed in 4198d384e64be43210771f7eb0548ae122964fc8. Do not treat that earlier failure as a final result; verify the new run.
+An earlier run 41335108080 failed because a static fixture was inadvertently included in the negative test set. The test fixture and CI key setup were corrected in commit 4198d384e64be43210771f7eb0548ae122964fc8; the final push and PR test runs passed.
 
-The existing workflow runs backend pytest -q, frontend ESLint and Next.js build (which includes TypeScript build validation). The repository does not currently define a backend lint/type-check command or pinned backend lint/type-check tools; backend lint/type-check are therefore **UNVERIFIED**, not passed. An explicit frontend tsc --noEmit step is not configured separately; Next.js build is the existing TypeScript validation path.
+Vercel's automated PR comment reported a preview deployment error. The cause was not investigated as part of this approval and remains **UNVERIFIED**; it is separate from the passing GitHub Actions test/build workflow.
 
 ## Other pre-existing Phase 2 work — paused
 
