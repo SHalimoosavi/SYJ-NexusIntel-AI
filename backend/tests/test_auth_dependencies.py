@@ -13,10 +13,20 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core import dependencies
+from app.core.rate_limit import RateLimitManager
 from app.database.database import Base
 from app.models.organization import Organization
 from app.models.role import Role
 from app.models.user import User
+
+
+@pytest.fixture(autouse=True)
+def local_rate_limit_backend(monkeypatch):
+    monkeypatch.setattr(
+        dependencies,
+        "rate_limit_manager",
+        RateLimitManager(redis_url="", app_env="test"),
+    )
 
 
 @pytest.fixture
