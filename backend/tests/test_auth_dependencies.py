@@ -46,7 +46,7 @@ def db_session():
     session.refresh(role)
     user = User(
         full_name="Test User",
-        email="qa@example.invalid",
+        email="qa@example.com",
         hashed_password="not-used",
         organization_id=org.id,
         role_id=role.id,
