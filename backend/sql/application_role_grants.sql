@@ -24,7 +24,7 @@ TO nexusintel_runtime;
 
 -- Ensure future tables created by the separate migration identity inherit the
 -- same application DML permissions. The audit table is narrowed separately
--- after creation by applying audit_log_hardening.sql.
+-- after creation by applying audit_log_immutability.sql.
 ALTER DEFAULT PRIVILEGES FOR ROLE nexusintel_migrator IN SCHEMA public
 GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO nexusintel_runtime;
 
