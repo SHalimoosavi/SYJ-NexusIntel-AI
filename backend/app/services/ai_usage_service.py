@@ -51,21 +51,11 @@ def enforce_ai_limit(
     db: Session,
     organization_id: int,
 ):
-    # ---------------------------------
-    # DEVELOPMENT BYPASS
-    # ---------------------------------
-    # Set AI_LIMIT_BYPASS=true locally.
-    # Railway production should leave it
-    # unset or false.
-    # ---------------------------------
-
-    if (
-        os.getenv(
-            "AI_LIMIT_BYPASS",
-            "false",
-        ).lower()
-        == "true"
-    ):
+    # Explicit development-only bypass. Unset APP_ENV defaults to production,
+    # so a forgotten bypass flag can never silently disable paid-plan limits.
+    app_env = os.getenv("APP_ENV", "production").lower()
+    bypass_requested = os.getenv("AI_LIMIT_BYPASS", "false").lower() == "true"
+    if bypass_requested and app_env in {"development", "dev", "local", "test"}:
         return
 
     subscription = get_subscription(
