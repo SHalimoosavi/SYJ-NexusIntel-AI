@@ -10,7 +10,7 @@
 - main remains at e51373d276b443581367f2c19aa291ebf2a042d3; no commit was made to main.
 - main was merged into feat/security-hardening with a normal merge commit: 5418ae47489777208f8de430f719d9bf9d1c4610.
 - Merge PR #3: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/3 — merged. GitHub reported zero changed files after refresh; no conflicts or conflict resolutions occurred. Both merge parents are preserved.
-- After merge and hygiene commits plus audit-document checkpoint 7cb814a454d6e708e550f1da10a34ba93803a5ac, feat/security-hardening is 431 commits ahead / 0 behind main; merge base is now main at e51373d276b443581367f2c19aa291ebf2a042d3.
+- feat/security-hardening is synchronized with main at 0 commits behind; the merge base is main at e51373d276b443581367f2c19aa291ebf2a042d3. The ahead count is intentionally omitted because each audit checkpoint commit itself increments it.
 - audit/baseline was not changed. No branch or tag was deleted. No rebase, squash, force-push, cherry-pick or history rewrite was performed.
 - Final review PR #4 from feat/security-hardening to main is open and unmerged: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/4. GitHub reports mergeable=true. It must remain unmerged.
 
@@ -53,7 +53,7 @@ Follow docs/audit/KEY_ROTATION.md. Never paste keys/passwords into ChatGPT, GitH
 
 ## Verification status
 
-Final CI on PR #4 head 7cb814a454d6e708e550f1da10a34ba93803a5ac:
+Final code CI on PR #4 code checkpoint 7cb814a454d6e708e550f1da10a34ba93803a5ac passed. Subsequent commits only refreshed audit documentation:
 
 - Backend security regression suite: **104 passed, 209 warnings in 2.66s** (push run 41335412532; PR run 41335433884 passed).
 - Frontend ESLint: **passed** (push run 41335412532; PR run 41335433884 passed).
