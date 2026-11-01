@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { authHeaders } from "@/lib/auth";
-
-const API_BASE =
-  "https://syj-nexusintel-ai-production.up.railway.app";
+import { createLead } from "@/lib/api";
 
 export default function CreateLeadForm() {
   const [loading, setLoading] =
@@ -30,25 +27,7 @@ export default function CreateLeadForm() {
     setLoading(true);
 
     try {
-      const response = await fetch(
-        `${API_BASE}/leads/`,
-        {
-          method: "POST",
-          headers: authHeaders(),
-          body: JSON.stringify(form),
-        }
-      );
-
-      if (!response.ok) {
-        const error =
-          await response.text();
-
-        alert(error);
-
-        setLoading(false);
-
-        return;
-      }
+      await createLead(form);
 
       alert(
         "Lead created successfully"
