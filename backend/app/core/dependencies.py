@@ -15,11 +15,12 @@ _UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 def allowed_origins() -> set[str]:
-    configured = os.getenv(
-        "CORS_ORIGINS",
-        "https://syj-nexus-intel-ai.vercel.app,http://localhost:3000",
-    )
-    return {origin.strip().rstrip("/") for origin in configured.split(",") if origin.strip()}
+    configured = os.getenv("CORS_ORIGINS", "")
+    return {
+        origin.strip().rstrip("/")
+        for origin in configured.split(",")
+        if origin.strip() and origin.strip() != "*"
+    }
 
 
 def get_current_user(
