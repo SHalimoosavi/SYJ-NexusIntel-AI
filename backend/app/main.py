@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from fastapi import HTTPException
 
 from app.core.redaction import RedactingLogFilter
+from app.schemas.common import HealthResponse, ReadinessResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -362,7 +363,7 @@ async def add_security_headers(request: Request, call_next):
     return response
 
 
-@app.get("/")
+@app.get("/", response_model=HealthResponse)
 def root():
     return {
         "status": "online",
@@ -371,7 +372,7 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=ReadinessResponse)
 def health():
     return {
         "success": True,
