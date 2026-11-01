@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.security import verify_token
+from app.core.rate_limit import RateLimitBackendUnavailable, rate_limit_manager
 from app.database.database import get_db
 from app.models.role import Role
 from app.models.user import User
