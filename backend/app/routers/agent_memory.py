@@ -8,6 +8,7 @@ from app.database.database import (
 )
 
 from app.core.input_validation import validate_domain
+from app.schemas.agent_memory import AgentMemoryCreate, AgentMemoryResponse
 
 from app.core.dependencies import (
     get_current_user,
@@ -25,24 +26,25 @@ router = APIRouter(
 )
 
 
-@router.post("/save")
+@router.post("/save", response_model=AgentMemoryResponse)
 def create_memory(
-    payload: dict,
+    payload: AgentMemoryCreate,
     db: Session = Depends(get_db),
     current_user=Depends(
         get_current_user
     ),
 ):
+    payload.domain = validate_domain(payload.domain)
     return save_memory(
         db,
-        payload,
+        payload.model_dump(),
         current_user[
             "organization_id"
         ],
     )
 
 
-@router.get("/history/{domain}")
+@router.get("/history/{domain}", response_model=list[AgentMemoryResponse])
 def history(
     domain: str,
     db: Session = Depends(get_db),
@@ -60,7 +62,7 @@ def history(
     )
 
 
-@router.get("/latest/{domain}")
+@router.get("/latest/{domain}", response_model=AgentMemoryResponse | None)
 def latest(
     domain: str,
     db: Session = Depends(get_db),
