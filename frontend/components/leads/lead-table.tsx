@@ -1,10 +1,7 @@
 "use client";
 
 import { Lead } from "@/types/lead";
-import { authHeaders } from "@/lib/auth";
-
-const API_BASE =
-  "https://syj-nexusintel-ai-production.up.railway.app";
+import { deleteLead as deleteLeadRequest } from "@/lib/api";
 
 type Props = {
   leads: Lead[];
@@ -26,22 +23,7 @@ export default function LeadTable({
     }
 
     try {
-      const response =
-        await fetch(
-          `${API_BASE}/leads/${id}`,
-          {
-            method: "DELETE",
-            headers:
-              authHeaders(),
-          }
-        );
-
-      if (!response.ok) {
-        alert(
-          "Failed to delete lead"
-        );
-        return;
-      }
+      await deleteLeadRequest(id);
 
       window.location.reload();
     } catch (error) {
