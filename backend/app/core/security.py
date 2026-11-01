@@ -1,12 +1,8 @@
-"""JWT issuance and verification with explicit key IDs.
-
-The legacy SECRET_KEY variable is intentionally unsupported. Tokens without a
-known kid are rejected, so the historically exposed key cannot remain a
-verification fallback.
-"""
+"""JWT issuance and verification with key IDs and typed short-lived sessions."""
 import json
 import os
 import re
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -14,9 +10,8 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = int(
-    os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "60")
-)
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 JWT_ISSUER = os.getenv("JWT_ISSUER", "syj-nexusintel-ai")
 JWT_AUDIENCE = os.getenv("JWT_AUDIENCE", "syj-nexusintel-ai-client")
 _KID_PATTERN = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
@@ -41,9 +36,7 @@ def _load_signing_keys() -> tuple[dict[str, str], str]:
         if not isinstance(kid, str) or not _KID_PATTERN.fullmatch(kid):
             raise RuntimeError("JWT_SIGNING_KEYS contains an invalid key ID.")
         if not isinstance(secret, str) or len(secret.encode("utf-8")) < 32:
-            raise RuntimeError(
-                f"JWT key '{kid}' must contain at least 32 UTF-8 bytes."
-            )
+            raise RuntimeError(f"JWT key '{kid}' must contain at least 32 UTF-8 bytes.")
         keys[kid] = secret
     if active_kid not in keys:
         raise RuntimeError("JWT_ACTIVE_KID must identify a configured signing key.")
@@ -66,16 +59,23 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict[str, Any]) -> str:
+def _create_token(
+    data: dict[str, Any],
+    token_type: str,
+    expires_at: datetime,
+) -> str:
     now = datetime.now(timezone.utc)
     claims = data.copy()
     claims.update(
         {
             "iat": now,
             "nbf": now,
-            "exp": now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+            "exp": expires_at,
             "iss": JWT_ISSUER,
             "aud": JWT_AUDIENCE,
+            "jti": uuid.uuid4().hex,
+            "token_type": token_type,
+            "session_version": int(claims.get("session_version", 0)),
         }
     )
     return jwt.encode(
@@ -86,11 +86,31 @@ def create_access_token(data: dict[str, Any]) -> str:
     )
 
 
+def create_access_token(data: dict[str, Any]) -> str:
+    return _create_token(
+        data,
+        "access",
+        datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+
+def create_refresh_token(data: dict[str, Any]) -> str:
+    return _create_token(
+        data,
+        "refresh",
+        datetime.now(timezone.utc) + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+
+
 def verify_token(token: str) -> dict[str, Any] | None:
     try:
         header = jwt.get_unverified_header(token)
         kid = header.get("kid")
-        if not isinstance(kid, str) or not _KID_PATTERN.fullmatch(kid):
+        if (
+            header.get("alg") != ALGORITHM
+            or not isinstance(kid, str)
+            or not _KID_PATTERN.fullmatch(kid)
+        ):
             return None
         signing_key = JWT_SIGNING_KEYS.get(kid)
         if signing_key is None:
@@ -101,8 +121,19 @@ def verify_token(token: str) -> dict[str, Any] | None:
             algorithms=[ALGORITHM],
             issuer=JWT_ISSUER,
             audience=JWT_AUDIENCE,
-            options={"require_exp": True, "require_iat": True, "require_nbf": True},
+            options={
+                "require_exp": True,
+                "require_iat": True,
+                "require_nbf": True,
+            },
         )
+        if (
+            payload.get("token_type") not in {"access", "refresh"}
+            or not isinstance(payload.get("jti"), str)
+            or not payload.get("jti")
+            or not isinstance(payload.get("session_version"), int)
+        ):
+            return None
         return payload
     except (JWTError, TypeError, ValueError):
         return None
