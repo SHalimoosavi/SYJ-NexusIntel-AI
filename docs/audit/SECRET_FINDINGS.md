@@ -9,11 +9,11 @@
 
 ## Executive summary
 
-- **Confirmed exposed credentials:** 1 — a hardcoded JWT HS256 signing key.
+- **Confirmed historical credential exposure:** 1 hardcoded JWT HS256 signing key. **Additional credential-like finding:** 1 PostgreSQL connection URL containing a username/password pair in `.env.example:4`; it is unverified whether the pair is a dummy/local-only value or was ever used. Treat it as compromised and rotate it if it was provisioned or reused.
 - **Additional unclassified scanner match:** 1 occurrence — the previous one-time Gitleaks report recorded two matches across 322 commits, but its JSON artifact was ephemeral and the second match's path/commit/line/type was not retained. It may be a repeat occurrence or a distinct finding; this is **UNVERIFIED**.
-- **Confirmed exposed DB passwords, AI provider keys, OAuth secrets, SMTP credentials, Railway/Vercel tokens, webhook signing secrets or PEM private keys:** none in the evidence inspected. Absence in the earlier 48-commit batch is supported only by the prior register's summary; the original raw scan artifact is unavailable, so category-by-category negative claims for that batch remain **UNVERIFIED**.
+- **Other confirmed literal exposures:** no AI provider key, OAuth client secret, SMTP credential, Railway/Vercel token, webhook signing secret or PEM private key was confirmed in the newly scanned 16-commit batch, the four post-baseline main commits, or inspected current configuration. The earlier 48-commit batch has no retained raw scan artifact; category-by-category absence there remains **UNVERIFIED**. The PostgreSQL URL in `.env.example:4` is separately recorded below as a credential-bearing candidate.
 - **Historical JWT key is still recoverable from Git history and all 24 repository tags inspected**, despite not appearing in the current three branch snapshots or the two current PR head snapshots.
-- **Rotation status:** UNVERIFIED. No live credential checks were performed.
+- **Rotation status:** UNVERIFIED. No live credential checks were performed. The PostgreSQL example URL has not been tested; treat its embedded pair as compromised until the owner confirms it was never used and replaces it.
 
 ## 1. Confirmed finding: historical JWT signing key
 
@@ -40,7 +40,7 @@ The three current branch heads were checked:
 | Ref | Result |
 |---|---|
 | `main` at `e51373d276b443581367f2c19aa291ebf2a042d3` | No hardcoded JWT literal in current `backend/app/core/security.py` |
-| `feat/security-hardening` at `dcb9c6fdad03f20ffafa8bfb5226eb1a217637ed` | No hardcoded JWT literal in current `backend/app/core/security.py` |
+| `feat/security-hardening` at `a196fa84ae66a84cfb1e4837130f0a4cb20be42f` | No hardcoded JWT literal in current `backend/app/core/security.py` |
 | `audit/baseline` at `c2b71f367327cc105ba886b2816900fbc34eab6d` | No hardcoded JWT literal in current `backend/app/core/security.py` |
 
 The two PR head snapshots were also checked:
@@ -77,7 +77,23 @@ The two PR head snapshots were also checked:
 
 **Conclusion:** The value is still recoverable from Git history and tags. Current-branch deletion is not remediation. No tag or branch was deleted or modified. No history purge was attempted.
 
-## 2. Unclassified Gitleaks match
+## 2. Additional credential-bearing PostgreSQL URL
+
+| Field | Evidence |
+|---|---|
+| Type | PostgreSQL connection URL with embedded username and password |
+| File | `.env.example` |
+| Introducing commit | `c0e2705da78d2568dcb38181728fa0701b48e4ed` |
+| First appearance | `c0e2705da78d2568dcb38181728fa0701b48e4ed`, line 4 |
+| Last confirmed appearance | `c0e2705da78d2568dcb38181728fa0701b48e4ed`, line 4; file remains present at current `feat/security-hardening` HEAD `a196fa84ae66a84cfb1e4837130f0a4cb20be42f` |
+| PR exposure | Present in closed, unmerged PR #2 head `fdc04b028963a28bb0f7dd75310a94f231d29ec2`; absent from current `main` and `audit/baseline` snapshots |
+| Masked value | `****` |
+| Validity | **UNVERIFIED** — the URL contains a username/password pair and a local/service hostname. No connection attempt or live credential test was made. It may be sample-only, but that is not proven. |
+| Rotation action | Treat as compromised. Rotate the database username/password if the pair was ever provisioned, reused, copied into a deployment secret store or used by any environment. Replace the example with non-credential placeholders. |
+
+The URL was added by `c0e2705da78d2568dcb38181728fa0701b48e4ed` and is still present in the feature branch. It was not found in the current `main`/`audit/baseline` trees or the 24 tag trees inspected. The file is an example file, not proof of production use; deployment validity remains **UNVERIFIED**.
+
+## 3. Unclassified Gitleaks match
 
 | Field | Evidence |
 |---|---|
@@ -92,20 +108,20 @@ The two PR head snapshots were also checked:
 
 The prior report records **2 matches across 322 commits**. One is the confirmed JWT finding above. The other match's metadata was not persisted. It is not valid to claim two distinct exposed credentials based on this count.
 
-## 3. Other credential categories
+## 4. Other credential categories
 
 The remaining 16 commits of the documented 64-commit baseline were inspected once, in one batch. The prior 48-commit review was not repeated. Four post-baseline commits associated with the accidental helper-file add/delete sequence were separately inspected. Current branch configuration files were checked for literal credential patterns.
 
 | Category | Evidence / result | Rotation decision |
 |---|---|---|
-| Database URLs and passwords | Initial commit `c06218f640b5765746cf98916f3a92792992dfb7`, `backend/app/database/database.py:5,8`, contains environment/local SQLite configuration, not a confirmed live DB credential. No literal DB password confirmed in the newly scanned range or current deployment/config files. | No Git-evidenced credential to rotate; actual deployment DB credentials are **UNVERIFIED** and should be rotated if reused or exposed. |
+| Database URLs and passwords | Initial commit `c06218f640b5765746cf98916f3a92792992dfb7`, `backend/app/database/database.py`, contains environment/local SQLite configuration, not a confirmed live DB credential. Separately, commit `c0e2705da78d2568dcb38181728fa0701b48e4ed` adds a credential-bearing PostgreSQL URL at `.env.example:4`; it remains in the current feature branch and closed PR #2 snapshot, but is absent from `main` and `audit/baseline`. Username/password presence is confirmed; whether they are real, valid or ever deployed is **UNVERIFIED**. | Treat as compromised; rotate immediately if ever provisioned or reused. Do not test it. |
 | AI provider keys | No literal provider key pattern confirmed in the 16-commit batch, four post-baseline commits, or current inspected config files. Prior 48-commit register says no other literal API/cloud key was confirmed, but raw report is unavailable. | **UNVERIFIED** for exhaustive historical absence; inspect provider secret stores privately. Rotate any key found in Git or reused from an exposed environment. |
 | OAuth client secrets | No literal OAuth client secret confirmed in the newly scanned commits/current inspected config. Earlier raw scan metadata is unavailable. | **UNVERIFIED**; rotate only if a literal/reuse is established by private provider inventory. |
 | SMTP credentials | No literal SMTP password or credential confirmed in the newly scanned commits/current inspected config. Earlier raw scan metadata is unavailable. | **UNVERIFIED**; rotate only if a literal/reuse is established. |
 | Railway / Vercel tokens | No literal platform token confirmed in the newly scanned commits or current inspected CI/deployment files. The Railway API base URL is a public endpoint, not a credential. | **UNVERIFIED** for all historical categories; review provider token inventory privately. |
 | Webhook signing secrets | No literal webhook signing secret confirmed in the newly scanned commits/current inspected config. Prior register records no confirmed webhook secret in the earlier review. | No confirmed value to rotate; exhaustive old-range absence remains **UNVERIFIED**. |
 | PEM/private keys | No private-key block confirmed in the newly scanned commit batch or current inspected config. Prior register records no confirmed private-key block in the earlier review. | No confirmed key to rotate; exhaustive old-range absence remains **UNVERIFIED**. |
-| Committed `.env` files | No actual `.env` file found in the three current branch trees or any of the 24 tag trees. Current security branch contains only `.env.example`, `backend/.env.example`, and `frontend/.env.example`. | No committed `.env` file found in inspected refs. External deployment environment values remain **UNVERIFIED**. |
+| Committed `.env` files | No actual `.env` file found in the three current branch trees or any of the 24 tag trees. The security branch contains `.env.example`, `backend/.env.example`, and `frontend/.env.example`; root `.env.example:4` contains a credential-bearing PostgreSQL URL added by `c0e2705da78d2568dcb38181728fa0701b48e4ed`. | No actual `.env` file found, but the credential-bearing example URL must be treated as compromised and rotated if reused. External deployment values remain **UNVERIFIED**. |
 | Docker / CI / configuration literals | No credential pattern found in inspected `.env.example`, Railway config, Dockerfiles, Compose file, Gitleaks config, pre-commit config, Dependabot or CI workflows on `feat/security-hardening`. The security test workflow contains a deterministic test-only JWT fixture, not a production credential. | No rotation indicated by these inspected files. Historical absence in the earlier 48 commits remains **UNVERIFIED** where the raw report is unavailable. |
 
 ### Historical range coverage
@@ -114,7 +130,7 @@ The remaining 16 commits of the documented 64-commit baseline were inspected onc
 - Newly reviewed remaining range: 16 commits, from `dc195abdcadf0d5e5825d085c777958c93e85349` through `c06218f640b5765746cf98916f3a92792992dfb7` inclusive.
 - Separately reviewed post-baseline main commits: `f9d78ce69f579e6a63468321b12dee1be8dd3ed6`, `346819a75bfb8baccf137972a218ffdcd6b94935`, `010a17619991f9162b2ccac73a821aa9d4115a53`, `e51373d276b443581367f2c19aa291ebf2a042d3`.
 
-## 4. Accidental add/delete sequence
+## 5. Accidental add/delete sequence
 
 The four post-baseline main commits were inspected:
 
@@ -127,7 +143,7 @@ The four post-baseline main commits were inspected:
 
 The helper and test contents remain recoverable from their historical commits, but the inspected contents do not contain the historical JWT literal or another confirmed credential. The JWT remains recoverable separately from `c06218f...` and the tags listed above.
 
-## 5. Rotation checklist
+## 6. Rotation checklist
 
 Complete these actions privately. Do not paste credentials into ChatGPT, GitHub issues, commits or logs.
 
@@ -142,7 +158,7 @@ Complete these actions privately. Do not paste credentials into ChatGPT, GitHub 
 9. **Only after rotation is complete**, consider a separate Git history purge. History rewriting is not included in this task and requires separate owner approval. It may invalidate commit SHAs, tags, PR bases, clones, forks, caches and integrations. Rotation remains mandatory even after any purge.
 10. **Do not delete tags or rewrite shared history** without explicit separate approval.
 
-## 6. Scanner and verification limitations
+## 7. Scanner and verification limitations
 
 - The previous full-history Gitleaks report's JSON artifact was not retained. Its second match cannot be classified from the available evidence.
 - The current CI Secret Scan run passed on commit `fdc04b028963a28bb0f7dd75310a94f231d29ec2`, but its workflow is diff-scoped and is not proof that every historical tag is clean.
@@ -152,4 +168,4 @@ Complete these actions privately. Do not paste credentials into ChatGPT, GitHub 
 
 ## Final disposition
 
-**One confirmed historical credential exposure; one additional unclassified scanner match; deployment rotation remains UNVERIFIED.** The historical JWT value must be considered compromised. All 24 tags inspected preserve it. No history purge is proposed or performed in this task.
+**One confirmed historical JWT exposure plus one credential-bearing PostgreSQL URL in `.env.example` whose validity is UNVERIFIED; one additional unclassified Gitleaks occurrence remains unresolved.** The JWT is recoverable from all 24 inspected tags. The PostgreSQL URL remains in the feature branch and closed PR #2 snapshot. Treat both credential values as compromised; rotate any corresponding active or reused credentials. No credential was tested against a live service. No history purge, tag deletion, branch deletion, force-push or merge was performed.
