@@ -10,7 +10,7 @@ from app.services.intelligence_service import generate_intelligence_report
 from app.services.lead_qualification_service import qualify_lead
 from app.services.technology_service import detect_technologies
 
-REPORTS_DIR = Path(os.getenv("REPORTS_DIR", "reports")).resolve()
+REPORTS_DIR = Path(os.getenv("REPORTS_DIR", "/tmp/nexusintel-reports")).resolve()
 REPORTS_DIR.mkdir(parents=True, exist_ok=True)
 
 
