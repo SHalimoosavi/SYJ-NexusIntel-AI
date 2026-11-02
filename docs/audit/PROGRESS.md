@@ -80,3 +80,51 @@ The feature branch already contains earlier implementation work for rate limitin
 - No full secret values in output, files, commits or logs.
 - No history rewrite, force-push, rebase, cherry-pick, branch/tag deletion or purge.
 - After opening the final feature-to-main PR and reporting CI/evidence, stop and wait for owner approval. Do not merge that PR.
+
+## 2026-11-03 — Repository reconciliation and Phase 2 checkpoint
+
+### Read-only repository state
+
+- Current `main`: `e51373d276b443581367f2c19aa291ebf2a042d3`.
+- `feat/security-hardening`: `4f457e170256790cc51676e86eead73a21098054`, 433 commits ahead of main and 0 behind.
+- `fix/phase1-auth-proxy-rbac`: `048ed9209b827b424ffa754ff7a3aaa30b1cac20`, 34 commits ahead of feat/security-hardening and 0 behind; PR #5 targets feat/security-hardening.
+- `audit/baseline`: `c2b71f367327cc105ba886b2816900fbc34eab6d`, 5 commits ahead and 4 behind main; retained unchanged because it is the head of open draft PR #1.
+- No existing branch or tag was moved. Main is already an ancestor of feat/security-hardening, so no merge was needed.
+- 24 tags were inspected; each is an ancestor of main. No tags were moved or deleted.
+- Repository branch-protection read was denied by GitHub API (403); actual protection/ruleset state is UNVERIFIED. Repository metadata lists all four branches as unprotected.
+
+### Workflow and hosting hygiene findings
+
+- The former `.github/workflows/dependency-refresh.yml` granted `contents: write`, generated a lockfile commit, rebased it onto `feat/security-hardening`, and pushed directly. It did not force-push, but could automatically move the shared branch tip. Removed in Phase 2.
+- Dependabot already covers pip, npm and GitHub Actions and remains the normal PR-based dependency update mechanism.
+- All remaining third-party GitHub Actions were pinned to verified commit SHAs.
+- Removed `backend/railway.json`, `backend/Procfile`, and the unused Vercel starter SVG. Updated README hosting claims and added `docs/legacy-hosting.md` marked DEPRECATED.
+- Owner-side Vercel dashboard/GitHub integration disconnection remains UNVERIFIED and must be completed by the owner.
+- The tracked `backend/reports/google.com.pdf` (1,993 bytes) remains a generated artifact candidate for later review; no large (>500 KB) tracked files were found in the inspected tree.
+
+### Phase 1 — PR #5 verification
+
+- PR #5: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/5; open draft, targets feat/security-hardening; no merge performed.
+- Head `048ed9209b827b424ffa754ff7a3aaa30b1cac20`.
+- Security Tests run 41370675786: backend 121 passed, 241 warnings; frontend regression tests, lint and production build passed.
+- Dependency Audit run 41370675690 passed; Secret Scan run 41370675669 passed.
+- The 241 warnings were traced to deprecated `datetime.utcnow` defaults/calls, Passlib's deprecated `crypt` use, Starlette's deprecated httpx TestClient integration, and frontend/navigation/toolchain warnings. No blanket warning filters were added.
+
+### Phase 2 — PR #6 in progress
+
+- PR #6: https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/pull/6; open draft, targets feat/security-hardening; no merge performed.
+- Branch: `chore/phase2-ci-repo-hygiene`; current reviewed head at this checkpoint: `4ef51d8153611e89f4b53038424b584fd3f6c0fb`.
+- Removed direct-push dependency workflow; pinned actions; removed legacy hosting files; added Dependabot-backed normal update path, Ruff and mypy tooling, and a backend quality CI job.
+- Replaced deprecated `datetime.utcnow` calls/defaults identified in the Phase 1 warning report with `utcnow_naive()`, which derives from an aware UTC clock and normalizes at the current timezone-naive database persistence boundary.
+- First Phase 2 Security Tests run 41546911304 failed at Ruff with 88 findings, primarily intentional import-time initialization in `app/main.py`, model re-exports, unused imports and boolean SQL comparisons. Targeted cleanup and documented per-file exceptions were committed; rerun at the latest head is PENDING.
+- Dependency Audit run 41546911360 passed; Secret Scan run 41546911249 passed. Latest rerun statuses must be checked before declaring Phase 2 complete.
+- Mypy result: UNVERIFIED (the first Ruff failure skipped mypy).
+- Remaining third-party deprecation warnings (Passlib `crypt`, Starlette/httpx) are not suppressed and require separate compatibility work if still emitted after the datetime cleanup.
+
+### Owner actions / security state
+
+- JWT signing key rotation: UNVERIFIED / owner will check.
+- PostgreSQL credential rotation or synthetic-never-reused confirmation: UNVERIFIED / owner will check.
+- Vercel integration disconnection in provider dashboard and GitHub settings: UNVERIFIED / owner action pending.
+- All credentials ever present in history remain classified as compromised. No credential was tested against a live service. No history purge, force-push, branch/tag deletion, or merge was performed.
+- Native installers, iOS and licensing remain out of scope.
