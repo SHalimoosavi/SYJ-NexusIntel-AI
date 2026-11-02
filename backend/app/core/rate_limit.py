@@ -4,6 +4,7 @@ Production fails closed when Redis is missing/unavailable. Local/desktop/test
 modes may use the process-local fallback; it is not suitable for replicas.
 """
 import hashlib
+import json
 import logging
 import os
 import time
@@ -28,6 +29,23 @@ end
 redis.call('ZADD', KEYS[1], now, ARGV[4])
 redis.call('EXPIRE', KEYS[1], window + 1)
 return {1, 0}
+"""
+
+
+_REFRESH_CLAIM_SCRIPT = """
+if redis.call('EXISTS', KEYS[1]) == 1 then
+  if redis.call('EXISTS', KEYS[2]) == 1 then return 2 end
+  return 0
+end
+redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
+redis.call('SET', KEYS[2], '1', 'EX', ARGV[2])
+return 1
+"""
+
+_REFRESH_COMPLETE_SCRIPT = """
+redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+redis.call('DEL', KEYS[2])
+return 1
 """
 
 
@@ -69,6 +87,8 @@ class RateLimitManager:
         self._memory_lockouts: dict[str, float] = {}
         self._memory_user_versions: dict[int, int] = defaultdict(int)
         self._memory_consumed_jti: dict[str, float] = {}
+        self._memory_refresh_inflight: dict[str, float] = {}
+        self._memory_refresh_results: dict[str, tuple[float, dict[str, str]]] = {}
         self._lock = Lock()
 
     def _redis(self):
@@ -231,35 +251,90 @@ class RateLimitManager:
                     return self._memory_user_versions[user_id]
             raise RateLimitBackendUnavailable("Redis session revocation failed") from exc
 
-    def consume_refresh_jti(self, jti: str, ttl_seconds: int) -> bool:
+    def begin_refresh_rotation(self, jti: str, ttl_seconds: int, grace_seconds: int = 5) -> int:
+        """Atomically claim a refresh JTI: 1=new, 2=in-flight duplicate, 0=replay."""
         client = self._redis()
         if client is None:
             now = time.monotonic()
             with self._lock:
                 expires = self._memory_consumed_jti.get(jti, 0.0)
                 if expires > now:
-                    return False
+                    return 2 if self._memory_refresh_inflight.get(jti, 0.0) > now else 0
                 self._memory_consumed_jti[jti] = now + ttl_seconds
-                return True
+                self._memory_refresh_inflight[jti] = now + grace_seconds
+                return 1
         try:
-            return bool(
-                client.set(
-                    self._key("consumed-refresh:" + jti),
-                    "1",
-                    ex=ttl_seconds,
-                    nx=True,
-                )
-            )
+            return int(client.eval(
+                _REFRESH_CLAIM_SCRIPT,
+                2,
+                self._key("consumed-refresh:" + jti),
+                self._key("refresh-inflight:" + jti),
+                ttl_seconds,
+                grace_seconds,
+            ))
         except Exception as exc:
             if self.local_mode:
                 now = time.monotonic()
                 with self._lock:
                     expires = self._memory_consumed_jti.get(jti, 0.0)
                     if expires > now:
-                        return False
+                        return 2 if self._memory_refresh_inflight.get(jti, 0.0) > now else 0
                     self._memory_consumed_jti[jti] = now + ttl_seconds
-                    return True
+                    self._memory_refresh_inflight[jti] = now + grace_seconds
+                    return 1
             raise RateLimitBackendUnavailable("Redis refresh-token rotation failed") from exc
+
+    def complete_refresh_rotation(self, jti: str, tokens: dict[str, str], grace_seconds: int = 5) -> None:
+        client = self._redis()
+        if client is None:
+            with self._lock:
+                self._memory_refresh_results[jti] = (time.monotonic() + grace_seconds, tokens)
+                self._memory_refresh_inflight.pop(jti, None)
+            return
+        try:
+            client.eval(
+                _REFRESH_COMPLETE_SCRIPT,
+                2,
+                self._key("refresh-result:" + jti),
+                self._key("refresh-inflight:" + jti),
+                json.dumps(tokens, separators=(",", ":")),
+                grace_seconds,
+            )
+        except Exception as exc:
+            if self.local_mode:
+                with self._lock:
+                    self._memory_refresh_results[jti] = (time.monotonic() + grace_seconds, tokens)
+                    self._memory_refresh_inflight.pop(jti, None)
+                return
+            raise RateLimitBackendUnavailable("Redis refresh result storage failed") from exc
+
+    def get_refresh_rotation_result(self, jti: str) -> dict[str, str] | None:
+        client = self._redis()
+        if client is None:
+            with self._lock:
+                cached = self._memory_refresh_results.get(jti)
+                if cached is None or cached[0] <= time.monotonic():
+                    self._memory_refresh_results.pop(jti, None)
+                    return None
+                return cached[1]
+        try:
+            raw = client.get(self._key("refresh-result:" + jti))
+            if not raw:
+                return None
+            value = json.loads(raw)
+            if not isinstance(value, dict) or not all(
+                isinstance(value.get(key), str) for key in ("access_token", "refresh_token")
+            ):
+                raise ValueError("Invalid cached refresh result")
+            return value
+        except Exception as exc:
+            if self.local_mode:
+                return None
+            raise RateLimitBackendUnavailable("Redis refresh result lookup failed") from exc
+
+    def consume_refresh_jti(self, jti: str, ttl_seconds: int) -> bool:
+        """Backward-compatible one-time consume API."""
+        return self.begin_refresh_rotation(jti, ttl_seconds) == 1
 
 
 def rate_limit_policy_for_path(path: str) -> tuple[int, int]:
