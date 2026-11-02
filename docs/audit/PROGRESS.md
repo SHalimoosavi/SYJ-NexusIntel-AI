@@ -137,3 +137,56 @@ The feature branch already contains earlier implementation work for rate limitin
 - PR #6 head backup: `backup/2026-11-03/pr6-head` → `7d3067ebf158607753c413638f05fb7cd2d5139b`.
 - The GitHub connection did not expose annotated-tag creation. Per owner authorization, created immutable-by-policy backup branches at the exact PR heads. Each ref was read back via GitHub's Git References API; all three object SHAs matched the intended commit SHAs.
 - No existing branch or tag was moved or deleted. No source code repair has started in this checkpoint.
+
+
+## 2026-11-03 — Mypy baseline classification (Step C)
+
+Source: failed PR #6 backend-quality job 125625724355, workflow run 41547247286, at PR #6 head 7d3067ebf158607753c413638f05fb7cd2d5139b. The log reports 59 errors across 18 files (118 source files checked). No mypy settings were changed and no error was suppressed.
+
+### Error categories before repair
+
+| Mypy category | Count |
+|---|---:|
+| arg-type | 44 |
+| assignment | 8 |
+| union-attr | 4 |
+| misc | 1 |
+| var-annotated | 1 |
+| attr-defined | 1 |
+| **Total** | **59** |
+
+### Errors by file before repair
+
+| File | Count |
+|---|---:|
+| app/main.py | 17 |
+| app/routers/auth.py | 14 |
+| app/services/organization_service.py | 4 |
+| app/core/rate_limit.py | 3 |
+| app/services/invitation_service.py | 3 |
+| app/core/safe_http.py | 2 |
+| app/services/feature_flag_service.py | 2 |
+| app/services/revenue_forecast_service.py | 2 |
+| app/services/lead_service.py | 2 |
+| app/services/crm_service.py | 2 |
+| app/core/api_docs.py | 1 |
+| app/services/audit_dashboard_service.py | 1 |
+| app/services/subscription_service.py | 1 |
+| app/services/osint_service.py | 1 |
+| app/services/ai_usage_service.py | 1 |
+| app/services/lead_note_service.py | 1 |
+| app/services/activity_service.py | 1 |
+| app/core/dependencies.py | 1 |
+| **Total** | **59** |
+
+### Root-cause classification from diagnostics
+
+- SQLAlchemy legacy declarative model attributes inferred as Column[T] at instance access, causing arg-type failures in services, dependencies and auth routes; proper mapped typing requires reviewing and consistently converting the model declarations to Mapped[T]/mapped_column without changing schema semantics.
+- FastAPI app constructor receives an overly broad kwargs mapping in app/main.py; use explicit typed arguments or a correctly typed settings structure.
+- RateLimitManager Redis client field lacks an explicit client protocol/type and app_env can be optional at lower() call; type the client lifecycle and normalize environment value.
+- safe_http.py has a response body assignment incompatible with the installed HTTPX BaseHTTPResponse read-only property, plus a string/int union requiring narrowing.
+- Remaining findings include optional OpenAPI description handling, feature flag Column-vs-bool assignment, dict accumulator annotation, optional OSINT response narrowing, and numeric forecast/CRM calculations inferred as int where floats are returned.
+
+### Step C disposition
+
+Before count: 59. After count: 59 (no repair committed). The GitHub connection provides repository read/write and Actions log access but no working-tree checkout or command execution. Correctly fixing 18 files and proving mypy plus regression tests requires an executable checkout/CI patch cycle. No speculative broad model conversion or untested type edits were committed. Step C remains INCOMPLETE; post-repair count is NOT RUN, not zero.
