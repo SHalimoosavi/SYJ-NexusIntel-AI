@@ -128,3 +128,12 @@ The feature branch already contains earlier implementation work for rate limitin
 - Vercel integration disconnection in provider dashboard and GitHub settings: UNVERIFIED / owner action pending.
 - All credentials ever present in history remain classified as compromised. No credential was tested against a live service. No history purge, force-push, branch/tag deletion, or merge was performed.
 - Native installers, iOS and licensing remain out of scope.
+
+
+## 2026-11-03 — Approved backup references (Step A)
+
+- PR #4 head backup: `backup/2026-11-03/pr4-head` → `4f457e170256790cc51676e86eead73a21098054`.
+- PR #5 head backup: `backup/2026-11-03/pr5-head` → `048ed9209b827b424ffa754ff7a3aaa30b1cac20`.
+- PR #6 head backup: `backup/2026-11-03/pr6-head` → `7d3067ebf158607753c413638f05fb7cd2d5139b`.
+- The GitHub connection did not expose annotated-tag creation. Per owner authorization, created immutable-by-policy backup branches at the exact PR heads. Each ref was read back via GitHub's Git References API; all three object SHAs matched the intended commit SHAs.
+- No existing branch or tag was moved or deleted. No source code repair has started in this checkpoint.
