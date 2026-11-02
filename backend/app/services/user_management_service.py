@@ -109,6 +109,19 @@ def update_user_role(
     return user
 
 
+def _is_last_active_super_admin(db: Session, user: User) -> bool:
+    role = db.query(Role).filter(Role.id == user.role_id).first()
+    if role is None or role.name != "SUPER_ADMIN" or not user.is_active:
+        return False
+    active_count = (
+        db.query(User)
+        .join(Role, User.role_id == Role.id)
+        .filter(Role.name == "SUPER_ADMIN", User.is_active.is_(True))
+        .count()
+    )
+    return active_count <= 1
+
+
 def update_user_status(
     db: Session,
     user_id: int,
@@ -135,6 +148,9 @@ def update_user_status(
             status_code=400,
             detail="Cannot deactivate yourself",
         )
+
+    if not is_active and _is_last_active_super_admin(db, user):
+        raise HTTPException(status_code=409, detail="Cannot disable the last active SUPER_ADMIN")
 
     user.is_active = is_active
 
@@ -182,6 +198,9 @@ def delete_user(
             status_code=400,
             detail="Cannot delete yourself",
         )
+
+    if _is_last_active_super_admin(db, user):
+        raise HTTPException(status_code=409, detail="Cannot delete the last active SUPER_ADMIN")
 
     db.delete(user)
 
