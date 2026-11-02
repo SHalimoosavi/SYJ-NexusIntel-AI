@@ -116,7 +116,12 @@ The feature branch already contains earlier implementation work for rate limitin
 
 ### Verification and outstanding owner actions
 
-- Backend and frontend tests have been added; results are **PENDING GitHub Actions**. Do not report them as passed until the new PR CI runs complete.
+- Backend security regression suite: **121 passed, 241 warnings** (CI run [41370540099](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41370540099)).
+- Frontend regression suite: **4 passed, 0 failed**; ESLint and Next.js production build passed (same CI run).
+- Dependency audit passed ([41370552138](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41370552138)).
+- Secret scan passed ([41370552036](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41370552036)).
+- Frontend ESLint reported two `window.location.assign()` warnings; these are existing navigation warnings in `frontend/lib/auth.ts`, not test failures.
+- The 241 backend warnings are not suppressed; warning triage remains Phase 2 work. The earlier baseline was 209 warnings, with 27 warnings now attributed to the new user-management regression tests and 5 additional warnings in auth-session tests; exact warning-class triage remains open.
 - PR #4 remains open and unmerged. This Phase 1 branch is intended to open a stacked PR into `feat/security-hardening`; no merge into `feat/security-hardening` or `main` is authorized.
 - JWT rotation status: **UNVERIFIED** (owner status field not supplied).
 - PostgreSQL credential rotation/synthetic status: **UNVERIFIED** (owner status field not supplied).
