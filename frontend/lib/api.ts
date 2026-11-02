@@ -1,5 +1,6 @@
 import { authHeaders } from "./auth";
 import { API_BASE } from "./config";
+import { refreshAuthSession } from "./auth-refresh.mjs";
 
 export { API_BASE };
 
@@ -21,12 +22,8 @@ async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
     return firstResponse;
   }
 
-  const refreshed = await fetch(`${API_BASE}/auth/refresh`, {
-    method: "POST",
-    credentials: "include",
-    cache: "no-store",
-  });
-  if (!refreshed.ok) return firstResponse;
+  const refreshed = await refreshAuthSession(API_BASE);
+  if (!refreshed) return firstResponse;
   return fetch(input, options);
 }
 
