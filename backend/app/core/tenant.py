@@ -48,9 +48,6 @@ def tenant_filter(
     )
 
 
-from fastapi import HTTPException
-
-
 def validate_tenant_access(
     record,
     organization_id: int,
