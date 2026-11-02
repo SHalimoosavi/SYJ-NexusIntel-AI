@@ -1,4 +1,4 @@
-from datetime import datetime
+from app.core.clock import utcnow_naive
 
 from sqlalchemy import Boolean
 from sqlalchemy import Column
@@ -54,5 +54,5 @@ class User(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utcnow_naive,
     )
