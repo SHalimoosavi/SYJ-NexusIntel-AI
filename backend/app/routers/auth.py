@@ -84,22 +84,33 @@ def _delete_session_cookies(response: Response) -> None:
     response.delete_cookie(key="refresh_token", **options)
 
 
-def _issue_session(response: Response, user: User, session_version: int) -> None:
+def _create_session_tokens(user: User, session_version: int) -> dict[str, str]:
     claims = {
         "sub": user.email,
         "user_id": user.id,
         "session_version": session_version,
     }
+    return {
+        "access_token": create_access_token(claims),
+        "refresh_token": create_refresh_token(claims),
+    }
+
+
+def _set_session_cookies(response: Response, tokens: dict[str, str]) -> None:
     response.set_cookie(
         key="access_token",
-        value=create_access_token(claims),
+        value=tokens["access_token"],
         **_cookie_options(ACCESS_TOKEN_EXPIRE_MINUTES * 60),
     )
     response.set_cookie(
         key="refresh_token",
-        value=create_refresh_token(claims),
+        value=tokens["refresh_token"],
         **_cookie_options(_REFRESH_TOKEN_TTL_SECONDS),
     )
+
+
+def _issue_session(response: Response, user: User, session_version: int) -> None:
+    _set_session_cookies(response, _create_session_tokens(user, session_version))
 
 
 @router.post("/login", response_model=AuthSessionResponse)
@@ -181,13 +192,49 @@ def refresh_session(
         if payload.get("session_version") != current_version:
             raise HTTPException(status_code=401, detail="Refresh session expired")
 
-        if not rate_limit_manager.consume_refresh_jti(jti, _REFRESH_TOKEN_TTL_SECONDS):
-            # Reuse of a rotated refresh token revokes the complete user session family.
+        rotation_state = rate_limit_manager.begin_refresh_rotation(
+            jti,
+            _REFRESH_TOKEN_TTL_SECONDS,
+        )
+        if rotation_state == 0:
+            # A replay after the short concurrent-request grace period is treated
+            # as theft and revokes the complete user session family.
             rate_limit_manager.revoke_user_sessions(user.id)
-            log_event(db, user.organization_id, user.id, "REFRESH_TOKEN_REUSE", "USER_SESSION", user.id, "Refresh token reuse detected; sessions revoked")
+            log_event(
+                db,
+                user.organization_id,
+                user.id,
+                "REFRESH_TOKEN_REUSE",
+                "USER_SESSION",
+                user.id,
+                "Refresh token reuse detected; sessions revoked",
+            )
             raise HTTPException(status_code=401, detail="Refresh session reuse detected")
 
-        _issue_session(response, user, current_version)
+        if rotation_state == 2:
+            # A parallel request waits for the first request to publish the exact
+            # replacement cookie pair. It never creates a second session.
+            tokens = None
+            for _ in range(20):
+                tokens = rate_limit_manager.get_refresh_rotation_result(jti)
+                if tokens:
+                    break
+                time.sleep(0.05)
+            if not tokens:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Session refresh is still processing; retry shortly",
+                    headers={"Retry-After": "1"},
+                )
+        else:
+            tokens = _create_session_tokens(user, current_version)
+            # Logout/password-change may race a refresh. Never publish tokens for
+            # a session version that has already been revoked.
+            if rate_limit_manager.get_user_session_version(user.id) != current_version:
+                raise HTTPException(status_code=401, detail="Refresh session expired")
+            rate_limit_manager.complete_refresh_rotation(jti, tokens)
+
+        _set_session_cookies(response, tokens)
     except RateLimitBackendUnavailable:
         raise HTTPException(
             status_code=503,
