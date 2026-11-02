@@ -222,3 +222,9 @@ Exact results for these latest runs are **PENDING / UNVERIFIED** until GitHub re
 ### Gate decision
 
 Steps B, C and D are incomplete, and the full Step E verification gate is not green. Per owner instruction, Phase 3 Docker work is **NOT STARTED**. No Docker branch or PR was created. Phases 4/5, licensing and native installers remain not started. Credential rotation remains owner-pending and unverified.
+
+
+### Follow-up Actions evidence (2026-11-03)
+
+- PR #5 Security Tests run 41549229425: backend-security-tests job 125632304116 completed successfully; pytest reports **121 passed, 0 failed, 0 skipped, 241 warnings in 3.63s**. Frontend-checks job 125632303715 remained in progress at last poll; frontend lint/build are therefore pending for this head. PR #5 Dependency Audit run 41549229411 completed successfully (npm-audit job 125632303691 and python-audit job 125632303909); Secret Scan run 41549229455 passed.
+- PR #6 runs triggered by progress checkpoint bf00b1b6267370d6902f18fef05c3dcdf6107103 remained in progress at last poll: Security Tests run 41549263652 (backend job 125632427144, quality job 125632427574, frontend job 125632427620); Dependency Audit run 41549263757 passed both npm and Python jobs; Secret Scan run 41549263665 passed. These are not runs for the later documentation-only head 8613201391932e1d32778a831d221d9524500d13.
