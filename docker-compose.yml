@@ -9,7 +9,7 @@ services:
       JWT_SIGNING_KEYS: ${JWT_SIGNING_KEYS:?Set JWT_SIGNING_KEYS in the deployment environment}
       JWT_ACTIVE_KID: ${JWT_ACTIVE_KID:?Set JWT_ACTIVE_KID in the deployment environment}
       CORS_ORIGINS: https://${DOMAIN:?Set DOMAIN}
-      TRUSTED_PROXY_HOSTS: 172.30.0.2
+      TRUSTED_PROXIES: 172.30.0.2
       COOKIE_SECURE: "true"
       COOKIE_SAMESITE: lax
       REPORTS_DIR: /tmp/nexusintel-reports
