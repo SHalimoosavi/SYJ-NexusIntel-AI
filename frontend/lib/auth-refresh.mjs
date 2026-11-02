@@ -8,6 +8,7 @@ const channel = typeof BroadcastChannel === "undefined"
   : new BroadcastChannel("syj-auth-refresh");
 
 if (channel) {
+  channel.unref?.();
   channel.addEventListener("message", (event) => {
     if (event.data && event.data.type === "refresh-complete") {
       lastCrossTabRefresh = Math.max(lastCrossTabRefresh, Number(event.data.at) || 0);
