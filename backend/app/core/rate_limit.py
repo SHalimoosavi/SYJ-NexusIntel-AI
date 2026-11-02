@@ -34,7 +34,7 @@ return {1, 0}
 
 _REFRESH_CLAIM_SCRIPT = """
 if redis.call('EXISTS', KEYS[1]) == 1 then
-  if redis.call('EXISTS', KEYS[2]) == 1 then return 2 end
+  if redis.call('EXISTS', KEYS[2]) == 1 or redis.call('EXISTS', KEYS[3]) == 1 then return 2 end
   return 0
 end
 redis.call('SET', KEYS[1], '1', 'EX', ARGV[1])
@@ -259,7 +259,10 @@ class RateLimitManager:
             with self._lock:
                 expires = self._memory_consumed_jti.get(jti, 0.0)
                 if expires > now:
-                    return 2 if self._memory_refresh_inflight.get(jti, 0.0) > now else 0
+                    return 2 if (
+                        self._memory_refresh_inflight.get(jti, 0.0) > now
+                        or self._memory_refresh_results.get(jti, (0.0, {}))[0] > now
+                    ) else 0
                 self._memory_consumed_jti[jti] = now + ttl_seconds
                 self._memory_refresh_inflight[jti] = now + grace_seconds
                 return 1
@@ -269,6 +272,7 @@ class RateLimitManager:
                 2,
                 self._key("consumed-refresh:" + jti),
                 self._key("refresh-inflight:" + jti),
+                self._key("refresh-result:" + jti),
                 ttl_seconds,
                 grace_seconds,
             ))
