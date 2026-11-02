@@ -282,7 +282,10 @@ class RateLimitManager:
                 with self._lock:
                     expires = self._memory_consumed_jti.get(jti, 0.0)
                     if expires > now:
-                        return 2 if self._memory_refresh_inflight.get(jti, 0.0) > now else 0
+                        return 2 if (
+                        self._memory_refresh_inflight.get(jti, 0.0) > now
+                        or self._memory_refresh_results.get(jti, (0.0, {}))[0] > now
+                    ) else 0
                     self._memory_consumed_jti[jti] = now + ttl_seconds
                     self._memory_refresh_inflight[jti] = now + grace_seconds
                     return 1
