@@ -151,3 +151,26 @@ def test_refresh_jti_can_be_consumed_only_once():
     manager = RateLimitManager(redis_url="", app_env="test")
     assert manager.consume_refresh_jti("one-time-jti", 3600)
     assert not manager.consume_refresh_jti("one-time-jti", 3600)
+
+def test_refresh_rotation_claim_is_atomic_and_duplicate_is_idempotent():
+    from concurrent.futures import ThreadPoolExecutor
+    from threading import Barrier
+
+    manager = RateLimitManager(redis_url="", app_env="test")
+    barrier = Barrier(2)
+
+    def claim():
+        barrier.wait()
+        return manager.begin_refresh_rotation("parallel-jti", 3600)
+
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results = list(pool.map(lambda _index: claim(), range(2)))
+
+    assert sorted(results) == [1, 2]
+    replacement = {
+        "access_token": "test-access-token",
+        "refresh_token": "test-refresh-token",
+    }
+    manager.complete_refresh_rotation("parallel-jti", replacement)
+    assert manager.begin_refresh_rotation("parallel-jti", 3600) == 2
+    assert manager.get_refresh_rotation_result("parallel-jti") == replacement
