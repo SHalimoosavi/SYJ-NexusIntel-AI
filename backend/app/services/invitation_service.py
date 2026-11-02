@@ -1,4 +1,6 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
+
+from app.core.clock import utcnow_naive
 import hashlib
 import secrets
 
@@ -61,7 +63,7 @@ def create_invitation(
         email=normalized_email,
         role_id=role_id,
         token=_token_digest(raw_token),
-        expires_at=datetime.utcnow() + timedelta(hours=INVITATION_EXPIRY_HOURS),
+        expires_at=utcnow_naive() + timedelta(hours=INVITATION_EXPIRY_HOURS),
     )
     db.add(invitation)
     db.commit()
@@ -96,7 +98,7 @@ def validate_invitation(db: Session, token: str):
     )
     if not invitation:
         raise HTTPException(status_code=400, detail="Invalid or expired invitation")
-    if invitation.is_used or invitation.expires_at < datetime.utcnow():
+    if invitation.is_used or invitation.expires_at < utcnow_naive():
         raise HTTPException(status_code=400, detail="Invalid or expired invitation")
     return invitation
 
