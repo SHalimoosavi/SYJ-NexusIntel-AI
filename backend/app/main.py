@@ -40,7 +40,7 @@ from app.models.invitation import Invitation
 
 from app.database.database import SessionLocal
 
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from app.core.client_ip import resolve_client_ip
 
 from app.core.rate_limit import (
     RateLimitBackendUnavailable,
@@ -146,13 +146,13 @@ if APP_ENV in {"development", "dev", "local", "desktop", "test"}:
         seed_roles(db)
     finally:
         db.close()
-TRUSTED_PROXY_HOSTS = [
+TRUSTED_PROXIES = [
     host.strip()
-    for host in os.getenv("TRUSTED_PROXY_HOSTS", "127.0.0.1,::1").split(",")
+    for host in os.getenv("TRUSTED_PROXIES", "").split(",")
     if host.strip()
 ]
-if "*" in TRUSTED_PROXY_HOSTS:
-    raise RuntimeError("Wildcard trusted proxies are forbidden")
+# Validate configured IP/CIDR entries at process startup. Empty means trust none.
+resolve_client_ip("127.0.0.1", None, TRUSTED_PROXIES)
 
 app = FastAPI(
     title="SYJ NexusIntel AI",
@@ -190,11 +190,6 @@ async def generic_unhandled_exception_handler(request: Request, exc: Exception):
 app.add_middleware(
     RequestBodyLimitMiddleware,
     max_body_bytes=int(os.getenv("MAX_REQUEST_BODY_BYTES", str(10 * 1024 * 1024))),
-)
-
-app.add_middleware(
-    ProxyHeadersMiddleware,
-    trusted_hosts=TRUSTED_PROXY_HOSTS,
 )
 
 _raw_cors_origins = os.getenv("CORS_ORIGINS", "")
@@ -316,7 +311,11 @@ app.include_router(
 
 @app.middleware("http")
 async def apply_route_rate_limits(request: Request, call_next):
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = resolve_client_ip(
+        request.client.host if request.client else None,
+        request.headers.get("x-forwarded-for"),
+        TRUSTED_PROXIES,
+    )
     path = request.url.path
     route_limit, route_window = rate_limit_policy_for_path(path)
     try:
