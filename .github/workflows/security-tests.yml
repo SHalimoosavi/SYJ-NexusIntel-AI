@@ -4,9 +4,11 @@ on:
   pull_request:
     branches:
       - main
+      - feat/security-hardening
   push:
     branches:
       - feat/security-hardening
+      - "fix/**"
   workflow_dispatch:
 
 permissions:
@@ -60,6 +62,9 @@ jobs:
       - name: Lint frontend
         working-directory: frontend
         run: npm run lint
+      - name: Run frontend regression tests
+        working-directory: frontend
+        run: npm test
       - name: Build frontend
         working-directory: frontend
         env:
