@@ -80,3 +80,45 @@ The feature branch already contains earlier implementation work for rate limitin
 - No full secret values in output, files, commits or logs.
 - No history rewrite, force-push, rebase, cherry-pick, branch/tag deletion or purge.
 - After opening the final feature-to-main PR and reporting CI/evidence, stop and wait for owner approval. Do not merge that PR.
+
+## Phase 1 — PR #4 review findings (implementation branch)
+
+**Branch:** `fix/phase1-auth-proxy-rbac`  
+**Base:** `feat/security-hardening` at the Phase 1 branch point `4f457e170256790cc51676e86eead73a21098054`  
+**Status:** Implementation committed; CI verification pending; no merge performed.
+
+### P1 — refresh-token concurrency
+
+- Added browser-side single-flight refresh coordination in `frontend/lib/auth-refresh.mjs`, using an in-tab shared promise and Web Locks with a short cross-tab completion marker.
+- Logout cancels pending refresh state; successful login/invitation acceptance re-enables refresh coordination.
+- Added a Redis Lua atomic claim for refresh JTIs, with a short idempotency result cache. A parallel duplicate receives the same replacement cookie pair; a replay after the grace window revokes the session family. A request still in progress returns 503 rather than revoking a legitimate session.
+- Added regression coverage for parallel refresh claims, duplicate cookie-pair reuse, later replay revocation, backend unavailability, logout invalidation, frontend parallel calls, refresh failure, and logout during refresh.
+- Implementation commits include `cd8a21f`, `186673e`, `c32115f`, `9b022d2`, `cf73a87`, `42f4219`, `4bec95d`, `8714d1e`, `e3cb319`, and `c36da7b`.
+
+### P2 — trusted proxy client IP
+
+- Removed Uvicorn's implicit proxy-header middleware from the application.
+- Added `TRUSTED_PROXIES`, defaulting to trust nothing; only a socket peer matching an explicitly configured IP/CIDR may supply `X-Forwarded-For`.
+- Resolver walks the chain from right to left and selects the first untrusted address; malformed headers fall back to the immediate peer.
+- Login abuse controls and global/route rate limits use the resolved client IP.
+- Docker's Nginx peer is explicitly configured as `172.30.0.2`; Uvicorn proxy-header parsing remains disabled and forwarded-allow-ips is explicitly empty in the service commands.
+- Added tests for spoofed headers, trusted proxy chains, IPv6, malformed values and trust-none default.
+- Implementation commits include `a96e1b4`, `72f51fd`, `f6ab89c`, `5416105`, `57b0c8e`, `8979bf6`, `c911691`, `fe711dc`, `80ddeab`, and `25adb44`.
+
+### P2 — SUPER_ADMIN role propagation and protection
+
+- User status and delete routes now pass the authenticated actor role to their services.
+- Non-SUPER_ADMIN actors cannot change/delete SUPER_ADMIN targets.
+- The last active SUPER_ADMIN cannot be disabled or deleted.
+- Existing self-modification prevention and organization-scoped user lookup remain in place.
+- Added regression tests for SUPER_ADMIN operations, ADMIN denial, self-escalation prevention, last-SUPER_ADMIN protection and cross-tenant isolation.
+- Implementation commits include `ee63de9`, `465cd02`, and `409c7fc`.
+
+### Verification and outstanding owner actions
+
+- Backend and frontend tests have been added; results are **PENDING GitHub Actions**. Do not report them as passed until the new PR CI runs complete.
+- PR #4 remains open and unmerged. This Phase 1 branch is intended to open a stacked PR into `feat/security-hardening`; no merge into `feat/security-hardening` or `main` is authorized.
+- JWT rotation status: **UNVERIFIED** (owner status field not supplied).
+- PostgreSQL credential rotation/synthetic status: **UNVERIFIED** (owner status field not supplied).
+- Vercel disconnection status: **UNVERIFIED** (owner status field not supplied).
+- No live credential tests or history purge performed.
