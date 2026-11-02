@@ -190,3 +190,35 @@ Source: failed PR #6 backend-quality job 125625724355, workflow run 41547247286,
 ### Step C disposition
 
 Before count: 59. After count: 59 (no repair committed). The GitHub connection provides repository read/write and Actions log access but no working-tree checkout or command execution. Correctly fixing 18 files and proving mypy plus regression tests requires an executable checkout/CI patch cycle. No speculative broad model conversion or untested type edits were committed. Step C remains INCOMPLETE; post-repair count is NOT RUN, not zero.
+
+
+## 2026-11-03 — CI failure disposition and verification checkpoint (Steps D–E)
+
+### Step D — failed CI root cause
+
+- The backend-quality failure is mypy, not Ruff. At prior PR #6 head 7d3067ebf158607753c413638f05fb7cd2d5139b, workflow run 41547247286 / job 125625724355, Ruff passed and mypy failed with 59 errors across 18 files. The complete diagnostic classification and root-cause summary are recorded above.
+- No CI job, check, setting or scope was weakened. No mypy errors were ignored or excluded. The 59 errors were not repaired in this checkpoint because the connected GitHub capability has no working-tree checkout or command runner; a speculative edit across 18 files without running mypy/tests would violate the zero-placeholder and evidence requirements.
+- Step D: **INCOMPLETE**. The root cause is identified; the failed check is not fixed.
+
+### Step E — exact available verification evidence
+
+Prior completed PR #6 run at head 7d3067ebf158607753c413638f05fb7cd2d5139b:
+
+- Backend tests: **104 passed, 0 failed, 0 skipped, 2 warnings** (job 125625724437; run 41547247286). Warnings: Passlib's Python crypt deprecation and Starlette/httpx TestClient deprecation.
+- Ruff: **passed** (job 125625724355).
+- Mypy: **failed, 59 errors / 18 files** (same job).
+- Frontend lint and production build: **passed** (job 125625724197).
+- Dependency audit: **passed** (run 41547247391).
+- Gitleaks diff/secret scan: **passed** (run 41547247248).
+- Gitleaks full-history: **UNVERIFIED at this latest PR #6 head**. The earlier history scan 41335412531 passed with one expected historical JWT key finding; that is not evidence for a full-history scan at the current head.
+
+Latest workflow runs triggered by this documentation checkpoint are still in progress at time of inspection:
+
+- PR #5 head 3de7f2c1f368a95348f41221789aa0ac3b654c07: Security Tests 41549229425 (frontend-checks and backend-security-tests in progress); Dependency Audit 41549229411 (npm passed, python audit in progress); Secret Scan 41549229455 passed.
+- PR #6 head bf00b1b6267370d6902f18fef05c3dcdf6107103: Security Tests 41549263652 (backend-security-tests, backend-quality and frontend-checks in progress); Dependency Audit 41549263757 (both audits in progress); Secret Scan 41549263665 passed.
+
+Exact results for these latest runs are **PENDING / UNVERIFIED** until GitHub reports terminal conclusions and job logs. No claim is made that these doc-only commits fix the previous mypy failure.
+
+### Gate decision
+
+Steps B, C and D are incomplete, and the full Step E verification gate is not green. Per owner instruction, Phase 3 Docker work is **NOT STARTED**. No Docker branch or PR was created. Phases 4/5, licensing and native installers remain not started. Credential rotation remains owner-pending and unverified.
