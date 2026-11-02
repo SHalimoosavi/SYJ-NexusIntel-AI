@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 
 from app.core.rbac import require_roles
 from app.database.database import get_db
-from app.models.subscription import Subscription
 from app.schemas.subscription import SubscriptionCreate, SubscriptionResponse
 from app.services.subscription_service import (
     create_subscription,
