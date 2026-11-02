@@ -127,3 +127,19 @@ The feature branch already contains earlier implementation work for rate limitin
 - PostgreSQL credential rotation/synthetic status: **UNVERIFIED** (owner status field not supplied).
 - Vercel disconnection status: **UNVERIFIED** (owner status field not supplied).
 - No live credential tests or history purge performed.
+
+
+## 2026-11-03 — Phase 1 regression-gap recheck (Step B)
+
+Reviewed the current PR #5 head 048ed9209b827b424ffa754ff7a3aaa30b1cac20 and these files: backend/app/core/client_ip.py, backend/app/core/rate_limit.py, backend/app/services/user_management_service.py, backend/tests/test_auth_sessions.py, backend/tests/test_proxy_header_trust.py, backend/tests/test_user_management_security.py, frontend/lib/auth-refresh.test.mjs, and frontend/lib/api.ts.
+
+### Existing implementation and regression evidence
+
+- Refresh rotation: atomic Redis Lua claim/completion scripts and a locked in-memory fallback are present. The auth-session test covers duplicate refresh returning the same cookie, replay after the grace window, session-family revocation, and fail-closed backend outage. Real Redis Lua integration/concurrency remains UNVERIFIED; tests exercise the in-memory manager.
+- Frontend refresh: module-level single-flight and Web Locks coordination are present. Existing tests cover same-tab coalescing, failure, logout cancellation, and invocation of the Web Lock API. Independent-tab contention, fallback coordination without Web Locks, and queued apiFetch 401 replay are NOT COVERED / UNVERIFIED.
+- Proxy trust: TRUSTED_PROXIES defaults to empty; resolver rejects malformed chains and ignores forwarded headers from an untrusted peer. Unit tests cover spoofing, rightmost untrusted hop, IPv6, malformed values and the empty default. Actual middleware-to-rate-limit-key integration is NOT COVERED / UNVERIFIED.
+- RBAC: tests cover ADMIN denial when disabling/deleting a SUPER_ADMIN, cross-tenant target denial, self-role escalation denial, and protection of the last active SUPER_ADMIN. These are present in the current PR #5 tree; no RBAC behavior change was made in this checkpoint.
+
+### Step B disposition
+
+The requested negative behaviors have existing regression tests for refresh-token replay, ADMIN-to-SUPER_ADMIN protection, cross-tenant target access, and spoofed forwarded-for at the resolver boundary. The remaining integration/concurrency gaps above require executable regression tests. No auth-sensitive code or test changes were committed in this checkpoint because this GitHub connection does not provide a repository checkout or command runner to demonstrate that new tests fail before and pass after the change; no unexecuted tests are being represented as verified. Step B is therefore INCOMPLETE pending an executable test environment or CI-backed patch workflow that can establish the required before/after evidence.
