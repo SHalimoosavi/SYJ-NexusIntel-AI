@@ -7,7 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.core.dependencies import get_current_user
-from app.core.rate_limit import RateLimitManager
+from app.core.rate_limit import RateLimitBackendUnavailable, RateLimitManager
 from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password
 from app.database.database import Base, get_db
 from app.main import app
@@ -198,3 +198,77 @@ def test_bruteforce_lockout_and_unknown_user_share_generic_error(monkeypatch, au
     )
     assert locked_attempt.status_code == 401
     assert locked_attempt.json() == {"detail": "Invalid credentials"}
+
+def test_logout_during_refresh_invalidates_the_pending_refresh_token(monkeypatch, auth_session):
+    db, user = auth_session
+    manager = RateLimitManager(redis_url="", app_env="test")
+    monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
+    refresh_token = create_refresh_token(
+        {"sub": user.email, "user_id": user.id, "session_version": 0}
+    )
+    access_token = create_access_token(
+        {"sub": user.email, "user_id": user.id, "session_version": 0}
+    )
+    logout_request = Request({
+        "type": "http",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/auth/logout",
+        "query_string": b"",
+        "headers": [
+            (b"origin", b"http://localhost:3000"),
+            (b"cookie", f"access_token={access_token}".encode("ascii")),
+        ],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+    })
+    auth_router.logout(logout_request, Response(), db)
+
+    refresh_request = Request({
+        "type": "http",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/auth/refresh",
+        "query_string": b"",
+        "headers": [
+            (b"origin", b"http://localhost:3000"),
+            (b"cookie", f"refresh_token={refresh_token}".encode("ascii")),
+        ],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+    })
+    with pytest.raises(HTTPException) as expired:
+        auth_router.refresh_session(refresh_request, Response(), db)
+    assert expired.value.status_code == 401
+
+
+def test_refresh_fails_closed_when_session_backend_is_unavailable(monkeypatch, auth_session):
+    db, user = auth_session
+    token = create_refresh_token(
+        {"sub": user.email, "user_id": user.id, "session_version": 0}
+    )
+
+    class UnavailableManager:
+        def get_user_session_version(self, _user_id):
+            return 0
+
+        def begin_refresh_rotation(self, *_args):
+            raise RateLimitBackendUnavailable("test outage")
+
+    monkeypatch.setattr(auth_router, "rate_limit_manager", UnavailableManager())
+    request = Request({
+        "type": "http",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/auth/refresh",
+        "query_string": b"",
+        "headers": [
+            (b"origin", b"http://localhost:3000"),
+            (b"cookie", f"refresh_token={token}".encode("ascii")),
+        ],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+    })
+    with pytest.raises(HTTPException) as unavailable:
+        auth_router.refresh_session(request, Response(), db)
+    assert unavailable.value.status_code == 503
