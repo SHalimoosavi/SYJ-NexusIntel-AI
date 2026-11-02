@@ -269,7 +269,7 @@ class RateLimitManager:
         try:
             return int(client.eval(
                 _REFRESH_CLAIM_SCRIPT,
-                2,
+                3,
                 self._key("consumed-refresh:" + jti),
                 self._key("refresh-inflight:" + jti),
                 self._key("refresh-result:" + jti),
