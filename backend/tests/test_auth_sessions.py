@@ -106,6 +106,23 @@ def test_refresh_rotation_rejects_reuse_and_revokes_session_family(monkeypatch, 
         for key, value in first_response.raw_headers
     )
 
+    concurrent_response = Response()
+    concurrent = auth_router.refresh_session(refresh_request(), concurrent_response, db)
+    assert concurrent == {"success": True, "token_type": "cookie"}
+    first_refresh_cookie = next(
+        value for key, value in first_response.raw_headers
+        if key == b"set-cookie" and b"refresh_token=" in value
+    )
+    concurrent_refresh_cookie = next(
+        value for key, value in concurrent_response.raw_headers
+        if key == b"set-cookie" and b"refresh_token=" in value
+    )
+    assert first_refresh_cookie == concurrent_refresh_cookie
+    assert manager.get_user_session_version(user.id) == 0
+
+    # Once the short idempotency grace has expired, the same token is theft/replay.
+    manager._memory_refresh_results.clear()
+    manager._memory_refresh_inflight.clear()
     with pytest.raises(HTTPException) as replay:
         auth_router.refresh_session(refresh_request(), Response(), db)
     assert replay.value.status_code == 401
