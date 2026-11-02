@@ -1,5 +1,5 @@
 """Tenant boundary regression tests using isolated SQLite data only."""
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import pytest
@@ -135,14 +135,14 @@ def tenant_db():
         email="invite-a@example.com",
         role_id=manager.id,
         token="digest-a",
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
     )
     invitation_b = Invitation(
         organization_id=org_b.id,
         email="invite-b@example.com",
         role_id=manager.id,
         token="digest-b",
-        expires_at=datetime.utcnow() + timedelta(hours=1),
+        expires_at=datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(hours=1),
     )
     session.add_all([
         note_a, note_b, activity_a, activity_b, memory_a, memory_b,
