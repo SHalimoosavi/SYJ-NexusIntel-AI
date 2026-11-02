@@ -234,6 +234,8 @@ def refresh_session(
                 raise HTTPException(status_code=401, detail="Refresh session expired")
             rate_limit_manager.complete_refresh_rotation(jti, tokens)
 
+        if tokens is None:
+            raise HTTPException(status_code=503, detail="Session refresh result unavailable")
         _set_session_cookies(response, tokens)
     except RateLimitBackendUnavailable:
         raise HTTPException(
