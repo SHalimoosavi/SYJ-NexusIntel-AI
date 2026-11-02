@@ -3,3 +3,8 @@ line-length = 100
 
 [lint]
 select = ["E4", "E7", "E9", "F"]
+
+[lint.per-file-ignores]
+# main.py deliberately loads the local .env before importing application modules;
+# model imports are also intentional so SQLAlchemy registers every mapped table.
+"app/main.py" = ["E402", "F401"]
