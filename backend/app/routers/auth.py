@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user
+from app.core.client_ip import resolve_client_ip
 from app.core.rate_limit import RateLimitBackendUnavailable, rate_limit_manager
 from app.core.security import (
     ACCESS_TOKEN_EXPIRE_MINUTES,
@@ -121,7 +122,10 @@ def login(
     db: Session = Depends(get_db),
 ):
     _require_trusted_origin(request)
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = resolve_client_ip(
+        request.client.host if request.client else None,
+        request.headers.get("x-forwarded-for"),
+    )
     attempt_key = _login_attempt_key(client_ip, credentials.email)
     account_key = _account_attempt_key(credentials.email)
 
