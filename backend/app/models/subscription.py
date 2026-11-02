@@ -1,4 +1,4 @@
-from datetime import datetime
+from app.core.clock import utcnow_naive
 
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -62,5 +62,5 @@ class Subscription(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utcnow_naive,
     )
