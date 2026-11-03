@@ -71,7 +71,7 @@ def get_crm_stats(
         ]
     )
 
-    close_rate = 0
+    close_rate: float = 0.0
 
     if won_deals + lost_deals > 0:
         close_rate = round(
@@ -140,7 +140,7 @@ def get_revenue_metrics(
 
     total_deals = len(leads)
 
-    win_rate = 0
+    win_rate: float = 0.0
 
     if total_deals > 0:
         win_rate = round(
