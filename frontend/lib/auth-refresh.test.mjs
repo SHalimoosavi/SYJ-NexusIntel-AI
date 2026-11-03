@@ -93,3 +93,14 @@ test("independent module contexts serialize refresh through shared Web Locks and
     else Object.defineProperty(globalThis, "localStorage", { configurable: true, value: originalStorage });
   }
 });
+
+test("refresh coordinator resumes after successful authentication", async () => {
+  cancelPendingAuthRefresh();
+  resumeAuthRefresh();
+  const result = await refreshAuthSession(
+    "/api",
+    async () => ({ ok: true }),
+    undefined,
+  );
+  assert.equal(result, true);
+});
