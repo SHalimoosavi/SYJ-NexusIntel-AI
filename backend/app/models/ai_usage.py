@@ -6,13 +6,15 @@ from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped
+
 from app.database.database import Base
 
 
 class AIUsage(Base):
     __tablename__ = "ai_usage"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,
