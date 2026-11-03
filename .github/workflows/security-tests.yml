@@ -51,8 +51,12 @@ jobs:
           import json
           import os
           import secrets
+          key = secrets.token_urlsafe(48)
+          encoded_keys = json.dumps({"test-v1": key})
+          print(f"::add-mask::{key}")
+          print(f"::add-mask::{encoded_keys}")
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
-              env.write("JWT_SIGNING_KEYS=" + json.dumps({"test-v1": secrets.token_urlsafe(48)}) + "\n")
+              env.write("JWT_SIGNING_KEYS=" + encoded_keys + "\n")
           PY
       - name: Expose Redis service container for outage characterization
         run: |
