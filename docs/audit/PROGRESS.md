@@ -235,3 +235,12 @@ Docker self-hosted install remains gated. Do not start until owner confirms whet
 - Explicitly excluded PR #6 workflow, hosting, dependency automation, Ruff-only cleanup, Redis argument coercion, HTTP response-body refactor, SQLAlchemy `mapped_column` substitutions, and the SSL helper runtime change.
 - PR #5 port head: `5aa15fdaf6e94dc3789ba766e9fc582a4635ab9d`. Actions were triggered for this head; do not mark the port green until its finished backend-quality, backend tests, and frontend jobs are inspected.
 - PR #5 and PR #6 remain sibling branches targeting `feat/security-hardening`; no merge/sync commit is applicable under the owner's conditional stacking rule.
+
+
+## 2026-11-04 — PR #5 model annotation correction after CI failure
+
+- Finished Security Tests run [41726490100](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41726490100) passed Ruff, backend security tests and frontend checks/build, but backend-quality Mypy failed with 12 assignment errors across the 10 model files listed below.
+- Root cause: `Mapped[T]` declarations were paired with existing SQLAlchemy `Column(...)` assignments. Corrected only the static annotations to `Column[T]` and removed the unused `Mapped` imports; the `Column(...)` expressions and all runtime behavior remain unchanged.
+- Files: `backend/app/models/user.py`, `backend/app/models/subscription.py`, `backend/app/models/organization.py`, `backend/app/models/lead_note.py`, `backend/app/models/lead.py`, `backend/app/models/invitation.py`, `backend/app/models/feature_flag.py`, `backend/app/models/audit_log.py`, `backend/app/models/ai_usage.py`, `backend/app/models/activity.py`.
+- No auth, JWT, refresh, RBAC, tenant isolation, rate-limit keying or proxy-IP implementation was changed. No check was weakened, no ignore added, and no test removed.
+- This is one bounded correction attempt. CI must verify Mypy 0 errors and unchanged-or-higher test counts before this gate can close.
