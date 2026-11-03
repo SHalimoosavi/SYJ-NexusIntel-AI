@@ -252,3 +252,27 @@ Docker self-hosted install remains gated. Do not start until owner confirms whet
 - Updated PR #5 and PR #6 descriptions with the exact SSL `type: ignore[arg-type]` line at `backend/app/services/osint_service.py:118`. A runtime `isinstance(sock, ssl.SSLSocket)` guard alone does not resolve the overloaded `getpeercert`/single-method Protocol mismatch; suppression retained, no TLS verification change.
 - PR #5 head is now `ae35fa149d47a78be122f75be72092e397031be0`; PR #6 head remains `86121487d509a302e60bcaf76d1c122d18a55f10`. PRs are siblings targeting `feat/security-hardening`; no sync merge is applicable.
 - CI on the updated PR #5 head is required before the verification gate can close. Docker Phase 3 remains blocked until every Section 3 item is finished and green.
+
+
+## Deferred, not blocking
+
+Owner approved all four items as non-blocking and explicitly excluded them from this typing/hygiene/Docker stack. No remediation code or dependency changes are authorized here.
+
+| Item | Why it matters | Earliest affected version / break point | Proposed follow-up |
+|---|---|---|---|
+| Passlib 1.7.4 deprecated `crypt` module | Python removes the stdlib `crypt` module; Passlib is unmaintained, increasing compatibility risk on Python upgrades. | Python 3.13 removes `crypt`. | Separate AUTH-SENSITIVE PR migrating to `argon2-cffi` or `pwdlib`, with rehash-on-login and password-hash migration/regression tests. Do not start now. [Issue #7](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/issues/7). |
+| Starlette TestClient / httpx deprecation | Current pinned test stack warns about the legacy TestClient integration. | Pinned Starlette 1.3.1 + httpx 0.28.1 already emits the warning. The warning does not specify a removal release; no future break version can be responsibly asserted. | Migrate test dependencies only when pinned Starlette/httpx versions permit the supported replacement, retaining the test contract. [Issue #8](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/issues/8). |
+| Frontend internal navigation via `window.location.assign()` (`frontend/app/login/page.tsx:33`, `frontend/lib/auth.ts:19`) | Next.js warns that internal navigation should use its router; replacing it may alter authentication navigation behavior. | Pinned Next.js / eslint-config-next 16.4.3 already emits the lint warning; the warning does not specify a removal release. | Separate PR using Next.js router navigation with explicit login-flow tests. [Issue #9](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/issues/9). |
+| PR #5 historical backend warning baseline (243 warnings) | High warning volume reduces signal and makes regressions harder to identify; owner accepts the existing baseline. | No single Python/library break version; this is a recorded baseline, not a specific runtime compatibility failure. | Preserve the baseline in this stack; reassess only in a separately approved maintenance task. [Issue #10](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/issues/10). |
+
+### Phase 3 Python image pin constraint
+
+- When Phase 3 is authorized by the completed Section 3 gate, pin the backend image to Python **3.12.15** (the exact Python patch version used by the CI runner evidence) rather than any floating `python:3` or `latest` tag.
+- Add an explanatory Dockerfile comment and repeat the rationale in the Phase 3 PR description: Passlib 1.7.4 currently depends on the stdlib `crypt` module, which Python 3.13 removes. The deferred Passlib migration must not be started in Phase 3.
+
+### PR #5 CI correction attempt 1 — diagnosis and repair
+
+- Finished run [41729011812](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41729011812) failed because the earlier correction removed the `Mapped` import but did not replace square-bracket `Mapped[T]` annotations. Ruff reported 12 `F821 Undefined name Mapped` errors; Mypy was skipped. Backend collection reported 11 errors; the first was `NameError: name 'Mapped' is not defined` from `app/models/user.py:16`, cascading through test imports.
+- Corrected only the annotations in the same 10 model files from `Mapped[T]` to `Column[T]`; no `Column(...)` assignment, default, constraint, or runtime expression was changed. Correction commits: `b9f9cb0171c69a8574068b5f2b2dd41f93e85818`, `d96dbc2fe479ec4648872236993d91c34e9e6599`, `53e10cf2d963764c48be16ec82a30db316b47e5e`, `30638b682a3b516e75e8661cdbd57dbf34b61f54`, `882722e595c3f88f03fc496a7aa05740df2bde31`, `64a8dc42223b80cdefd0ff4729a15520aa03e130`, `f21080b43c969d222624041f8b836206d177c281`, `1f277a042e9f78697a23d9c770409706d8d7e7f8`, `7c814ca14e2a8eb5ccd944e8770584311d491923`, `1ddeb2566a7fecccb772699cf1aa83758b6ff932`.
+- The 243-warning baseline remains the last complete comparable PR #5 backend test result (126 passed, 243 warnings). The failed collection attempt emitted 2 warnings before abort; that partial count is not comparable. Verify exact warning count on the next complete test run and ensure it does not exceed 243.
+- Deferred warnings are not to be fixed in this stack.
