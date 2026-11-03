@@ -143,3 +143,12 @@ Reviewed the current PR #5 head 048ed9209b827b424ffa754ff7a3aaa30b1cac20 and the
 ### Step B disposition
 
 The requested negative behaviors have existing regression tests for refresh-token replay, ADMIN-to-SUPER_ADMIN protection, cross-tenant target access, and spoofed forwarded-for at the resolver boundary. The remaining integration/concurrency gaps above require executable regression tests. No auth-sensitive code or test changes were committed in this checkpoint because this GitHub connection does not provide a repository checkout or command runner to demonstrate that new tests fail before and pass after the change; no unexecuted tests are being represented as verified. Step B is therefore INCOMPLETE pending an executable test environment or CI-backed patch workflow that can establish the required before/after evidence.
+
+
+## 2026-11-03 — Historical auth-sensitive commit mapping
+
+- Created `docs/audit/AUTH_SENSITIVE_CHANGES.md` in commit `41955f65ba5d536e757e27080b5fc549227208c5` on `fix/phase1-auth-proxy-rbac`.
+- Method: enumerated PR #5 (35 commits) and PR #6 (86 commits), inspected commit-level file lists/patches for auth, JWT, refresh, tenant, RBAC, rate-limit and proxy-IP paths/content, and inspected PR #6's aggregate base-to-head diff (49 files). PR #6 introduces no auth-sensitive behavior change; the relevant behavior implementation is in PR #5.
+- The document maps identified behavior and test/configuration commits, names tests, distinguishes tests added later, records the historical prefix/test-first limitation, and lists uncovered areas. The table is included in PR descriptions for owner review.
+- Historical limitation: **Convention not followed before `cd8a21f1c18c0b89ff271ea47005b5e9787839d9`: not retroactively fixable without history rewrite.** No history was changed.
+- Audit completion is limited to inspected patches; see the document's explicit search method and completeness limits. Remaining gaps must be covered with test-first commits.
