@@ -7,7 +7,7 @@ Redirects are followed manually and revalidated at each hop.
 import ipaddress
 import socket
 import ssl
-from typing import cast
+from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
 
 import certifi
@@ -102,7 +102,7 @@ def _pinned_https_get(
             response.close()
             pool.close()
             raise ValueError("Target response exceeded the permitted size")
-        setattr(response, "data", body)
+        cast(Any, response).data = body
         return SafeHTTPResponse(response, pool)
     except Exception:
         pool.close()
