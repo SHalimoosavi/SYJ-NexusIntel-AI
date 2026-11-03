@@ -53,6 +53,7 @@ def test_clean_tree_passes(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -
         ("config/" + "rail" + "way.toml", b""),
         ("config/" + "Pro" + "cfile", b"web: run\n"),
         ("config/" + "nix" + "packs", b""),
+        ("config/" + "nix" + "packs.toml", b""),
         ("config/" + "." + "ver" + "cel" + "/project", b""),
         ("config/settings.env", ("VER" + "CEL_" + "TOKEN=secret-value\n").encode()),
         ("config/host.txt", ( "app." + "ver" + "cel" + ".app\n").encode()),

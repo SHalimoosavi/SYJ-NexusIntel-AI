@@ -437,3 +437,11 @@ The following are the completed CI evidence for the latest code head. Formal Ste
 - This is a replacement for the earlier escaped implementation, not a Gitleaks baseline or suppression. Gitleaks configuration/workflows were not changed.
 - In flight: execute the guard and pytest on a clean checkout, inspect any reported non-allowlisted matches, then update this log and open the Stage 0 PR. Provider disconnect, credential rotation, GitHub inventory and docs-only no-provider verification remain UNVERIFIED.
 - Last run URL: NOT YET RUN for this replacement.
+
+
+### Guard test hardening follow-up
+
+- Added explicit coverage for the additional Nixpacks TOML filename variant.
+- Changed binary fixture construction to assemble provider markers at runtime so the test source itself does not contain a live match.
+- Added an explicit pytest installation step to the CI job; the guard workflow still invokes the standalone script without inline logic.
+- Last run URL: NOT YET RUN; awaiting CI for commit.
