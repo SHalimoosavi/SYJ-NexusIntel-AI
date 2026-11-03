@@ -33,7 +33,7 @@ def get_event_summary(
         .all()
     )
 
-    summary = {}
+    summary: dict[str, int] = {}
 
     for log in logs:
         summary[log.event_type] = (
