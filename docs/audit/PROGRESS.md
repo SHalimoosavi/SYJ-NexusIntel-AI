@@ -307,3 +307,17 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 - Mypy reported **57 errors in 14 files**, down from 59. The original `api_docs.py`, `safe_http.py`, `feature_flag_service.py`, and `subscription.py` findings are no longer present. The remaining diagnostics include two exposed `AuditLog.event_type` typing errors and Redis command typing errors; full log excerpt is retained in Actions.
 - Backend regression suite: **one failure** in `test_redis_backend_uses_hashed_keys_and_atomic_eval`. Root cause: moving Redis import to module scope bypassed that test's lazy-import fake and attempted a real localhost:6379 connection. No production Redis service or credential was used.
 - Third correction attempt commit: `0385b77ca1aaff03757bd97c71a1f74897851e6c`. It restores lazy Redis import, defines a narrow synchronous Redis protocol at the boundary, converts Lua numeric arguments to strings, and types `AuditLog.event_type` as a mapped non-null string. This is the third and final permitted fix attempt for this CI failure; if the next validation fails again, stop and present the exact log excerpt rather than making another fix.
+
+
+### Step 2 — validated Mypy batch 1 and batch 2
+
+**Batch 1 final validation**
+- Security Tests run [41551322020](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41551322020), on the Phase 2 checkpoint containing batch 1: backend tests passed, Ruff passed, frontend lint/build passed, Mypy reported **49 errors in 12 files**. The run's overall conclusion is failure solely because Mypy remains non-zero.
+- Compared with the 59-error baseline, the count is down by 10. No test configuration or Mypy policy was weakened.
+
+**Batch 2 validation**
+- Commit: `7759514c94555a6b586c1cc8157ccea733bb395f` — mapped `User.id`, `User.hashed_password`, and nullable `User.organization_id` using SQLAlchemy 2 `Mapped` / `mapped_column`, preserving existing nullability.
+- Security Tests run [41551471902](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41551471902): backend tests passed, Ruff passed, frontend lint/build passed; Mypy reported **32 errors in 10 files**.
+- The count decreased by 17 from 49. The user identity typing errors in `auth.py` and `dependencies.py` are cleared; two invitation-service diagnostics also disappeared because they referenced `User.id`. No behavior or schema semantics were intentionally changed.
+
+**Next Mypy batch:** 10 remaining diagnostics are attributable to scalar primary-key typing in `Organization`, `Lead`, `Invitation`, `AIUsage`, `LeadNote`, and `Activity`. These will be corrected in one mapped-typing batch and validated through the existing Mypy CI job.
