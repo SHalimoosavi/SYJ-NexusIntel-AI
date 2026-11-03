@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - feat/security-hardening
+      - fix/phase1-auth-proxy-rbac
   workflow_dispatch:
 
 permissions:
