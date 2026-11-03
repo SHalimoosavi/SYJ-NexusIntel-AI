@@ -272,3 +272,40 @@ def test_refresh_fails_closed_when_session_backend_is_unavailable(monkeypatch, a
     with pytest.raises(HTTPException) as unavailable:
         auth_router.refresh_session(request, Response(), db)
     assert unavailable.value.status_code == 503
+
+
+def test_refresh_missing_cached_result_fails_closed(monkeypatch, auth_session):
+    db, user = auth_session
+    token = create_refresh_token(
+        {"sub": user.email, "user_id": user.id, "session_version": 0}
+    )
+
+    class MissingResultManager:
+        def get_user_session_version(self, _user_id):
+            return 0
+
+        def begin_refresh_rotation(self, *_args):
+            return 2
+
+        def get_refresh_rotation_result(self, _jti):
+            return None
+
+    monkeypatch.setattr(auth_router, "rate_limit_manager", MissingResultManager())
+    monkeypatch.setattr(auth_router.time, "sleep", lambda _seconds: None)
+    request = Request({
+        "type": "http",
+        "method": "POST",
+        "scheme": "http",
+        "path": "/auth/refresh",
+        "query_string": b"",
+        "headers": [
+            (b"origin", b"http://localhost:3000"),
+            (b"cookie", f"refresh_token={token}".encode("ascii")),
+        ],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+    })
+    with pytest.raises(HTTPException) as unavailable:
+        auth_router.refresh_session(request, Response(), db)
+    assert unavailable.value.status_code == 503
+    assert unavailable.value.detail == "Session refresh result unavailable"
