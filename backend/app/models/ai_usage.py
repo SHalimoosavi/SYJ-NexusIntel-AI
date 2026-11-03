@@ -12,7 +12,7 @@ from app.database.database import Base
 class AIUsage(Base):
     __tablename__ = "ai_usage"
 
-    id: Mapped[int] = Column(
+    id: Column[int] = Column(
         Integer,
         primary_key=True,
         index=True,
