@@ -54,6 +54,11 @@ jobs:
           with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
               env.write("JWT_SIGNING_KEYS=" + json.dumps({"test-v1": secrets.token_urlsafe(48)}) + "\n")
           PY
+      - name: Expose Redis service container for outage characterization
+        run: |
+          container_id="$(docker ps --filter ancestor=redis:7.4-alpine --format '{{.ID}}' | head -n 1)"
+          test -n "$container_id"
+          echo "REDIS_SERVICE_CONTAINER_ID=$container_id" >> "$GITHUB_ENV"
       - name: Run security regression suite
         working-directory: backend
         run: pytest -q
