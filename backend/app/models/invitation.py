@@ -7,8 +7,6 @@ from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
-from sqlalchemy.orm import Mapped
-
 from app.database.database import Base
 
 
