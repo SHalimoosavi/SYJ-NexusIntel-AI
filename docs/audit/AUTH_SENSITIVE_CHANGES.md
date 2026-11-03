@@ -76,3 +76,19 @@ Historical auth-sensitive commits do not consistently use the `AUTH-SENSITIVE:` 
 - **SUPER_ADMIN and cross-tenant access:** existing tests remain green in [PR #5 run 41549229425](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41549229425): `test_admin_cannot_modify_or_delete_super_admin`, `test_actor_cannot_escalate_own_role`, `test_last_active_super_admin_cannot_be_disabled_or_deleted`, `test_cross_tenant_target_remains_inaccessible`.
 
 No auth policy change was introduced for these new tests; tests that pass against existing behavior are explicitly characterization tests, not red/green behavior-change proof. New auth-sensitive commits use the `AUTH-SENSITIVE:` prefix. No permissions, rate limits, token lifetimes, TLS verification, or security checks were weakened.
+
+
+## SSL typing suppression — owner review
+
+PR #6 retains this exact suppression at `backend/app/services/osint_service.py:118`:
+
+```python
+certificate = _read_tls_certificate(sock)  # type: ignore[arg-type]  # Python 3.12.15 typeshed overload mismatch; helper calls binary_form=False and rejects None, empty/non-dict certs, and malformed typed fields.
+```
+
+An `isinstance(sock, ssl.SSLSocket)` guard is **not a sufficient single-attempt replacement**: it narrows the runtime class but does not resolve the overloaded `getpeercert` method's incompatibility with the helper's single-method Protocol. Leave the suppression unchanged unless a replacement is independently type-checked and fail-closed tested. PR #5's port did not modify this TLS helper or its verification behavior.
+
+
+## 2026-11-04 — typing-only port into PR #5
+
+PR #5 received type-only backend annotations from PR #6 in the following files: `backend/app/core/api_docs.py`, `backend/app/core/rate_limit.py`, `backend/app/core/safe_http.py`, `backend/app/models/{activity,ai_usage,audit_log,feature_flag,invitation,lead,lead_note,organization,subscription,user}.py`, and `backend/app/services/{audit_dashboard_service,crm_service,osint_service,revenue_forecast_service}.py`. The follow-up model correction changed only `Mapped[T]` to `Column[T]` annotations and removed unused imports in the 10 affected model files. Existing runtime expressions and behavior were preserved. No auth/JWT/refresh/RBAC/tenant-isolation/rate-limit-keying/proxy-IP behavior was changed. CI validation is pending at PR #5 head `f0a217fdd89bd768f57b870c75b310e79c6d34ce`; do not treat the type-check gate as green until finished Actions results confirm it.
