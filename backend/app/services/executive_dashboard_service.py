@@ -33,7 +33,7 @@ def get_executive_dashboard(
         .filter(
             User.organization_id
             == organization_id,
-            User.is_active == True,
+            User.is_active.is_(True),
         )
         .count()
     )
@@ -61,7 +61,7 @@ def get_executive_dashboard(
         .filter(
             Invitation.organization_id
             == organization_id,
-            Invitation.is_used == True,
+            Invitation.is_used.is_(True),
         )
         .count()
     )

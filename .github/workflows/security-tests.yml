@@ -4,9 +4,12 @@ on:
   pull_request:
     branches:
       - main
+      - feat/security-hardening
   push:
     branches:
       - feat/security-hardening
+      - fix/phase1-auth-proxy-rbac
+      - chore/phase2-ci-repo-hygiene
   workflow_dispatch:
 
 permissions:
@@ -23,8 +26,8 @@ jobs:
       REDIS_URL: ""
       CORS_ORIGINS: http://localhost:3000
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
           cache: pip
@@ -48,8 +51,8 @@ jobs:
   frontend-checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: "22"
           cache: npm
@@ -65,3 +68,22 @@ jobs:
         env:
           NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
         run: npm run build
+
+  backend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend quality and test dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements-dev.txt
+      - name: Ruff lint
+        working-directory: backend
+        run: ruff check app tests
+      - name: Mypy type-check
+        working-directory: backend
+        run: mypy --config-file mypy.ini app

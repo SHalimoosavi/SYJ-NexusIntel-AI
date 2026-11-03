@@ -1,5 +1,7 @@
 from datetime import datetime
 
+from app.core.clock import utcnow_naive
+
 from sqlalchemy.orm import Session
 
 from app.models.lead import Lead
@@ -29,7 +31,7 @@ def get_relationship_intelligence(
 
     recommendations = []
 
-    today = datetime.utcnow()
+    today = utcnow_naive()
 
     for lead in leads:
         score = lead.lead_score or 0

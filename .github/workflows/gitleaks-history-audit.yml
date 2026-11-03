@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feat/security-hardening
+      - fix/phase1-auth-proxy-rbac
+      - chore/phase2-ci-repo-hygiene
   workflow_dispatch:
 
 permissions:
@@ -14,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout all repository history and refs
-        uses: actions/checkout@v4
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
           fetch-depth: 0
 

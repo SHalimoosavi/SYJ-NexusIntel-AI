@@ -1,4 +1,4 @@
-from datetime import datetime
+from app.core.clock import utcnow_naive
 
 from sqlalchemy import Column
 from sqlalchemy import Integer
@@ -6,13 +6,15 @@ from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database.database import Base
 
 
 class Lead(Base):
     __tablename__ = "leads"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,
@@ -127,5 +129,5 @@ class Lead(Base):
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utcnow_naive,
     )

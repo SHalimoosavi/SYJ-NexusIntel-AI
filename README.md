@@ -8,7 +8,7 @@
 [![Backend](https://img.shields.io/badge/backend-95%25-brightgreen)]()
 [![Frontend](https://img.shields.io/badge/frontend-90%25-brightgreen)]()
 [![Auth](https://img.shields.io/badge/auth-100%25-brightgreen)]()
-[![Deployment](https://img.shields.io/badge/deployment-live-brightgreen)]()
+[![Deployment](https://img.shields.io/badge/deployment-self--hosted--migration-orange)]()
 
 ---
 
@@ -72,7 +72,7 @@ Next.js 16 (React 19, TypeScript)
 JWT Cookie Session
    │
    ▼
-Railway-hosted FastAPI
+Docker-based FastAPI service (self-hosted target)
    │
    ▼
 RBAC Middleware
@@ -85,10 +85,10 @@ Business Services
 SQLAlchemy ORM
    │
    ▼
-Railway PostgreSQL
+PostgreSQL service (self-hosted target)
 ```
 
-Frontend is deployed on Vercel; backend and database are deployed on Railway. Both are live and monitored.
+The previous Vercel/Railway hosting configuration is deprecated. The project is moving to a Docker-based self-hosted deployment; production acceptance is not yet complete.
 
 ---
 
@@ -146,16 +146,16 @@ Settings
 - React 19
 - TypeScript
 - TailwindCSS
-- Deployed on Vercel
+- Docker-based self-hosted deployment target; acceptance pending
 
 **Backend**
 - FastAPI
 - SQLAlchemy (Alembic-ready migration architecture)
 - JWT authentication
-- Deployed on Railway
+- Docker-based self-hosted deployment target; acceptance pending
 
 **Data**
-- Railway-managed PostgreSQL
+- PostgreSQL (self-hosted Docker service target)
 
 **Services**
 - Organization Service
@@ -182,12 +182,13 @@ Security posture is being hardened as part of the current stabilisation phase; f
 
 | Component | Host | Status |
 |---|---|---|
-| Frontend | Vercel | Live |
-| Backend | Railway | Live |
-| Database | Railway PostgreSQL | Live |
-| Authentication | Production JWT | Live |
-| API | Production REST API | Live |
-| Dashboard | Production | Live |
+| Component | Current direction | Status |
+| Frontend | Docker-based self-hosted stack | Migration in progress |
+| Backend | Docker-based self-hosted stack | Migration in progress |
+| Database | PostgreSQL in Docker Compose | Not yet acceptance-tested |
+| Authentication | Cookie-based JWT sessions | Hardening in progress |
+| API | FastAPI | Security verification in progress |
+| Dashboard | Next.js | Build verification available |
 
 ---
 
@@ -210,11 +211,12 @@ Security posture is being hardened as part of the current stabilisation phase; f
 - Regression testing
 - Database validation
 
-### Phase 3 — Public Launch
-- Documentation
-- Licensing
-- Deployment verification
-- Commercial readiness
+### Phase 3 — Self-hosted deployment readiness
+- Complete install and deployment documentation
+- Clean-machine Docker acceptance
+- Backup, restore, upgrade and rollback verification
+
+Licensing and native installers are explicitly out of scope for this phase.
 
 ### Future — Feature Expansion
 - Autonomous AI agents (Research, Opportunity, Sales, Executive, Memory)
@@ -285,4 +287,4 @@ Redistribution and modification are prohibited without written permission. For l
 ---
 
 **Status:** Production Stabilisation · **Goal:** Public Launch
-**Last Updated:** July 2026
+**Last Updated:** November 2026

@@ -22,7 +22,13 @@ def resolve_public_addresses(domain: str) -> tuple[str, list[str]]:
         answers = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
     except OSError as exc:
         raise ValueError("Target domain could not be resolved") from exc
-    addresses = sorted({answer[4][0].split("%", 1)[0] for answer in answers})
+    normalized_addresses: set[str] = set()
+    for answer in answers:
+        address = answer[4][0]
+        if not isinstance(address, str):
+            raise ValueError("DNS response contained an invalid address")
+        normalized_addresses.add(address.split("%", 1)[0])
+    addresses = sorted(normalized_addresses)
     if not addresses:
         raise ValueError("Target domain has no public address")
     for address in addresses:
@@ -39,15 +45,16 @@ def assert_public_domain(domain: str) -> str:
 class SafeHTTPResponse:
     """Small response adapter exposing only the attributes used by services."""
 
-    def __init__(self, response, pool):
+    def __init__(self, response, pool, body: bytes):
         self._response = response
         self._pool = pool
+        self._body = body
         self.status_code = response.status
         self.headers = response.headers
 
     @property
     def text(self) -> str:
-        return self._response.data.decode("utf-8", errors="replace")
+        return self._body.decode("utf-8", errors="replace")
 
     @property
     def is_redirect(self) -> bool:
@@ -101,8 +108,7 @@ def _pinned_https_get(
             response.close()
             pool.close()
             raise ValueError("Target response exceeded the permitted size")
-        response.data = body
-        return SafeHTTPResponse(response, pool)
+        return SafeHTTPResponse(response, pool, body)
     except Exception:
         pool.close()
         raise

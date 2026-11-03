@@ -10,6 +10,8 @@ import time
 import uuid
 from collections import defaultdict, deque
 from threading import Lock
+from typing import Any, Protocol, cast
+
 
 logger = logging.getLogger("security.rate_limit")
 
@@ -54,6 +56,21 @@ class SlidingWindowLimiter:
         return self.check(key, limit, window_seconds)[0]
 
 
+class RedisClient(Protocol):
+    """Synchronous Redis operations used by the rate-limit manager."""
+
+    def ping(self) -> bool: ...
+    def eval(self, script: str, numkeys: int, *keys_and_args: str) -> list[int]: ...
+    def exists(self, *names: str) -> int: ...
+    def pipeline(self) -> Any: ...
+    def get(self, name: str) -> str | None: ...
+    def incr(self, name: str) -> int: ...
+    def setex(self, name: str, seconds: int, value: str) -> Any: ...
+    def expire(self, name: str, seconds: int) -> Any: ...
+    def delete(self, *names: str) -> int: ...
+    def set(self, name: str, value: str, *, ex: int, nx: bool) -> Any: ...
+
+
 class RateLimitBackendUnavailable(RuntimeError):
     pass
 
@@ -61,9 +78,9 @@ class RateLimitBackendUnavailable(RuntimeError):
 class RateLimitManager:
     def __init__(self, redis_url: str | None = None, app_env: str | None = None):
         self.redis_url = redis_url if redis_url is not None else os.getenv("REDIS_URL")
-        self.app_env = (app_env or os.getenv("APP_ENV", "production")).lower()
+        self.app_env = (app_env if app_env is not None else os.getenv("APP_ENV") or "production").lower()
         self.local_mode = self.app_env in {"development", "dev", "local", "desktop", "test"}
-        self._redis_client = None
+        self._redis_client: RedisClient | None = None
         self._memory = SlidingWindowLimiter()
         self._memory_failures: dict[str, tuple[int, float]] = {}
         self._memory_lockouts: dict[str, float] = {}
@@ -71,7 +88,7 @@ class RateLimitManager:
         self._memory_consumed_jti: dict[str, float] = {}
         self._lock = Lock()
 
-    def _redis(self):
+    def _redis(self) -> RedisClient | None:
         if not self.redis_url:
             if self.local_mode:
                 return None
@@ -80,13 +97,13 @@ class RateLimitManager:
             try:
                 import redis
 
-                self._redis_client = redis.Redis.from_url(
+                self._redis_client = cast(RedisClient, redis.Redis.from_url(
                     self.redis_url,
                     decode_responses=True,
                     socket_connect_timeout=1.5,
                     socket_timeout=1.5,
                     health_check_interval=30,
-                )
+                ))
                 self._redis_client.ping()
             except Exception as exc:
                 self._redis_client = None
@@ -111,9 +128,9 @@ class RateLimitManager:
                 _REDIS_WINDOW_SCRIPT,
                 1,
                 redis_key,
-                time.time(),
-                window_seconds,
-                limit,
+                str(time.time()),
+                str(window_seconds),
+                str(limit),
                 uuid.uuid4().hex,
             )
             return bool(int(result[0])), int(result[1])

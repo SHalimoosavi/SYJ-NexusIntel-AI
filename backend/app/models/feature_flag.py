@@ -1,6 +1,7 @@
-from datetime import datetime
+from app.core.clock import utcnow_naive
 
 from sqlalchemy import Column
+from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import Boolean
@@ -30,12 +31,13 @@ class FeatureFlag(Base):
         nullable=False,
     )
 
-    is_enabled = Column(
+    is_enabled: Mapped[bool | None] = mapped_column(
         Boolean,
         default=False,
+        nullable=True,
     )
 
     created_at = Column(
         DateTime,
-        default=datetime.utcnow,
+        default=utcnow_naive,
     )
