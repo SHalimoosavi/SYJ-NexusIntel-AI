@@ -299,3 +299,11 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 
 
 - Follow-up correction commit `729aaa59f4f04a86c50ea6b97699fb998a577596` replaces **both** runtime-evaluated `Redis[str]` annotations with the installed library's non-generic `Redis` annotation and restores standard-library/third-party import grouping. The preceding run [41551035116](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41551035116) was triggered before this correction and therefore does not validate it; its backend test collection still reports the same generic-type exception. Await the next run on the corrected head before further edits.
+
+
+### Step 2 — Mypy batch 1 follow-up run and third correction attempt
+
+- Run [41551103243](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41551103243), head `729aaa59f4f04a86c50ea6b97699fb998a577596): Ruff passed; frontend checks were still in progress at last observation and the overall run ultimately failed.
+- Mypy reported **57 errors in 14 files**, down from 59. The original `api_docs.py`, `safe_http.py`, `feature_flag_service.py`, and `subscription.py` findings are no longer present. The remaining diagnostics include two exposed `AuditLog.event_type` typing errors and Redis command typing errors; full log excerpt is retained in Actions.
+- Backend regression suite: **one failure** in `test_redis_backend_uses_hashed_keys_and_atomic_eval`. Root cause: moving Redis import to module scope bypassed that test's lazy-import fake and attempted a real localhost:6379 connection. No production Redis service or credential was used.
+- Third correction attempt commit: `0385b77ca1aaff03757bd97c71a1f74897851e6c`. It restores lazy Redis import, defines a narrow synchronous Redis protocol at the boundary, converts Lua numeric arguments to strings, and types `AuditLog.event_type` as a mapped non-null string. This is the third and final permitted fix attempt for this CI failure; if the next validation fails again, stop and present the exact log excerpt rather than making another fix.
