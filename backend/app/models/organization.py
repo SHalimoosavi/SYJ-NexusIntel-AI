@@ -5,13 +5,15 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
 
+from sqlalchemy.orm import Mapped
+
 from app.database.database import Base
 
 
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,
