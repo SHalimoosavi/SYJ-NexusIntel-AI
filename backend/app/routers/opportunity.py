@@ -5,9 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.opportunity import (
-    OpportunityRequest,
-)
+from app.schemas.opportunity import OpportunityRequest, OpportunityResponse
 
 from app.services.opportunity_service import (
     analyze_opportunity,
@@ -28,7 +26,7 @@ router = APIRouter(
 )
 
 
-@router.post("/analyze")
+@router.post("/analyze", response_model=OpportunityResponse)
 def opportunity_analysis(
     request: OpportunityRequest,
     db: Session = Depends(get_db),
@@ -53,6 +51,7 @@ def opportunity_analysis(
         db,
         organization_id,
         "OPPORTUNITY_ANALYSIS",
+        current_user["user_id"],
     )
 
     return result

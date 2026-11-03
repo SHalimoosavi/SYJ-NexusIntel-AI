@@ -12,7 +12,7 @@ from app.database.database import Base
 class Activity(Base):
     __tablename__ = "activities"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,

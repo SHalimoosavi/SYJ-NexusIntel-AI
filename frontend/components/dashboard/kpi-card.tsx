@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 
 import AnimatedCounter from "./animated-counter";
 
@@ -8,7 +9,7 @@ type Props = {
   title: string;
   value: string | number;
   subtitle: string;
-  icon: any;
+  icon: LucideIcon;
 };
 
 export default function KPICard({

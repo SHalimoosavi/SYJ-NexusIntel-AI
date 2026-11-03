@@ -1,88 +1,42 @@
-const API_BASE =
-  "https://syj-nexusintel-ai-production.up.railway.app";
+import { API_BASE } from "./config";
+import { cancelPendingAuthRefresh, resumeAuthRefresh } from "./auth-refresh.mjs";
 
-/* =========================
-   TOKEN HELPERS
-========================= */
-
-export function getToken(): string | null {
-  if (typeof document === "undefined") {
-    return null;
-  }
-
-  const match = document.cookie.match(
-    /(^| )token=([^;]+)/
-  );
-
-  return match ? match[2] : null;
-}
-
+/**
+ * Browser authentication is held in an HttpOnly cookie scoped to the API.
+ * JavaScript must never read, persist, or attach the session JWT itself.
+ */
 export function authHeaders() {
-  const token = getToken();
-
-  return {
-    "Content-Type": "application/json",
-    ...(token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {}),
-  };
+  return { "Content-Type": "application/json" };
 }
 
-export function saveToken(
-  token: string
-) {
-  document.cookie =
-    `token=${token}; path=/; max-age=86400`;
-}
-
-export function logout() {
-  document.cookie =
-    "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-
-  window.location.href = "/login";
-}
-
-/* =========================
-   LOGIN
-========================= */
-
-export async function login(
-  email: string,
-  password: string
-) {
-  const response = await fetch(
-    `${API_BASE}/auth/login`,
-    {
+export async function logout() {
+  cancelPendingAuthRefresh();
+  try {
+    await fetch(`${API_BASE}/auth/logout`, {
       method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    }
-  );
-
-  const data =
-    await response.json();
-
-  if (!response.ok) {
-    throw new Error(
-      data.detail ||
-      "Invalid credentials"
-    );
+      credentials: "include",
+      cache: "no-store",
+    });
+  } finally {
+    window.location.assign("/login");
   }
+}
 
+export async function login(email: string, password: string) {
+  const response = await fetch(`${API_BASE}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+    cache: "no-store",
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.detail || "Invalid credentials");
+  }
+  resumeAuthRefresh();
   return data;
 }
-
-/* =========================
-   INVITATION ACCEPTANCE
-========================= */
 
 export async function acceptInvitation(
   full_name: string,
@@ -90,32 +44,21 @@ export async function acceptInvitation(
   password: string,
   invitation_token: string
 ) {
-  const response = await fetch(
-    `${API_BASE}/invitations/accept`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type":
-          "application/json",
-      },
-      body: JSON.stringify({
-        full_name,
-        email,
-        password,
-        invitation_token,
-      }),
-    }
-  );
-
-  const data =
-    await response.json();
-
+  const response = await fetch(`${API_BASE}/invitations/accept`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      full_name,
+      email,
+      password,
+      invitation_token,
+    }),
+  });
+  const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(
-      data.detail ||
-      "Invitation acceptance failed"
-    );
+    throw new Error(data.detail || "Invitation acceptance failed");
   }
-
+  resumeAuthRefresh();
   return data;
 }

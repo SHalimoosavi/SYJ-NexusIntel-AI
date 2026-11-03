@@ -12,7 +12,7 @@ from app.database.database import Base
 class Subscription(Base):
     __tablename__ = "subscriptions"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,

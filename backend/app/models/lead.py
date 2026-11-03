@@ -12,7 +12,7 @@ from app.database.database import Base
 class Lead(Base):
     __tablename__ = "leads"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,

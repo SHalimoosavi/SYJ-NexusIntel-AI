@@ -1,4 +1,4 @@
-import { Lead } from "@/types/lead";
+import type { Lead } from "@/types/lead";
 import LeadScoreBadge from "@/components/leads/lead-score-badge";
 
 type Props = {

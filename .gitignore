@@ -1,47 +1,62 @@
 # Python
-
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
 *.pyd
 
-# Virtual Environment
-
+# Virtual environments
 venv/
+.venv/
 backend/venv/
+backend/.venv/
 
-# Database
-
-*.db
-*.sqlite3
-
-# Environment
-
+# Environment files: keep only explicitly safe examples
 .env
+.env.*
+!.env.example
+!**/.env.example
+
+# Credentials, private keys and certificates
+*.key
+*.pem
+*.p12
+*.pfx
+*.p7b
+*.p7c
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+*.pub
+
+# Local databases and database sidecars
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.duckdb
+*.mdb
 
 # Logs
-
 *.log
 
 # OS
-
 .DS_Store
 
 # Node
-
 node_modules/
 
 # Next.js
-
 .next/
 out/
 
 # Coverage
-
 coverage/
 htmlcov/
 
 # IDE
-
 .vscode/
 .idea/

@@ -11,7 +11,7 @@ from app.database.database import Base
 class Organization(Base):
     __tablename__ = "organizations"
 
-    id = Column(
+    id: Mapped[int] = Column(
         Integer,
         primary_key=True,
         index=True,

@@ -5,10 +5,8 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.schemas.lead_note import (
-    LeadNoteCreate,
-    LeadNoteResponse,
-)
+from app.schemas.lead_note import LeadNoteCreate, LeadNoteResponse
+from app.schemas.common import SuccessResponse
 
 from app.services.lead_note_service import (
     create_note,
@@ -41,6 +39,7 @@ def create_note_route(
         db,
         note,
         current_user["organization_id"],
+        current_user["user_id"],
     )
 
 
@@ -64,6 +63,7 @@ def get_notes_route(
 
 @router.delete(
     "/{note_id}",
+    response_model=SuccessResponse,
 )
 def delete_note_route(
     note_id: int,
@@ -76,6 +76,7 @@ def delete_note_route(
         db,
         note_id,
         current_user["organization_id"],
+        current_user["user_id"],
     )
 
     return {

@@ -4,6 +4,27 @@ import { useEffect, useState } from "react";
 
 import CommandLayout from "@/components/layout/command-layout";
 import ExecutiveDashboard from "@/components/dashboard/executive-dashboard";
+import type {
+  AgentMemory,
+  CRMStats,
+  CRMRevenue,
+  CRMPipeline,
+  ExecutiveBriefing,
+  ExecutiveOpportunity,
+  ExecutiveRisks,
+  IntelligenceReport,
+} from "@/lib/api";
+
+type DashboardData = {
+  stats: CRMStats;
+  revenue: CRMRevenue;
+  pipeline: CRMPipeline;
+  briefing: ExecutiveBriefing;
+  memories: AgentMemory[];
+  opportunities: ExecutiveOpportunity[];
+  risks: ExecutiveRisks;
+  intelligenceReport: IntelligenceReport;
+};
 
 import {
 getCRMStats,
@@ -17,7 +38,7 @@ getIntelligenceReport,
 } from "@/lib/api";
 
 export default function DashboardPage() {
-const [data, setData] = useState<any>(null);
+const [data, setData] = useState<DashboardData | null>(null);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState("");
 
@@ -54,11 +75,12 @@ getIntelligenceReport(),
       risks,
       intelligenceReport,
     });
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(err);
     setError(
-      err?.message ||
-      "Failed to load dashboard"
+      err instanceof Error
+        ? err.message
+        : "Failed to load dashboard"
     );
   } finally {
     setLoading(false);
@@ -79,11 +101,11 @@ Loading Dashboard...
 );
 }
 
-if (error) {
+if (error || !data) {
 return (
 <CommandLayout>
 <div className="p-8 text-red-500">
-{error}
+{error || "Dashboard data is unavailable"}
 </div>
 </CommandLayout>
 );

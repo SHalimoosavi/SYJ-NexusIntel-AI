@@ -1,8 +1,19 @@
 from dotenv import load_dotenv
 from pathlib import Path
+import os
+import logging
+from urllib.parse import urlsplit
+from fastapi import Request
+from fastapi.responses import JSONResponse
+
+from app.core.redaction import RedactingLogFilter
+from app.core.body_limit import RequestBodyLimitMiddleware
+from app.schemas.common import HealthResponse, ReadinessResponse
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
+
+APP_ENV = os.getenv("APP_ENV", "production").strip().lower()
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -29,7 +40,14 @@ from app.models.invitation import Invitation
 
 from app.database.database import SessionLocal
 
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from app.core.client_ip import resolve_client_ip
+
+from app.core.rate_limit import (
+    RateLimitBackendUnavailable,
+    rate_limit_manager,
+    rate_limit_policy_for_path,
+)
+from app.core.api_docs import api_docs_config
 
 from app.services.role_service import (
     seed_roles,
@@ -121,33 +139,88 @@ from app.routers.users import (
     router as users_router
 )
 
-Base.metadata.create_all(bind=engine)
-
-db = SessionLocal()
-
-try:
-    seed_roles(db)
-
-finally:
-    db.close()
+if APP_ENV in {"development", "dev", "local", "desktop", "test"}:
+    Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
+    try:
+        seed_roles(db)
+    finally:
+        db.close()
+TRUSTED_PROXIES = [
+    host.strip()
+    for host in os.getenv("TRUSTED_PROXIES", "").split(",")
+    if host.strip()
+]
+# Validate configured IP/CIDR entries at process startup. Empty means trust none.
+resolve_client_ip("127.0.0.1", None, TRUSTED_PROXIES)
 
 app = FastAPI(
     title="SYJ NexusIntel AI",
     description="AI Powered Business Intelligence, Lead Discovery and OSINT Platform",
     version="1.0.0",
+    **api_docs_config(),
 )
 
-app.add_middleware(ProxyHeadersMiddleware)
+# Apply redaction to existing handlers. The production process must configure
+# handlers through the standard logging setup before importing this module.
+_redacting_filter = RedactingLogFilter()
+_root_logger = logging.getLogger()
+_root_logger.addFilter(_redacting_filter)
+for _handler in _root_logger.handlers:
+    _handler.addFilter(_redacting_filter)
+for _logger_name in ("uvicorn", "uvicorn.error", "uvicorn.access", "fastapi"):
+    _named_logger = logging.getLogger(_logger_name)
+    _named_logger.addFilter(_redacting_filter)
+    for _handler in _named_logger.handlers:
+        _handler.addFilter(_redacting_filter)
+
+@app.exception_handler(Exception)
+async def generic_unhandled_exception_handler(request: Request, exc: Exception):
+    logging.getLogger("security.application").error(
+        "unhandled_exception method=%s path_group=%s error_type=%s",
+        request.method,
+        request.url.path.split("/", 2)[1] if request.url.path.count("/") >= 1 else "root",
+        type(exc).__name__,
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "An internal server error occurred."},
+    )
+
+app.add_middleware(
+    RequestBodyLimitMiddleware,
+    max_body_bytes=int(os.getenv("MAX_REQUEST_BODY_BYTES", str(10 * 1024 * 1024))),
+)
+
+_raw_cors_origins = os.getenv("CORS_ORIGINS", "")
+if not _raw_cors_origins and APP_ENV not in {"development", "dev", "local", "desktop", "test"}:
+    raise RuntimeError("CORS_ORIGINS must be explicitly configured in production")
+
+CORS_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in _raw_cors_origins.split(",")
+    if origin.strip()
+]
+if not CORS_ORIGINS and APP_ENV in {"development", "dev", "local", "desktop", "test"}:
+    CORS_ORIGINS = ["http://localhost:3000"]
+for origin in CORS_ORIGINS:
+    parsed_origin = urlsplit(origin)
+    if (
+        parsed_origin.scheme not in ({"https"} if APP_ENV not in {"development", "dev", "local", "desktop", "test"} else {"http", "https"})
+        or not parsed_origin.netloc
+        or parsed_origin.path
+        or parsed_origin.query
+        or parsed_origin.fragment
+        or origin == "*"
+    ):
+        raise RuntimeError("CORS_ORIGINS contains an invalid or unsafe origin")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://syj-nexus-intel-ai.vercel.app",
-        "http://localhost:3000",
-    ],
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "X-Request-ID", "X-CSRF-Token"],
 )
 
 app.include_router(auth_router)
@@ -236,7 +309,70 @@ app.include_router(
     agent_memory_router
 )
 
-@app.get("/")
+@app.middleware("http")
+async def apply_route_rate_limits(request: Request, call_next):
+    client_ip = resolve_client_ip(
+        request.client.host if request.client else None,
+        request.headers.get("x-forwarded-for"),
+        TRUSTED_PROXIES,
+    )
+    path = request.url.path
+    route_limit, route_window = rate_limit_policy_for_path(path)
+    try:
+        global_allowed, global_retry = rate_limit_manager.check(
+            f"ip:{client_ip}:global",
+            600,
+            60,
+        )
+        route_allowed, route_retry = rate_limit_manager.check(
+            f"ip:{client_ip}:{request.method}:{path}",
+            route_limit,
+            route_window,
+        )
+    except RateLimitBackendUnavailable:
+        return JSONResponse(
+            status_code=503,
+            content={"detail": "Rate limiting service unavailable"},
+            headers={"Retry-After": "5"},
+        )
+
+    if not global_allowed or not route_allowed:
+        retry_after = max(1, global_retry, route_retry)
+        logging.getLogger("security.rate_limit").warning(
+            "rate_limit_hit scope=ip method=%s route_group=%s",
+            request.method,
+            path.split("/", 2)[1] if path.count("/") >= 1 else "root",
+        )
+        return JSONResponse(
+            status_code=429,
+            content={"detail": "Rate limit exceeded. Please retry later."},
+            headers={"Retry-After": str(retry_after)},
+        )
+    return await call_next(request)
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault(
+        "Permissions-Policy",
+        "camera=(), microphone=(), geolocation=(), payment=()",
+    )
+    if APP_ENV not in {"development", "dev", "local", "desktop", "test"}:
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'none'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'",
+    )
+    return response
+
+
+@app.get("/", response_model=HealthResponse)
 def root():
     return {
         "status": "online",
@@ -245,7 +381,7 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", response_model=ReadinessResponse)
 def health():
     return {
         "success": True,

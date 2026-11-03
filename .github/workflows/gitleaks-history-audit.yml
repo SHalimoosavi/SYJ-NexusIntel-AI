@@ -1,0 +1,75 @@
+name: Gitleaks Full-History Metadata Audit
+
+on:
+  push:
+    branches:
+      - feat/security-hardening
+      - fix/phase1-auth-proxy-rbac
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  history-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout all repository history and refs
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan all refs with redacted output
+        id: gitleaks
+        continue-on-error: true
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE:/repo" \
+            -v "$RUNNER_TEMP:/tmp" \
+            -w /repo \
+            zricethezav/gitleaks:v8.24.3 \
+            git . --config=.gitleaks.toml --log-opts="--all --no-merges" \
+            --redact --report-format=json --report-path=/tmp/gitleaks-history.json
+
+      - name: Publish finding metadata only
+        if: always()
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          report = Path(os.environ["RUNNER_TEMP"]) / "gitleaks-history.json"
+          if not report.exists():
+              print("UNVERIFIED: Gitleaks report was not produced.")
+              with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+                  summary.write("## Gitleaks history audit\n\nUNVERIFIED: report not produced.\n")
+              raise SystemExit(0)
+
+          findings = json.loads(report.read_text(encoding="utf-8") or "[]")
+          rows = []
+          for finding in findings:
+              rows.append({
+                  "file": finding.get("File", "UNVERIFIED"),
+                  "commit": finding.get("Commit", "UNVERIFIED"),
+                  "line": finding.get("StartLine", "UNVERIFIED"),
+                  "rule": finding.get("RuleID", "UNVERIFIED"),
+                  "description": finding.get("Description", ""),
+              })
+
+          lines = [
+              "## Gitleaks history audit",
+              "",
+              f"Findings: **{len(rows)}**",
+              "",
+              "| File | Commit | Line | Rule ID | Description |",
+              "|---|---|---:|---|---|",
+          ]
+          for row in rows:
+              values = [str(row[key]).replace("|", "\\|").replace("\n", " ") for key in ("file", "commit", "line", "rule", "description")]
+              lines.append("| " + " | ".join(values) + " |")
+          summary = "\n".join(lines) + "\n"
+          print(summary)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as stream:
+              stream.write(summary)
+          PY

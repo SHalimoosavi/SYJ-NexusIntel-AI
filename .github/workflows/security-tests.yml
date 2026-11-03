@@ -1,0 +1,102 @@
+name: Security Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feat/security-hardening
+  push:
+    branches:
+      - feat/security-hardening
+      - "fix/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backend-security-tests:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      PYTHONPATH: ${{ github.workspace }}/backend
+      APP_ENV: test
+      DATABASE_URL: sqlite://
+      JWT_ACTIVE_KID: test-v1
+      REDIS_URL: ""
+      REDIS_TEST_URL: redis://localhost:6379/15
+      CORS_ORIGINS: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend and test dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements-dev.txt
+      - name: Configure ephemeral JWT test key
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import secrets
+          with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as env:
+              env.write("JWT_SIGNING_KEYS=" + json.dumps({"test-v1": secrets.token_urlsafe(48)}) + "\n")
+          PY
+      - name: Run security regression suite
+        working-directory: backend
+        run: pytest -q
+
+  backend-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: backend/requirements-dev.txt
+      - name: Install backend quality and test dependencies
+        working-directory: backend
+        run: python -m pip install -r requirements-dev.txt
+      - name: Ruff lint
+        working-directory: backend
+        run: ruff check app tests
+      - name: Mypy type-check
+        working-directory: backend
+        run: mypy --config-file mypy.ini app
+
+  frontend-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        working-directory: frontend
+        run: npm ci
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+      - name: Run frontend regression tests
+        working-directory: frontend
+        run: npm test
+      - name: Build frontend
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_BASE_URL: https://api.example.invalid
+        run: npm run build

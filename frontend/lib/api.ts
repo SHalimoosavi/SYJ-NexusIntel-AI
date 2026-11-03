@@ -1,8 +1,13 @@
 import { authHeaders } from "./auth";
+import { API_BASE } from "./config";
+import { refreshAuthSession } from "./auth-refresh.mjs";
+import { apiFetchWithRefresh } from "./api-fetch.mjs";
 
-export const API_BASE =
-  "https://syj-nexusintel-ai-production.up.railway.app";
+export { API_BASE };
 
+async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
+  return apiFetchWithRefresh(input, init, API_BASE, fetch, refreshAuthSession);
+}
 /* =========================
    TYPES
 ========================= */
@@ -10,15 +15,75 @@ export const API_BASE =
 export interface Lead {
   id: number;
   business_name: string;
-  contact_person: string;
-  email: string;
-  phone: string;
-  website: string;
-  city: string;
-  category: string;
-  source: string;
-  notes: string;
-  created_at: string;
+  contact_person?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  website?: string | null;
+  city?: string | null;
+  category?: string | null;
+  industry?: string | null;
+  company_size?: string | null;
+  source?: string | null;
+  notes?: string | null;
+  status: string;
+  pipeline_stage: string;
+  estimated_value: number;
+  lead_score: number;
+  priority: string;
+  probability: number;
+  actual_revenue: number;
+  last_contacted?: string | null;
+  next_followup?: string | null;
+  created_at?: string | null;
+}
+
+export interface LeadCreatePayload {
+  business_name: string;
+  contact_person?: string;
+  email?: string;
+  phone?: string;
+  website?: string;
+  city?: string;
+  category?: string;
+  industry?: string;
+  company_size?: string;
+  source?: string;
+  notes?: string;
+  status?: string;
+  pipeline_stage?: string;
+  estimated_value?: number;
+  last_contacted?: string;
+  next_followup?: string;
+}
+
+export interface LeadUpdatePayload {
+  status: string;
+  pipeline_stage: string;
+  estimated_value: number;
+  probability: number;
+  actual_revenue?: number;
+  last_contacted?: string | null;
+  next_followup?: string | null;
+}
+
+export interface ExecutiveOpportunity {
+  id: number;
+  business_name: string;
+  estimated_value: number;
+  pipeline_stage: string;
+}
+
+export interface ExecutiveRisks {
+  risk_count: number;
+  risks: string[];
+}
+
+export interface IntelligenceReport {
+  overall_score: number;
+  security_score: number;
+  seo_score: number;
+  trust_score: number;
+  recommendations: string[];
 }
 
 export interface RelationshipIntelligence {
@@ -34,6 +99,14 @@ export interface Activity {
   lead_id: number;
   activity_type: string;
   description: string | null;
+  created_at: string;
+}
+
+export interface LeadNote {
+  id: number;
+  lead_id: number;
+  note: string;
+  note_type: string;
   created_at: string;
 }
 
@@ -103,11 +176,12 @@ export interface AgentMemory {
    LEADS (JWT PROTECTED)
 ========================= */
 
-export async function getLeads() {
-  const response = await fetch(
+export async function getLeads(): Promise<Lead[]> {
+  const response = await apiFetch(
     `${API_BASE}/leads/`,
     {
       headers: authHeaders(),
+      credentials: "include",
       cache: "no-store",
     }
   );
@@ -120,7 +194,7 @@ export async function getLeads() {
 }
 
 export async function getRelationshipIntelligence(): Promise<RelationshipIntelligence> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/relationship-intelligence`,
     {
       headers: authHeaders(),
@@ -138,9 +212,9 @@ export async function getRelationshipIntelligence(): Promise<RelationshipIntelli
 }
 
 export async function createLead(
-  payload: any
+  payload: LeadCreatePayload
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/`,
     {
       method: "POST",
@@ -158,9 +232,9 @@ export async function createLead(
 
 export async function updateLead(
   leadId: number,
-  payload: any
+  payload: LeadUpdatePayload
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/${leadId}`,
     {
       method: "PUT",
@@ -179,7 +253,7 @@ export async function updateLead(
 export async function deleteLead(
   leadId: number
 ) {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/leads/${leadId}`,
     {
       method: "DELETE",
@@ -199,7 +273,7 @@ export async function deleteLead(
 ========================= */
 
 export async function getCRMStats(): Promise<CRMStats> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/stats`,
     {
       headers: authHeaders(),
@@ -215,7 +289,7 @@ export async function getCRMStats(): Promise<CRMStats> {
 }
 
 export async function getCRMRevenue(): Promise<CRMRevenue> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/revenue`,
     {
       headers: authHeaders(),
@@ -231,7 +305,7 @@ export async function getCRMRevenue(): Promise<CRMRevenue> {
 }
 
 export async function getCRMPipeline(): Promise<CRMPipeline> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/crm/pipeline`,
     {
       headers: authHeaders(),
@@ -247,7 +321,7 @@ export async function getCRMPipeline(): Promise<CRMPipeline> {
 }
 
 export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/briefing`,
     {
       headers: authHeaders(),
@@ -262,8 +336,8 @@ export async function getExecutiveBriefing(): Promise<ExecutiveBriefing> {
   return response.json();
 }
 
-export async function getExecutiveOpportunities() {
-  const response = await fetch(
+export async function getExecutiveOpportunities(): Promise<ExecutiveOpportunity[]> {
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/opportunities`,
     {
       headers: authHeaders(),
@@ -274,8 +348,8 @@ export async function getExecutiveOpportunities() {
   return response.json();
 }
 
-export async function getExecutiveRisks() {
-  const response = await fetch(
+export async function getExecutiveRisks(): Promise<ExecutiveRisks> {
+  const response = await apiFetch(
     `${API_BASE}/executive-intelligence/risks`,
     {
       headers: authHeaders(),
@@ -289,7 +363,7 @@ export async function getExecutiveRisks() {
 export async function getMemoryHistory(
   domain: string
 ): Promise<AgentMemory[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/agent-memory/history/${domain}`,
     {
       headers: authHeaders(),
@@ -305,7 +379,7 @@ export async function getMemoryHistory(
 }
 
 export async function getSalesPriorities(): Promise<SalesPriority[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/sales-agent/priorities`,
     {
       headers: authHeaders(),
@@ -320,8 +394,8 @@ export async function getSalesPriorities(): Promise<SalesPriority[]> {
   return response.json();
 }
 
-export async function getIntelligenceReport() {
-  const response = await fetch(
+export async function getIntelligenceReport(): Promise<IntelligenceReport> {
+  const response = await apiFetch(
     `${API_BASE}/intelligence/report`,
     {
       method: "POST",
@@ -345,7 +419,7 @@ export async function getIntelligenceReport() {
 export async function getLeadActivities(
   leadId: number
 ): Promise<Activity[]> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/activities/${leadId}`,
     {
       headers: authHeaders(),
@@ -359,5 +433,42 @@ export async function getLeadActivities(
     );
   }
 
+  return response.json();
+}
+
+
+export async function getLeadNotes(leadId: number): Promise<LeadNote[]> {
+  const response = await apiFetch(
+    `${API_BASE}/lead-notes/${leadId}`,
+    {
+      headers: authHeaders(),
+      cache: "no-store",
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to fetch lead notes");
+  }
+  return response.json();
+}
+
+export async function createLeadNote(
+  leadId: number,
+  note: string
+): Promise<LeadNote> {
+  const response = await apiFetch(
+    `${API_BASE}/lead-notes`,
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: JSON.stringify({
+        lead_id: leadId,
+        note,
+        note_type: "GENERAL",
+      }),
+    }
+  );
+  if (!response.ok) {
+    throw new Error("Failed to save lead note");
+  }
   return response.json();
 }

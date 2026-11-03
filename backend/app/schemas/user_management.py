@@ -1,5 +1,5 @@
-from pydantic import BaseModel
-from pydantic import EmailStr
+from datetime import datetime
+from pydantic import BaseModel, ConfigDict, EmailStr
 
 
 class UserRoleUpdate(BaseModel):
@@ -12,17 +12,10 @@ class UserStatusUpdate(BaseModel):
 
 class UserManagementResponse(BaseModel):
     id: int
-
     full_name: str
     email: EmailStr
-
-    organization_id: int | None = None
     role_id: int | None = None
-
     is_active: bool
+    created_at: datetime | None = None
 
-    created_at: str | None = None
-
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = ConfigDict(from_attributes=True)

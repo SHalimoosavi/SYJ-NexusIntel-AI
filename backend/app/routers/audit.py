@@ -5,17 +5,11 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 
-from app.core.dependencies import (
-    get_current_user,
-)
-
 from app.core.rbac import (
     require_roles,
 )
 
-from app.schemas.audit import (
-    AuditResponse,
-)
+from app.schemas.audit import AuditResponse
 
 from app.services.audit_dashboard_service import (
     get_audit_logs,
@@ -50,7 +44,7 @@ def audit_logs(
     )
 
 
-@router.get("/events")
+@router.get("/events", response_model=dict[str, int])
 def audit_events(
     db: Session = Depends(get_db),
     current_user=Depends(
