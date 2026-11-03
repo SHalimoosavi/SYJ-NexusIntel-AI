@@ -32,7 +32,7 @@ class AuditLog(Base):
         index=True,
     )
 
-    event_type: Mapped[str] = Column(
+    event_type: Column[str] = Column(
         String,
         nullable=False,
         index=True,
