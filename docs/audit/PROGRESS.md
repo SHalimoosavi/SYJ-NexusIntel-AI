@@ -285,3 +285,28 @@ Owner approved all four items as non-blocking and explicitly excluded them from 
 - Created new ref `backup/2026-11-04/pr5-before-runtime-revert` at exact commit `1c4a4b53d97d5b91f0d562195128d04fd47db023` before any runtime revert or model import correction.
 - Ref creation succeeded as a new branch; no existing ref was moved or deleted.
 - Backup ref is immutable for this recovery sequence.
+
+## 2026-11-04 — Owner correction: backup, model typing blocker, refresh-claim dependency
+
+### Section 0 — backup
+- Created `backup/2026-11-04/pr5-before-runtime-revert` at exact SHA `1c4a4b53d97d5b91f0d562195128d04fd47db023`.
+- Recorded the ref in this file in commit `b36c1397f6591a0ef9dbd37bad25dadb32420f6b`. No existing ref was moved or deleted.
+
+### Section 1 — Ruff root-cause diagnosis; not yet closed
+- Finished run [41729011812](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41729011812) reports exactly 12 Ruff errors, all rule `F821 Undefined name Mapped`: activity.py:15, ai_usage.py:15, audit_log.py:35, feature_flag.py:33, invitation.py:16, lead.py:15, lead_note.py:15, organization.py:14, subscription.py:15, user.py:16, user.py:33, user.py:38.
+- The later model correction replaced the `Mapped[T]` annotations with `Column[T]` and removed the `Mapped` imports. This avoids the Ruff names but does not follow the owner's explicit instruction to restore the imports and keep the `Mapped[T]` annotations.
+- Finished run [41726490100](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41726490100) shows that restoring `Mapped[T]` while retaining `Column(...)` assignments causes 12 Mypy `[assignment]` errors across the same 10 files. A type-safe correction that satisfies both gates needs an owner decision; no further model code was changed in this section.
+
+### Section 2 — refresh runtime revert; STOPPED before code change
+- Compared `backend/app/core/rate_limit.py` on the immutable pre-port ref `backup/2026-11-04/pr5-pre-typing-port` (SHA `02b7379b3e04f484555bfb7e814ea238980789a8`) with the current PR #5 branch. The pre-port file already contains `_REFRESH_CLAIM_SCRIPT`, `_REFRESH_COMPLETE_SCRIPT`, the refresh in-flight/result state, and `begin_refresh_rotation`, `complete_refresh_rotation`, and `get_refresh_rotation_result`. The current file's diff from pre-port is limited to the Redis Protocol/type declarations and casts; no refresh-claim runtime feature was introduced by the typing port.
+- Therefore no runtime revert commit was made. Removing the scripts/methods would regress pre-port behavior and break existing callers/tests; owner requested STOP if such dependencies exist.
+- Direct callers in `backend/app/routers/auth.py`: `begin_refresh_rotation` line 199, `get_refresh_rotation_result` line 223, `complete_refresh_rotation` line 239.
+- Dependent tests: `backend/tests/test_rate_limit.py::test_refresh_rotation_claim_is_atomic_and_duplicate_is_idempotent`; `backend/tests/test_auth_sessions.py::test_refresh_rotation_rejects_reuse_and_revokes_session_family`, `::test_refresh_fails_closed_when_session_backend_is_unavailable`, `::test_refresh_missing_cached_result_fails_closed`; and `backend/tests/test_redis_refresh_rotation.py::test_redis_refresh_rotation_is_atomic_idempotent_and_detects_reuse`.
+- PR #5 runtime-revert step remains BLOCKED pending owner decision; no refresh/auth code or tests were modified.
+
+### Section 4 — refresh atomicity evidence (analysis only; no implementation)
+- PR #5 uses the Redis Lua claim in `backend/app/core/rate_limit.py`; Redis executes the script atomically. It returns 1 for the first claim, 2 for a duplicate while in-flight/result grace state exists, and 0 for replay after grace. Duplicate requests retrieve the same replacement tokens; replay revokes the user session family.
+- PR #6 at reviewed head `86121487d509a302e60bcaf76d1c122d18a55f10` uses Redis `SET ... NX EX` in `consume_refresh_jti` and the auth route at `backend/app/routers/auth.py:184`. This is an atomic one-time consume; only one simultaneous request can win, while a duplicate is rejected and triggers session-family revocation. PR #6 has no PR #5-style idempotent duplicate result cache.
+- PR #5 default refresh-token TTL is 7 days (`REFRESH_TOKEN_EXPIRE_DAYS`, configurable); consumed-JTI TTL uses that token TTL. In-flight and replacement-result keys use a 5-second grace TTL by default. Production Redis failures raise `RateLimitBackendUnavailable` and the auth route returns 503 with `Retry-After`; process-local fallback is restricted to local/test modes.
+- PR #5 tests include an in-memory concurrency/idempotency test, a Redis-backed CI integration test, and auth-session tests for reuse, backend outage, and missing cached result. PR #6 has the one-time consume unit test but no equivalent Redis refresh integration test in the reviewed file set.
+- Recommendation is deferred: do not choose or implement a replacement until owner decides between retaining the tested Redis Lua idempotency protocol (with explicit AUTH-SENSITIVE test-first commits) or migrating to a database atomic conditional update.
