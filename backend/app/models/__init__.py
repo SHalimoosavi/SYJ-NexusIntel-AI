@@ -15,3 +15,19 @@ from app.models.ai_usage import AIUsage
 from app.models.agent_memory import AgentMemory
 
 from app.models.osint_report import OSINTReport
+
+__all__ = [
+    "User",
+    "Role",
+    "Organization",
+    "Lead",
+    "Activity",
+    "LeadNote",
+    "Invitation",
+    "Subscription",
+    "Permission",
+    "AuditLog",
+    "AIUsage",
+    "AgentMemory",
+    "OSINTReport",
+]
