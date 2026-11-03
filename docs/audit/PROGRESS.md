@@ -342,3 +342,36 @@ Owner approved all four items as non-blocking and explicitly excluded them from 
 - Per-file commits: `013a036fa11731491fd3a5709def551a825fd8ba`, `f014289133b8c64b5ad728b041baecf823dc0c64`, `e047c29908e491ec1d85c8253a81ba4d68290e15`, `e67bf363abebc81066cf2a12146a848a8cde65b8`, `cd2c6d0a51ad073deaf3d02990972e35d614277e`, `b3f6af6617c989e67fa5e05193b1817754e9ebe6`, `07df9e348634c7d795c0b6ea05a93a3d3ea72821`, `29ff92de94000d0c0d4ae56f6ace0e8f11ecc58d`, `4f08f7be2b6101a0d74e8d64bf374df6c52d2029`, `d1985658a2a504aaa283e8351ffe8624c4314075`.
 - No Ruff/Mypy suppression, ignore, configuration weakening, test removal or cast was added. Fresh finished CI on the final documentation-updated head is required before declaring this correction green.
 
+## 2026-11-04 — Full port diff audit against immutable pre-port backup
+
+Compared PR #5 branch against `backup/2026-11-04/pr5-pre-typing-port` (SHA `02b7379b3e04f484555bfb7e814ea238980789a8`). GitHub compare reports 17 changed code files plus the three audit documents listed below. Each code hunk was inspected against the pre-port file.
+
+| File | Classification | Evidence |
+|---|---|---|
+| `backend/app/core/api_docs.py` | Annotation only | Added `ApiDocsConfig(TypedDict)`, return annotation and no-op `cast(str, ...)`; docs URL values and production/development branches are unchanged. |
+| `backend/app/core/rate_limit.py` | Annotation only | Added `RedisClient(Protocol)`, attribute/return annotations and no-op casts. Both Lua scripts, key construction, TTL arguments, fallback branches, claim/complete/result method bodies and rate-limit policies are unchanged. |
+| `backend/app/core/safe_http.py` | Annotation only | Added no-op casts around socket address typing and response.data assignment; same address normalization, response body assignment, TLS verification, request and redirect behavior. |
+| `backend/app/models/activity.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. All other columns unchanged. |
+| `backend/app/models/ai_usage.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. All other columns unchanged. |
+| `backend/app/models/audit_log.py` | Annotation only | `event_type` uses `Mapped[str] = mapped_column(...)`; same String, nullable and index settings. |
+| `backend/app/models/feature_flag.py` | Annotation only | `is_enabled` uses `Mapped[bool | None] = mapped_column(...)`; same Boolean/default=False and inferred nullable behavior. |
+| `backend/app/models/invitation.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
+| `backend/app/models/lead.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
+| `backend/app/models/lead_note.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
+| `backend/app/models/organization.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
+| `backend/app/models/subscription.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
+| `backend/app/models/user.py` | Annotation only | `id`, `hashed_password`, and nullable `organization_id` use SQLAlchemy 2.0 `Mapped`/ `mapped_column`; primary-key, String/not-null password, Integer/FK/nullable organization settings unchanged. `role_id`, `is_active`, and other fields unchanged. No cast used. |
+| `backend/app/services/audit_dashboard_service.py` | Annotation only | Added `dict[str, int]` annotation to existing empty summary dictionary; same object and accumulation logic. |
+| `backend/app/services/crm_service.py` | Annotation only | Added float annotations to close_rate/win_rate. Corrected the temporary `0.0` initializers back to original integer `0`, preserving zero-case JSON numeric representation. |
+| `backend/app/services/osint_service.py` | Annotation only | Added a no-op cast for the certificate dictionary; same socket call and output logic. |
+| `backend/app/services/revenue_forecast_service.py` | Annotation only | Added float/int annotations; restored original integer `0` initial values for pipeline_value, weighted_revenue and close_rate, preserving zero-case runtime values. |
+| `docs/audit/AUTH_SENSITIVE_CHANGES.md` | Docs only | Corrected the historical Redis protocol entry and linked the design note. |
+| `docs/audit/PROGRESS.md` | Docs only | Audit progress and owner-decision evidence. |
+| `docs/audit/REFRESH_PROTOCOL.md` | Docs only | New design note; no application code. |
+
+No schema, Pydantic schema, API response model or serializer files are in the compare result. For the model changes, SQL column types, defaults, primary keys, foreign keys, indexes and explicit nullability are preserved; `Mapped` annotations and `mapped_column` are the SQLAlchemy 2.0 declarative mapping form. No database migration was added.
+
+**Security-sensitive scope check:** no changed file is `auth.py`, `security.py`, `rbac.py`, `tenant.py`, `client_ip.py`, `main.py`, JWT configuration, or proxy-IP resolver. The auth route file is byte-for-byte identical to the pre-port backup. The only rate-limit file changes are typing declarations/casts; there are no runtime hunks in refresh, rate-limit keying, auth, JWT, RBAC, tenant isolation or proxy-IP behavior. The previously alleged `rate_limit.py` violation remains withdrawn.
+
+**Non-annotation runtime drift found and corrected:** CRM/revenue initial numeric literals had briefly changed from integer `0` to float `0.0`. They have been restored to `0` while retaining variable annotations in commits `5a8838e5c8814564718b8fc01374e50d3a636e8f` and `b6687c835e9339518114dad43f8c327822480405`. Thus the final port audit contains no intended runtime behavior changes.
+
