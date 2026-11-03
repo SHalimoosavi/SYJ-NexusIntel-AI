@@ -42,6 +42,15 @@ def redis_url() -> str:
 
 
 @pytest.fixture
+def redis_key_cleanup(redis_url):
+    client = redis.Redis.from_url(redis_url, decode_responses=True)
+    tracked = []
+    yield lambda *keys: tracked.extend(keys)
+    if tracked:
+        client.delete(*set(tracked))
+
+
+@pytest.fixture
 def auth_world(tmp_path):
     engine = create_engine(
         f"sqlite:///{tmp_path / 'refresh-outage.sqlite3'}",
@@ -148,7 +157,7 @@ def _new_token(world) -> str:
 
 
 def test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_token(
-    monkeypatch, redis_url, auth_world
+    monkeypatch, redis_url, auth_world, redis_key_cleanup
 ):
     token = _new_token(auth_world)
     payload = verify_token(token)
@@ -168,6 +177,7 @@ def test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_to
     live_client = redis.Redis.from_url(redis_url, decode_responses=True)
     live_manager = RateLimitManager(redis_url=redis_url, app_env="production")
     consumed, inflight, result = _keys(live_manager, jti)
+    redis_key_cleanup(consumed, inflight, result)
     assert live_client.exists(consumed, inflight, result) == 0
     assert live_manager.get_user_session_version(auth_world["user_id"]) == 0
 
@@ -190,6 +200,7 @@ def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
     client = redis.Redis.from_url(redis_url, decode_responses=True)
     manager = RateLimitManager(redis_url=redis_url, app_env="production")
     consumed, inflight, result = _keys(manager, jti)
+    redis_key_cleanup(consumed, inflight, result)
     client.delete(consumed, inflight, result)
     original_complete = manager.complete_refresh_rotation
     container_id = os.getenv("REDIS_SERVICE_CONTAINER_ID")
@@ -277,7 +288,7 @@ def _redis_ping(client: redis.Redis) -> bool:
         return False
 
 
-def test_refresh_recovers_and_result_key_expires(monkeypatch, redis_url, auth_world):
+def test_refresh_recovers_and_result_key_expires(monkeypatch, redis_url, auth_world, redis_key_cleanup):
     token = _new_token(auth_world)
     payload = verify_token(token)
     assert payload is not None
@@ -285,6 +296,7 @@ def test_refresh_recovers_and_result_key_expires(monkeypatch, redis_url, auth_wo
     client = redis.Redis.from_url(redis_url, decode_responses=True)
     manager = RateLimitManager(redis_url=redis_url, app_env="production")
     consumed, inflight, result = _keys(manager, jti)
+    redis_key_cleanup(consumed, inflight, result)
     client.delete(consumed, inflight, result)
     monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
 
@@ -337,7 +349,7 @@ def test_production_mode_never_uses_in_memory_fallback():
 
 
 def test_ten_parallel_refreshes_create_one_idempotent_rotation(
-    monkeypatch, redis_url, auth_world
+    monkeypatch, redis_url, auth_world, redis_key_cleanup
 ):
     count = 10
     token = _new_token(auth_world)
@@ -347,6 +359,7 @@ def test_ten_parallel_refreshes_create_one_idempotent_rotation(
     client = redis.Redis.from_url(redis_url, decode_responses=True)
     manager = RateLimitManager(redis_url=redis_url, app_env="production")
     consumed, inflight, result = _keys(manager, jti)
+    redis_key_cleanup(consumed, inflight, result)
     client.delete(consumed, inflight, result)
     monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
     barrier = Barrier(count)
