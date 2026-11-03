@@ -28,8 +28,8 @@ def calculate_forecast(
         .all()
     )
 
-    pipeline_value: float = 0.0
-    weighted_revenue: float = 0.0
+    pipeline_value: float = 0
+    weighted_revenue: float = 0
     won_revenue: int = 0
 
     total_leads = len(leads)
@@ -62,7 +62,7 @@ def calculate_forecast(
             won_revenue += value
             won_count += 1
 
-    close_rate: float = 0.0
+    close_rate: float = 0
 
     if total_leads > 0:
         close_rate = round(
