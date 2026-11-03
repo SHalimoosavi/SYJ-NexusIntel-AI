@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - feat/security-hardening
+      - fix/phase1-auth-proxy-rbac
+      - chore/phase2-ci-repo-hygiene
   workflow_dispatch:
 
 permissions:
