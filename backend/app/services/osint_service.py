@@ -3,7 +3,6 @@ import ssl
 
 import dns.resolver
 from bs4 import BeautifulSoup
-from bs4.element import Tag
 
 from app.core.safe_http import assert_public_domain, resolve_public_addresses, safe_get
 
