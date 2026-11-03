@@ -13,7 +13,6 @@ import redis
 from app.core.rate_limit import RateLimitManager
 
 
-@pytest.mark.integration
 def test_redis_refresh_rotation_is_atomic_idempotent_and_detects_reuse() -> None:
     redis_url = os.getenv("REDIS_TEST_URL")
     if not redis_url:
