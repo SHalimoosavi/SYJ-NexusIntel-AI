@@ -308,4 +308,4 @@ def test_refresh_missing_cached_result_fails_closed(monkeypatch, auth_session):
     with pytest.raises(HTTPException) as unavailable:
         auth_router.refresh_session(request, Response(), db)
     assert unavailable.value.status_code == 503
-    assert unavailable.value.detail == "Session refresh result unavailable"
+    assert unavailable.value.detail == "Session refresh is still processing; retry shortly"
