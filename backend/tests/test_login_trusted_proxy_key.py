@@ -43,7 +43,7 @@ def test_login_rate_limit_key_uses_resolved_trusted_proxy_client_ip(monkeypatch)
 
     try:
         auth_router.login(
-            UserLogin(email="user@example.test", password="WrongPassword123!"),
+            UserLogin(email="user@example.com", password="WrongPassword123!"),
             request,
             Response(),
             None,
@@ -55,6 +55,6 @@ def test_login_rate_limit_key_uses_resolved_trusted_proxy_client_ip(monkeypatch)
 
     assert manager.failure_keys[0] == auth_router._login_attempt_key(
         "198.51.100.25",
-        "user@example.test",
+        "user@example.com",
     )
     assert "172.30.0.2" not in manager.failure_keys[0]
