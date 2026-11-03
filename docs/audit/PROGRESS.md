@@ -386,3 +386,31 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 - Exact diagnostic: app/services/osint_service.py:118: Argument 1 to "_read_tls_certificate" has incompatible type "SSLSocket"; expected "_PeerCertificateSource" [arg-type]. The log shows overloads for Literal[False], Literal[True], and bool, with the decoded dictionary return explicitly nullable.
 - Applied only the owner-authorized single-line fallback at that call site: type: ignore[arg-type]. Its adjacent comment records the Python 3.12.15 typeshed overload mismatch and the helper's runtime guarantee: binary_form=False, explicit None/empty/non-dict rejection, and isinstance validation of notAfter and subjectAltName. No other ignore, config change, or TLS weakening was added.
 - This is the only permitted fallback; do not make further Mypy fixes if it still fails. The follow-up CI run must prove Mypy 0 errors and complete frontend build before Step 2 can close.
+
+
+### Step 2 — SSL certificate typing gate completed
+
+- Root path: SSLSocket.getpeercert(binary_form=False), using ssl.create_default_context() with normal certificate and hostname verification. A typed protocol helper now handles None, {}, required notAfter, subjectAltName tuple pairs, expiry parsing and expiration; the caller fails closed. All module getpeercert() use is routed through this helper.
+- Pure fake-certificate tests cover None, empty dict, valid, expired, malformed notAfter, multiple SAN entries, missing keys and wrong value types. Tests and implementation were committed together because the helper is a new interface and could not be tested as an existing callable against the old code.
+- Implementation commit: 24ee410ca685ab9288c511a5508381266044069b. Mypy identified the standard-library overloaded SSLSocket stub/Protocol mismatch, not the original optional-mapping diagnostic. The owner-authorized single-line arg-type ignore was added at the call site in commit 22c0cc7db291dd043d3dabf0c392ea297d424d48. No other ignore or TLS weakening was introduced.
+- Final validation run [41557240790](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557240790): backend-quality **passed**; Ruff passed; Mypy reports “Success: no issues found in 118 source files”; backend tests **118 passed, 0 failed, 0 skipped, 2 warnings**; frontend lint and production build completed successfully. Step 2 is **COMPLETE**.
+
+### Step 3 — Phase 1 regression review (PR #5 / PR #6)
+
+- PR #5 remains open, draft and unmerged. PR #6 remains open, draft and unmerged. Both target feat/security-hardening; neither was merged.
+- PR #5's existing Security Tests run [41549229425](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41549229425) is green: backend **121 passed, 0 failed, 241 warnings**; frontend regression tests, lint and production build passed.
+- Green coverage already present: refresh rotation atomic claim/idempotency, duplicate replacement cookie, later replay revocation, backend failure/logout invalidation; browser same-tab single-flight, failure, logout cancellation and Web Lock use; proxy trust-none, spoof rejection, rightmost trusted-chain parsing, IPv6 and malformed header fallback; SUPER_ADMIN restrictions, last active SUPER_ADMIN guard, self-action prevention and cross-tenant isolation.
+- Gaps not yet closed: independent browser-context multi-tab test; API request replay after refresh; real Redis concurrent refresh integration test; and middleware-to-rate-limit client-IP integration test.
+- Existing behavior commits are separate commits, but they predate the required AUTH-SENSITIVE: message prefix and several implementation commits precede their tests. Renaming commits would violate the no-history-rewrite rule. This historical deviation is explicitly disclosed in PR #5's “Auth-sensitive changes for owner review” section. No new auth-sensitive code change has been made in this review checkpoint.
+- PR #6 contains no new auth-sensitive behavior; its SSL certificate helper is an OSINT TLS inspection change. PR #6 description links to the PR #5 auth review inventory.
+- Step 3 remains **INCOMPLETE** pending owner decision on the historical commit-prefix/test-first deviation and closure of the four uncovered regression areas. No auth behavior was weakened or permissions widened.
+
+### Step 5 — verification evidence already green on PR #6 head 22c0cc7
+
+The following are the completed CI evidence for the latest code head. Formal Step 5 remains gated behind Step 3 completion.
+
+- Backend tests / Ruff / Mypy / frontend lint / frontend production build: Security Tests run [41557240790](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557240790). Backend 118 passed, 0 failed, 0 skipped, 2 third-party warnings; Ruff passed; Mypy 0 errors across 118 files; frontend lint and production build completed.
+- Dependency audit: [41557240771](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557240771) — Python audit and npm audit both passed; 0 known vulnerabilities reported by each.
+- Gitleaks diff/repository scan: [41557240582](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557240582) — passed, no leaks in the scanned change range.
+- Full-history Gitleaks: [41557234559](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557234559) — audit workflow passed after scanning 583 commits and recorded **one historical JWT finding**. The finding remains unsuppressed and unbaselined; JWT rotation remains **UNVERIFIED**. PostgreSQL credential rotation remains **UNVERIFIED**.
+- Step 6 Docker self-hosted install remains **NOT STARTED** and must not begin until formal Step 5 is complete and green.
