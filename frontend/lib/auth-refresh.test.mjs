@@ -50,3 +50,46 @@ test("cross-tab Web Lock is used for refresh serialization", async () => {
   assert.equal(result, true);
   assert.equal(lockName, "syj-auth-refresh");
 });
+
+test("independent module contexts serialize refresh through shared Web Locks and storage", async () => {
+  const originalStorage = globalThis.localStorage;
+  const values = new Map();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key) => values.get(key) ?? null,
+      setItem: (key, value) => values.set(key, value),
+    },
+  });
+  try {
+    const firstContext = await import("./auth-refresh.mjs?context=first");
+    const secondContext = await import("./auth-refresh.mjs?context=second");
+    firstContext.resumeAuthRefresh();
+    secondContext.resumeAuthRefresh();
+    let active = false;
+    const queue = [];
+    const locks = {
+      request: async (_name, callback) => {
+        if (active) await new Promise((resolve) => queue.push(resolve));
+        active = true;
+        try { return await callback(); }
+        finally { active = false; queue.shift()?.(); }
+      },
+    };
+    let refreshCalls = 0;
+    const fetcher = async () => {
+      refreshCalls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      return { ok: true };
+    };
+    const results = await Promise.all([
+      firstContext.refreshAuthSession("/api", fetcher, locks),
+      secondContext.refreshAuthSession("/api", fetcher, locks),
+    ]);
+    assert.deepEqual(results, [true, true]);
+    assert.equal(refreshCalls, 1);
+  } finally {
+    if (originalStorage === undefined) delete globalThis.localStorage;
+    else Object.defineProperty(globalThis, "localStorage", { configurable: true, value: originalStorage });
+  }
+});
