@@ -12,7 +12,7 @@ def _tag(markup: str) -> Tag:
 
 def test_attribute_helper_handles_missing_attrs_mapping() -> None:
     tag = _tag("<meta content='summary'>")
-    tag.attrs = None  # type: ignore[assignment]
+    tag.attrs = None
     assert _get_tag_attribute(tag, "content") is None
 
 
