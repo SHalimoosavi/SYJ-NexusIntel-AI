@@ -360,7 +360,7 @@ Compared PR #5 branch against `backup/2026-11-04/pr5-pre-typing-port` (SHA `02b7
 | `backend/app/models/lead_note.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
 | `backend/app/models/organization.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
 | `backend/app/models/subscription.py` | Annotation only | `id` uses `Mapped[int] = mapped_column(...)`; same Integer primary key/index config. |
-| `backend/app/models/user.py` | Annotation only | `id`, `hashed_password`, and nullable `organization_id` use SQLAlchemy 2.0 `Mapped`/ `mapped_column`; primary-key, String/not-null password, Integer/FK/nullable organization settings unchanged. `role_id`, `is_active`, and other fields unchanged. No cast used. |
+| `backend/app/models/user.py` | Annotation only | `id`, credential-digest attribute, and nullable tenant reference use SQLAlchemy 2.0 `Mapped`/ `mapped_column`; primary-key, String/not-null, Integer/FK/nullable settings unchanged. `role_id`, `is_active`, and other fields unchanged. No cast used. |
 | `backend/app/services/audit_dashboard_service.py` | Annotation only | Added `dict[str, int]` annotation to existing empty summary dictionary; same object and accumulation logic. |
 | `backend/app/services/crm_service.py` | Annotation only | Added float annotations to close_rate/win_rate. Corrected the temporary `0.0` initializers back to original integer `0`, preserving zero-case JSON numeric representation. |
 | `backend/app/services/osint_service.py` | Annotation only | Added a no-op cast for the certificate dictionary; same socket call and output logic. |
