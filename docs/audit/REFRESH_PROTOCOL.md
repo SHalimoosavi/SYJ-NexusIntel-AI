@@ -70,7 +70,7 @@ A Redis Lua script that accesses multiple keys requires every key to map to the 
 
 - Original script introduction: [`cd8a21f1c18c0b89ff271ea47005b5e9787839d9`](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/commit/cd8a21f1c18c0b89ff271ea47005b5e9787839d9). Its parent `4f457e170256790cc51676e86eead73a21098054` lacks both scripts and the claim method.
 - Later idempotency-result-key correction: `42f4219f4267ec393f94327972c0f3264710a030`.
-- Correct three-key Lua invocation: `4bec95dca2719bb842b66d9d7658de33e10d9579`.
+- Correct three-key Lua invocation: [the key-count correction commit](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/commit/4bec95dca2719bb842b66d9d7658de33e10d9579).
 - In-memory concurrency/idempotency: `backend/tests/test_rate_limit.py::test_refresh_rotation_claim_is_atomic_and_duplicate_is_idempotent`.
 - Auth behavior: `backend/tests/test_auth_sessions.py::test_refresh_rotation_rejects_reuse_and_revokes_session_family`; `::test_refresh_fails_closed_when_session_backend_is_unavailable`; `::test_refresh_missing_cached_result_fails_closed`.
 - Real Redis concurrency/idempotency/replay: `backend/tests/test_redis_refresh_rotation.py::test_redis_refresh_rotation_is_atomic_idempotent_and_detects_reuse`, using an isolated Redis CI service.
