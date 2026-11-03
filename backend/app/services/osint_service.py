@@ -1,5 +1,6 @@
 import socket
 import ssl
+from collections.abc import Mapping
 
 import dns.resolver
 from bs4 import BeautifulSoup
@@ -76,6 +77,27 @@ def get_security_headers(domain: str):
         return {"error": "Security header inspection failed for public domain"}
 
 
+def _get_tag_attribute(tag: Tag | None, name: str) -> str | None:
+    if tag is None:
+        return None
+
+    attributes = tag.attrs or {}
+    if not isinstance(attributes, Mapping):
+        return None
+
+    value: object = attributes.get(name)
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        parts: list[str] = []
+        for item in value:
+            if not isinstance(item, str):
+                return None
+            parts.append(item)
+        return " ".join(parts) or None
+    return None
+
+
 def get_seo_data(domain: str):
     try:
         response = safe_get(domain, timeout=10)
@@ -83,7 +105,7 @@ def get_seo_data(domain: str):
             soup = BeautifulSoup(response.text, "lxml")
             title = soup.title.text if soup.title else ""
             meta: Tag | None = soup.select_one('meta[name="description"]')
-            description = meta.attrs.get("content", "") if meta is not None else ""
+            description = _get_tag_attribute(meta, "content") or ""
             return {
                 "title": title,
                 "description": description,
