@@ -3,6 +3,7 @@ import ssl
 
 import dns.resolver
 from bs4 import BeautifulSoup
+from bs4.element import Tag
 
 from app.core.safe_http import assert_public_domain, resolve_public_addresses, safe_get
 
@@ -82,7 +83,7 @@ def get_seo_data(domain: str):
             soup = BeautifulSoup(response.text, "lxml")
             title = soup.title.text if soup.title else ""
             meta = soup.find("meta", attrs={"name": "description"})
-            description = meta.get("content", "") if meta is not None else ""
+            description = meta.get("content", "") if isinstance(meta, Tag) else ""
             return {
                 "title": title,
                 "description": description,
