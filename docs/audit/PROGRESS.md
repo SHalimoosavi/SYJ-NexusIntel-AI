@@ -276,3 +276,6 @@ Owner approved all four items as non-blocking and explicitly excluded them from 
 - Corrected only the annotations in the same 10 model files from `Mapped[T]` to `Column[T]`; no `Column(...)` assignment, default, constraint, or runtime expression was changed. Correction commits: `b9f9cb0171c69a8574068b5f2b2dd41f93e85818`, `d96dbc2fe479ec4648872236993d91c34e9e6599`, `53e10cf2d963764c48be16ec82a30db316b47e5e`, `30638b682a3b516e75e8661cdbd57dbf34b61f54`, `882722e595c3f88f03fc496a7aa05740df2bde31`, `64a8dc42223b80cdefd0ff4729a15520aa03e130`, `f21080b43c969d222624041f8b836206d177c281`, `1f277a042e9f78697a23d9c770409706d8d7e7f8`, `7c814ca14e2a8eb5ccd944e8770584311d491923`, `1ddeb2566a7fecccb772699cf1aa83758b6ff932`.
 - The 243-warning baseline remains the last complete comparable PR #5 backend test result (126 passed, 243 warnings). The failed collection attempt emitted 2 warnings before abort; that partial count is not comparable. Verify exact warning count on the next complete test run and ensure it does not exceed 243.
 - Deferred warnings are not to be fixed in this stack.
+
+
+- CI revalidation trigger after annotation correction and deferred-warning bookkeeping: documentation-only empty-effect checkpoint; no application behavior change.
