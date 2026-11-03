@@ -5,6 +5,7 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.database import Base
 
@@ -12,7 +13,7 @@ from app.database.database import Base
 class Subscription(Base):
     __tablename__ = "subscriptions"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,

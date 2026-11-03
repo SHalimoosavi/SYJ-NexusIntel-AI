@@ -8,6 +8,8 @@ import logging
 import os
 import time
 import uuid
+
+from redis import Redis
 from collections import defaultdict, deque
 from threading import Lock
 
@@ -61,9 +63,9 @@ class RateLimitBackendUnavailable(RuntimeError):
 class RateLimitManager:
     def __init__(self, redis_url: str | None = None, app_env: str | None = None):
         self.redis_url = redis_url if redis_url is not None else os.getenv("REDIS_URL")
-        self.app_env = (app_env or os.getenv("APP_ENV", "production")).lower()
+        self.app_env = (app_env if app_env is not None else os.getenv("APP_ENV") or "production").lower()
         self.local_mode = self.app_env in {"development", "dev", "local", "desktop", "test"}
-        self._redis_client = None
+        self._redis_client: Redis[str] | None = None
         self._memory = SlidingWindowLimiter()
         self._memory_failures: dict[str, tuple[int, float]] = {}
         self._memory_lockouts: dict[str, float] = {}
@@ -71,16 +73,14 @@ class RateLimitManager:
         self._memory_consumed_jti: dict[str, float] = {}
         self._lock = Lock()
 
-    def _redis(self):
+    def _redis(self) -> Redis[str] | None:
         if not self.redis_url:
             if self.local_mode:
                 return None
             raise RateLimitBackendUnavailable("Redis is required for production rate limiting")
         if self._redis_client is None:
             try:
-                import redis
-
-                self._redis_client = redis.Redis.from_url(
+                self._redis_client = Redis.from_url(
                     self.redis_url,
                     decode_responses=True,
                     socket_connect_timeout=1.5,
