@@ -152,3 +152,24 @@ The requested negative behaviors have existing regression tests for refresh-toke
 - The document maps identified behavior and test/configuration commits, names tests, distinguishes tests added later, records the historical prefix/test-first limitation, and lists uncovered areas. The table is included in PR descriptions for owner review.
 - Historical limitation: **Convention not followed before `cd8a21f1c18c0b89ff271ea47005b5e9787839d9`: not retroactively fixable without history rewrite.** No history was changed.
 - Audit completion is limited to inspected patches; see the document's explicit search method and completeness limits. Remaining gaps must be covered with test-first commits.
+
+
+## 2026-11-03 — Step 3 regression and integration coverage update
+
+- Auth-sensitive mapping updated in `docs/audit/AUTH_SENSITIVE_CHANGES.md`; PR #5 and PR #6 descriptions now contain the same owner-review table.
+- New characterization/integration tests and commits: `a1d1f5b` API replay contract tests; `7028db3` independent browser-context refresh; `0881fb4` real Redis refresh rotation; `4b0194f` ASGI rate-limit/client-IP integration; `1dcbec7` missing refresh-result fail-closed; `2b9abbc` trusted login IP key; `c49b7c2` proxy launch flags. API helper extraction commits are `a41e61f` and `0fc30c9`, both prefixed `AUTH-SENSITIVE:` and intended to preserve existing behavior.
+- Existing SUPER_ADMIN and cross-tenant tests remain covered by PR #5 run [41549229425](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41549229425).
+- New integration tests for browser contexts, API replay, Redis atomicity and middleware client-IP were green on [41561425429](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41561425429): backend 123 passed, 0 failed, 0 skipped, 241 warnings; frontend checks passed. Later added missing-result/login-IP/launch-config tests are awaiting the latest PR #5 CI.
+- Ruff/Mypy CI was enabled for PR #5. First run exposed 88 legacy Ruff diagnostics; matching the existing PR #6 Ruff policy and removing real unused/duplicate imports reduced the count to 26, then targeted non-behavior cleanup was committed. Latest run [41562235297](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41562235297) was queued at the time of this update; Step 3 is not formally complete until latest tests are green.
+- Latest known PR #5 code head before this documentation update: `6c8121d1af2da9a81586c316c184578662ded856`; documentation commit for this update follows. PR #5 remains open/unmerged.
+
+## 2026-11-03 — Step 5 verification evidence on PR #6
+
+- PR #6 head: `86121487d509a302e60bcaf76d1c122d18a55f10`. All required checks completed successfully on that exact head:
+  - Security Tests / backend-quality: [41557633460](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633460) — Ruff passed; Mypy 0 errors in 118 source files; backend 118 passed, 0 failed, 0 skipped, 2 warnings; frontend lint completed with 0 errors and 2 warnings; production build completed successfully.
+  - Dependency audits: [41557633335](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633335) — npm and Python audits passed, 0 known vulnerabilities each.
+  - Gitleaks diff: [41557633307](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633307) — passed.
+  - Gitleaks full history: [41557626920](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557626920) — 584 commits scanned, one historical JWT finding remains unsuppressed and unbaselined. Current `backend/app/core/security.py` does not contain the legacy hardcoded key assignment.
+- Backend warning count is 2 versus the earlier 209 baseline (207 fewer). This comparison is based on the current PR #6 backend test run.
+- SSL typing resolution uses the helper plus the one owner-authorized `arg-type` ignore at `osint_service.py:118`; Python 3.12.15 typeshed Protocol mismatch comment and runtime guard are recorded in code. Mypy reports 0 errors. TLS verification remains enabled.
+- JWT signing-key rotation and PostgreSQL credential rotation remain **UNVERIFIED**. No baseline/suppression was added. Docker Step 6 remains **NOT STARTED** pending Step 3 completion and formal Step 5 gate closure.
