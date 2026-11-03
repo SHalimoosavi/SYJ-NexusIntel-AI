@@ -101,3 +101,47 @@ A Redis Lua script that accesses multiple keys requires every key to map to the 
 - Real Redis concurrency/idempotency/replay: `backend/tests/test_redis_refresh_rotation.py::test_redis_refresh_rotation_is_atomic_idempotent_and_detects_reuse`, using an isolated Redis CI service.
 - Finished CI evidence: [Security Tests run 41561425429](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41561425429), `backend-security-tests` and `frontend-checks` both passed; backend suite 123 passed, 0 failed, 0 skipped, 241 warnings. The integration test file was present at the run head.
 - Historical convention: **convention not followed: historical**. This implementation predates the AUTH-SENSITIVE prefix/test-first convention. History was not rewritten.
+
+
+
+## 2026-11-04 — Test isolation, rejection controls and persistence decision record
+
+### Test-isolation diagnosis
+
+The failed 401s in [run 41735551017](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41735551017) were caused by shared Redis state crossing fresh SQLite fixtures. The preceding post-claim reuse test incremented Redis user-version:1; later fixtures recreated user ID 1 and minted new tokens with session_version 0. Since refresh_session compares the Redis session version before claiming the JTI, it returned "Refresh session expired" before any refresh-claim operation. Test-only fix: unique user IDs, dedicated Redis DB flush in setup/teardown, healthy controls and explicit timeout assertions. Production code remains unchanged.
+
+### Rejection-test controls
+
+- Case a: healthy same-token retry returns 200 after Redis restoration; outage response is exact 503 and no cookie/claim mutation.
+- Case b: separate healthy token returns 200 before the real Redis service is stopped; outage returns exact 503/no cookies; post-grace old-token replay returns exact reuse-detected 401 and increments session version.
+- Case c: separate healthy token returns 200 before Redis pause; the paused request captures redis-py TimeoutError, returns exact 503 and completes in 1.2–2.0 seconds around the configured 1.5-second socket timeout.
+- Case d: positive recovery test returns 200 and verifies 7-day consumed claim and 5-second result TTL.
+- Case e: healthy Redis refresh returns 200; production manager raises RateLimitBackendUnavailable instead of using memory fallback; explicit local mode is separately exercised.
+- Case f: ten concurrent healthy requests return identical token pairs; post-result-TTL replay returns exact reuse-detected 401.
+
+Invalid-token 401 is distinguishable from replay 401 by the response detail ("Refresh session unavailable" versus "Refresh session reuse detected"). Backend outages return HTTP 503 with "Session service temporarily unavailable", not the invalid-token 401. The session-version mismatch returns 401 "Refresh session expired"; no app log line is emitted for that branch.
+
+### Redis data and durability
+
+The Redis manager stores hashed rate-limit-window keys, login-failure/lockout keys, refresh consumed-JTI claim keys, in-flight markers, cached replacement-result values, and user session-version/revocation keys. The consumed claim lasts 7 days; in-flight and result keys last 5 seconds. User session-version keys have no short TTL and represent logout/revocation state.
+
+JWTs are stateless and there is no per-token database record. The database checks that a user exists and is active, but does not store consumed JTIs or the current session version. Redis is therefore the source of truth for both refresh-token reuse detection and session-family revocation. If Redis loses the consumed claim and session-version keys, a still-valid rotated token can be accepted again; this is fail-open. Rate-limit counter loss merely resets throttling windows temporarily.
+
+The Compose Redis command enables AOF and RDB (--appendonly yes --save 60 1000) and persists /data in the redis_data volume. The cached result JSON contains access and refresh JWTs; if live during persistence writes, those values can be present in AOF/RDB and backups after Redis key expiry. Treat the volume and every backup as containing live tokens. The Phase 3 backup script must exclude redis_data until the owner approves a persistence design.
+
+Options reviewed:
+- A — Disable persistence: rejected for the current design; losing consumed claims and session-version keys permits replay/revocation state loss.
+- B — Separate persistent claims Redis and ephemeral results/rate-limit Redis: cannot split the result key from consumed/in-flight keys without redesigning the three-key atomic Lua operation. Session-version keys also require durable storage.
+- C — Encrypt cached result values with a key stored outside the Redis volume/backups, or redesign the value as an opaque reference. This requires production changes and owner approval.
+- D — Keep current setup and document the risk; simplest short-term, but plaintext JWTs remain in persistence artifacts.
+
+Recommendation: C, application-level encryption of cached result values with the encryption key managed outside Redis and its backups. Keep consumed claims and session-version state durable. No persistence setting or production code was changed; awaiting owner approval.
+
+### Finished CI evidence
+
+On head 1010b150ce6817fb637f45eaedb8f0f894dad0ab:
+- [Security Tests 41738304955](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738304955): 132 passed, 0 failed, 0 skipped, 257 warnings; Ruff passed; Mypy 0 issues in 118 files; frontend lint, regression tests and build passed.
+- [Dependency Audit 41738304835](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738304835): npm audit and pip-audit passed, 0 known vulnerabilities.
+- [Secret Scan 41738305269](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738305269): PR diff scan passed; all-ref full-history scan examined 705 commits and found 3 historical findings (2 generic-api-key false positives in documentation and 1 historical hardcoded JWT signing key). No baseline/suppression or history purge was performed.
+
+The warning count is 14 above the 243 baseline; all 14 additional warnings are attributed by pytest to this module and are SQLAlchemy datetime.utcnow() deprecations from test fixture model defaults.
