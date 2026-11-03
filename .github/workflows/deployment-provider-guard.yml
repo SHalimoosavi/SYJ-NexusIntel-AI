@@ -19,4 +19,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Check tracked files
-        run: python scripts/guard_deployment_providers.py
+        run: python scripts/ci/check_no_deployment_providers.py
+      - name: Test deployment-provider guard
+        run: pytest -q tests/ci/test_check_no_deployment_providers.py
