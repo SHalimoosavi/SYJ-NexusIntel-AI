@@ -82,7 +82,7 @@ def get_seo_data(domain: str):
             soup = BeautifulSoup(response.text, "lxml")
             title = soup.title.text if soup.title else ""
             meta = soup.find("meta", attrs={"name": "description"})
-            description = meta.get("content", "") if meta else ""
+            description = meta.get("content", "") if meta is not None else ""
             return {
                 "title": title,
                 "description": description,
