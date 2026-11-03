@@ -244,3 +244,11 @@ Docker self-hosted install remains gated. Do not start until owner confirms whet
 - Files: `backend/app/models/user.py`, `backend/app/models/subscription.py`, `backend/app/models/organization.py`, `backend/app/models/lead_note.py`, `backend/app/models/lead.py`, `backend/app/models/invitation.py`, `backend/app/models/feature_flag.py`, `backend/app/models/audit_log.py`, `backend/app/models/ai_usage.py`, `backend/app/models/activity.py`.
 - No auth, JWT, refresh, RBAC, tenant isolation, rate-limit keying or proxy-IP implementation was changed. No check was weakened, no ignore added, and no test removed.
 - This is one bounded correction attempt. CI must verify Mypy 0 errors and unchanged-or-higher test counts before this gate can close.
+
+
+## 2026-11-04 — audit matrix and PR description visibility
+
+- Updated `docs/audit/AUTH_SENSITIVE_CHANGES.md` in commit `ae35fa149d47a78be122f75be72092e397031be0` to record the type-only PR #6-to-PR #5 port, its 10-file `Mapped[T]` to `Column[T]` correction, the affected file set, and the explicit absence of auth/JWT/refresh/RBAC/tenant-isolation/rate-limit-keying/proxy-IP behavior changes.
+- Updated PR #5 and PR #6 descriptions with the exact SSL `type: ignore[arg-type]` line at `backend/app/services/osint_service.py:118`. A runtime `isinstance(sock, ssl.SSLSocket)` guard alone does not resolve the overloaded `getpeercert`/single-method Protocol mismatch; suppression retained, no TLS verification change.
+- PR #5 head is now `ae35fa149d47a78be122f75be72092e397031be0`; PR #6 head remains `86121487d509a302e60bcaf76d1c122d18a55f10`. PRs are siblings targeting `feat/security-hardening`; no sync merge is applicable.
+- CI on the updated PR #5 head is required before the verification gate can close. Docker Phase 3 remains blocked until every Section 3 item is finished and green.
