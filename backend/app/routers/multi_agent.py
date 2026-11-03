@@ -16,10 +16,6 @@ from app.services.ai_usage_service import (
     log_ai_request,
 )
 
-from app.core.dependencies import (
-    get_current_user,
-)
-
 from app.core.feature_guard import (
     require_feature,
 )
