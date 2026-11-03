@@ -228,3 +228,55 @@ Steps B, C and D are incomplete, and the full Step E verification gate is not gr
 
 - PR #5 Security Tests run 41549229425: backend-security-tests job 125632304116 completed successfully; pytest reports **121 passed, 0 failed, 0 skipped, 241 warnings in 3.63s**. Frontend-checks job 125632303715 remained in progress at last poll; frontend lint/build are therefore pending for this head. PR #5 Dependency Audit run 41549229411 completed successfully (npm-audit job 125632303691 and python-audit job 125632303909); Secret Scan run 41549229455 passed.
 - PR #6 runs triggered by progress checkpoint bf00b1b6267370d6902f18fef05c3dcdf6107103 remained in progress at last poll: Security Tests run 41549263652 (backend job 125632427144, quality job 125632427574, frontend job 125632427620); Dependency Audit run 41549263757 passed both npm and Python jobs; Secret Scan run 41549263665 passed. These are not runs for the later documentation-only head 8613201391932e1d32778a831d221d9524500d13.
+
+
+## 2026-11-03 — Step 1 completion and revised Step 2 Mypy-only method
+
+### Step 1 — completed test-only proof and cleanup
+
+- Test-only commit `21011ddfc7748839b514736910caf31a45d96ac2` added a temporary focused typing test for `app/core/api_docs.py`.
+- Security Tests run [41550135888](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41550135888): backend security suite failed exactly as intended at that focused test, with **1 failed, 104 passed, 2 warnings**. The captured diagnostic was `app/core/api_docs.py:6 [union-attr]`: optional `str | None` was not narrowed before `.strip()`. The existing Mypy CI job also failed; Ruff and frontend checks passed.
+- As directed, no further per-module Mypy regression tests will be written. The temporary focused test was removed in normal commit `9e44b7df0aee774e2b9602d9d9131d5ef487d9a3` with commit message `test: remove redundant focused mypy regression test`. No history rewrite occurred. A new Actions run for this deletion commit has not yet appeared in the Actions API at checkpoint time; verification is pending.
+
+### Step 2 — authoritative 59-error Mypy baseline from run 41550135888
+
+Source: backend-quality job `125635399997`, Security Tests run [41550135888](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41550135888), PR #6 test merge commit `cbc6b12521a567b72693b6fb6b2d8a26b53ee93b`. Mypy checked 118 source files and reported **59 errors in 18 files**.
+
+Error-code totals:
+
+| Error code | Count |
+|---|---:|
+| arg-type | 44 |
+| assignment | 8 |
+| union-attr | 4 |
+| misc | 1 |
+| var-annotated | 1 |
+| attr-defined | 1 |
+| **Total** | **59** |
+
+Complete diagnostics grouped by file and error code (file:line — diagnostic):
+
+| File | Error code | Diagnostic locations and causes | Count |
+|---|---|---|---:|
+| app/core/api_docs.py | union-attr | :6 optional environment string may be None before strip | 1 |
+| app/core/safe_http.py | union-attr; misc | :25 str/int union not narrowed before split; :104 HTTPX BaseHTTPResponse.data is read-only | 2 |
+| app/services/feature_flag_service.py | assignment | :98, :127 bool assigned to value inferred as Column[bool] | 2 |
+| app/services/audit_dashboard_service.py | var-annotated | :36 summary accumulator needs an explicit type | 1 |
+| app/core/rate_limit.py | union-attr; assignment; attr-defined | :64 optional string may be None before lower; :83 Redis assigned to variable inferred as None; :90 ping accessed on None | 3 |
+| app/services/subscription_service.py | arg-type | :52 Column[int] supplied where int | 1 |
+| app/services/osint_service.py | union-attr | :56 optional response mapping may be None before get | 1 |
+| app/services/organization_service.py | arg-type | :14, :15, :18, :22 Column[int] values supplied where int/int-or-None | 4 |
+| app/services/lead_service.py | arg-type | :158, :163 Column[int] supplied where int/int-or-None | 2 |
+| app/services/invitation_service.py | arg-type | :78, :142, :145 Column[int] supplied where int-or-None | 3 |
+| app/services/ai_usage_service.py | arg-type | :113 Column[int] supplied where int-or-None | 1 |
+| app/services/revenue_forecast_service.py | assignment | :57 Any-or-float and :68 float assigned to int-inferred variable | 2 |
+| app/services/lead_note_service.py | arg-type | :45 Column[int] supplied where int-or-None | 1 |
+| app/services/crm_service.py | assignment | :77, :146 float assigned to int-inferred variables | 2 |
+| app/services/activity_service.py | arg-type | :45 Column[int] supplied where int-or-None | 1 |
+| app/core/dependencies.py | arg-type | :61 Column[int] supplied where int | 1 |
+| app/routers/auth.py | arg-type; assignment | :180, :186, :187 (three arguments), :222, :223, :226, :242, :252, :263, :264, :267 pass Column[int]/Column[str] where scalar types are expected; :247 assigns str to Column[str]-inferred variable | 14 |
+| app/main.py | arg-type | :161 broad **dict[str, str | None] passed into FastAPI constructor, producing 17 incompatible-argument diagnostics | 17 |
+| **Total** |  |  | **59** |
+
+Repair policy: batches of 10–15 errors per commit, fix underlying types and runtime contracts, do not use blanket ignores, ignore_errors, module exclusions or relaxed mypy settings. A narrowly justified `# type: ignore[code]` is allowed only for a third-party library with no stubs. After each batch, wait for the existing backend-quality Mypy job and record the exact run URL and remaining error count. Stop after at most three fix attempts for any CI failure.
+
