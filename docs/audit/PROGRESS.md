@@ -375,3 +375,26 @@ No schema, Pydantic schema, API response model or serializer files are in the co
 
 **Non-annotation runtime drift found and corrected:** CRM/revenue initial numeric literals had briefly changed from integer `0` to float `0.0`. They have been restored to `0` while retaining variable annotations in commits `5a8838e5c8814564718b8fc01374e50d3a636e8f` and `b6687c835e9339518114dad43f8c327822480405`. Thus the final port audit contains no intended runtime behavior changes.
 
+## 2026-11-04 — PR #5 verification and PR #6 branch status
+
+### PR #5 finished CI on the reviewed code head
+- Reviewed head: [PR #5 current code head](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/commit/d8acd2b0519f2e8b082219e7acfc641bb4fca506).
+- [Security Tests run 41732576285](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732576285): all jobs completed green. `backend-quality` ran; Ruff passed; Mypy reported zero errors across 118 source files. Backend regression suite: **126 passed, 0 failed, 0 skipped, 243 warnings**. This exactly matches the pre-port passing test count of 126; no tests were removed and the count did not drop. Frontend lint, frontend regression tests and production build passed.
+- [Dependency Audit run 41732576260](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732576260): `python-audit` and `npm-audit` completed green; pip-audit reported no known vulnerabilities and npm audit reported 0 vulnerabilities.
+- [Secret Scan run 41732576172](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732576172): completed green; Gitleaks diff scan reported no leaks in the scanned change range.
+- [Full-history Gitleaks audit run 41732569955](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732569955): audit workflow completed successfully but reported **3 findings**: two `generic-api-key` metadata findings in audit documentation and the existing historical JWT assignment finding at `backend/app/core/security.py`, commit `c06218f640b5765746cf98916f3a92792992dfb7`. The values were redacted by the audit workflow and are not reproduced here. No baseline or suppression was added. Treat the two documentation findings as UNVERIFIED until independently adjudicated; JWT rotation remains UNVERIFIED.
+- These finished runs correspond to the reviewed code head above. Subsequent changes in this section are documentation-only.
+
+### PR #6 unchanged-head reconfirmation
+- PR #6 remains on its existing head `86121487d509a302e60bcaf76d1c122d18a55f10`, targeting the same base branch `feat/security-hardening` as PR #5.
+- [Security Tests run 41557633460](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633460): `backend-quality`, `backend-security-tests` and `frontend-checks` completed green.
+- [Dependency Audit run 41557633335](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633335): Python and npm audits completed green.
+- [Secret Scan run 41557633307](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633307): Gitleaks diff scan completed green.
+- [Full-history audit run 41557626920](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557626920): completed successfully with the one historical JWT finding; no baseline or suppression.
+
+### Sync / merge gate
+- PR #5 and PR #6 are sibling branches; both target `feat/security-hardening`. PR #6 is not stacked on PR #5.
+- No branch merge was performed. The instruction “Never merge” remains controlling; therefore no PR #5-to-PR #6 merge commit was created. PR #6 remains unchanged.
+- PR #4 remains open and unmerged. `main` was not touched. JWT and PostgreSQL credential rotation remain UNVERIFIED.
+- Docker Step 6 remains BLOCKED: full-history Gitleaks still has 3 findings (2 documentation findings not adjudicated and 1 historical JWT finding), and the explicit no-merge rule prevents the requested branch sync.
+
