@@ -321,3 +321,10 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 - The count decreased by 17 from 49. The user identity typing errors in `auth.py` and `dependencies.py` are cleared; two invitation-service diagnostics also disappeared because they referenced `User.id`. No behavior or schema semantics were intentionally changed.
 
 **Next Mypy batch:** 10 remaining diagnostics are attributable to scalar primary-key typing in `Organization`, `Lead`, `Invitation`, `AIUsage`, `LeadNote`, and `Activity`. These will be corrected in one mapped-typing batch and validated through the existing Mypy CI job.
+
+
+### Step 2 — Mypy batch 3 submitted (pending CI)
+
+- Commit: `4e1f3045f6e49bc10e201a7d4a8721ccc34c6ad4` — `fix(typing): map remaining entity primary keys`.
+- Converted only the six affected primary-key attributes (`Organization.id`, `Lead.id`, `Invitation.id`, `AIUsage.id`, `LeadNote.id`, `Activity.id`) to `Mapped[int]` / `mapped_column`, preserving primary-key and index configuration.
+- Baseline scope: 10 remaining `Column[int]` diagnostics across organization, lead, invitation, AI usage, lead-note, and activity services. Validation and the remaining Mypy count are pending; do not count these errors as fixed until the CI log confirms it.
