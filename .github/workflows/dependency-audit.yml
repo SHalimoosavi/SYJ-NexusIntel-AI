@@ -6,6 +6,7 @@ on:
     branches:
       - main
       - feat/security-hardening
+      - "fix/**"
   schedule:
     - cron: "23 5 * * 1"
   workflow_dispatch:
