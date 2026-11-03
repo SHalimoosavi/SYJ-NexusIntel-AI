@@ -1,4 +1,3 @@
-import pytest
 from fastapi import HTTPException, Response
 
 from app.core.rate_limit import RateLimitManager
