@@ -1,0 +1,24 @@
+name: Deployment Provider Guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - chore/decommission-vercel-railway
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  deployment-provider-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+      - name: Check tracked files
+        run: python scripts/ci/check_no_deployment_providers.py
+      - name: Test deployment-provider guard
+        run: pytest -q tests/ci/test_check_no_deployment_providers.py

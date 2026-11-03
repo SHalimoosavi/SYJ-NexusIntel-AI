@@ -88,7 +88,7 @@ SQLAlchemy ORM
 PostgreSQL service (self-hosted target)
 ```
 
-The previous Vercel/Railway hosting configuration is deprecated. The project is moving to a Docker-based self-hosted deployment; production acceptance is not yet complete.
+The project is moving to a Docker-based self-hosted deployment; production acceptance is not yet complete.
 
 ---
 
