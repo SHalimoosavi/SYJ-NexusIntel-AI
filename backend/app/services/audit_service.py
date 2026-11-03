@@ -3,9 +3,6 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.models.audit_log import AuditLog
-from app.models.organization import Organization
-from app.models.user import User
-from app.models.role import Role
 from app.core.redaction import redact_text
 
 logger = logging.getLogger("security.audit")
