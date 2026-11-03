@@ -115,7 +115,7 @@ def get_ssl_info(domain: str):
         with context.wrap_socket(socket.socket(), server_hostname=host) as sock:
             sock.settimeout(5)
             sock.connect((addresses[0], 443))
-            certificate = _read_tls_certificate(sock)
+            certificate = _read_tls_certificate(sock)  # type: ignore[arg-type]  # Python 3.12.15 typeshed overload mismatch; helper calls binary_form=False and rejects None, empty/non-dict certs, and malformed typed fields.
         if certificate is None:
             return {"valid": False, "error": "TLS certificate missing or unusable"}
         if certificate.expired:

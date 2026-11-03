@@ -378,3 +378,11 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 - Added pure unit tests with fake peer objects for None, empty dictionary, valid and expired certificates, malformed expiry, multiple SAN entries, missing keys, and wrong types. Tests and implementation are committed together because the helper is a new interface and no pre-existing callable contract could be tested independently against the old implementation.
 - Tests and source changes are in one atomic commit; CI result is pending. Do not claim Mypy zero or backend-quality green until the exact Actions run completes.
 - JWT rotation remains UNVERIFIED. The historical Gitleaks finding remains visible; no baseline or suppression was added. PostgreSQL credential rotation remains UNVERIFIED.
+
+
+### SSL helper CI result and owner-authorized narrow typing fallback
+
+- Validation run [41557127982](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557127982), head 24ee410ca685ab9288c511a5508381266044069b: Ruff passed; backend security tests passed; frontend lint passed and production build was still running at first inspection. Mypy reported one error at the helper call: [arg-type], because the Python 3.12.15 typeshed overloaded SSLSocket.getpeercert signature was rejected as implementing the helper Protocol, despite the helper only invoking binary_form=False.
+- Exact diagnostic: app/services/osint_service.py:118: Argument 1 to "_read_tls_certificate" has incompatible type "SSLSocket"; expected "_PeerCertificateSource" [arg-type]. The log shows overloads for Literal[False], Literal[True], and bool, with the decoded dictionary return explicitly nullable.
+- Applied only the owner-authorized single-line fallback at that call site: type: ignore[arg-type]. Its adjacent comment records the Python 3.12.15 typeshed overload mismatch and the helper's runtime guarantee: binary_form=False, explicit None/empty/non-dict rejection, and isinstance validation of notAfter and subjectAltName. No other ignore, config change, or TLS weakening was added.
+- This is the only permitted fallback; do not make further Mypy fixes if it still fails. The follow-up CI run must prove Mypy 0 errors and complete frontend build before Step 2 can close.
