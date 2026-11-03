@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import socket
+import subprocess
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
@@ -191,13 +192,31 @@ def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
     consumed, inflight, result = _keys(manager, jti)
     client.delete(consumed, inflight, result)
     original_complete = manager.complete_refresh_rotation
+    container_id = os.getenv("REDIS_SERVICE_CONTAINER_ID")
+    assert container_id, "CI must expose the real Redis service container ID"
 
-    def lose_endpoint_after_claim(claimed_jti, tokens, grace_seconds=5):
-        manager.redis_url = _closed_port()
-        manager._redis_client = None
-        return original_complete(claimed_jti, tokens, grace_seconds)
+    def stop_redis_after_claim(claimed_jti, tokens, grace_seconds=5):
+        subprocess.run(
+            ["docker", "stop", "--time", "1", container_id],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        try:
+            return original_complete(claimed_jti, tokens, grace_seconds)
+        finally:
+            subprocess.run(
+                ["docker", "start", container_id],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+            manager._redis_client = None
+            _wait_until(lambda: _redis_ping(client), 10.0, "Redis service restart")
 
-    monkeypatch.setattr(manager, "complete_refresh_rotation", lose_endpoint_after_claim)
+    monkeypatch.setattr(manager, "complete_refresh_rotation", stop_redis_after_claim)
     monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
 
     status, body, response = _invoke(token, auth_world["factory"])
@@ -206,7 +225,6 @@ def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
     assert body == {"detail": "Session service temporarily unavailable"}
     assert not any(name.lower() == b"set-cookie" for name, _ in response.raw_headers)
 
-    manager.redis_url = redis_url
     manager._redis_client = None
     assert client.exists(consumed) == 1
     assert client.exists(inflight) == 1
