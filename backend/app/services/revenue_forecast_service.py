@@ -28,9 +28,9 @@ def calculate_forecast(
         .all()
     )
 
-    pipeline_value = 0
-    weighted_revenue = 0
-    won_revenue = 0
+    pipeline_value: float = 0.0
+    weighted_revenue: float = 0.0
+    won_revenue: int = 0
 
     total_leads = len(leads)
     won_count = 0
