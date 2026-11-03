@@ -6,6 +6,8 @@ from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey, event
 
+from sqlalchemy.orm import Mapped
+
 from app.database.database import Base
 
 
@@ -32,7 +34,7 @@ class AuditLog(Base):
         index=True,
     )
 
-    event_type = Column(
+    event_type: Mapped[str] = Column(
         String,
         nullable=False,
         index=True,
