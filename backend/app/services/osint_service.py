@@ -1,5 +1,6 @@
 import socket
 import ssl
+from typing import cast
 
 import dns.resolver
 from bs4 import BeautifulSoup
@@ -52,7 +53,7 @@ def get_ssl_info(domain: str):
         with context.wrap_socket(socket.socket(), server_hostname=host) as sock:
             sock.settimeout(5)
             sock.connect((addresses[0], 443))
-            cert = sock.getpeercert()
+            cert = cast(dict[str, object], sock.getpeercert())
         return {"valid": True, "issuer": str(cert.get("issuer"))}
     except Exception:
         return {"valid": False, "error": "TLS inspection failed for public domain"}

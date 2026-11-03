@@ -14,10 +14,6 @@ from app.core.feature_constants import (
     EXECUTIVE_INTELLIGENCE,
 )
 
-from app.core.dependencies import (
-    get_current_user,
-)
-
 from app.services.ai_usage_service import (
     enforce_ai_limit,
     log_ai_request,

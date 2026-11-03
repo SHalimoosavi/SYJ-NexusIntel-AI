@@ -78,6 +78,7 @@ def update_status_route(
         request.is_active,
         current_user["organization_id"],
         current_user["user_id"],
+        current_user["role_name"],
     )
 
 
@@ -94,4 +95,5 @@ def delete_user_route(
         user_id,
         current_user["organization_id"],
         current_user["user_id"],
+        current_user["role_name"],
     )}

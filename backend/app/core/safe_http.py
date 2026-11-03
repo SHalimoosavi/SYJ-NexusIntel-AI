@@ -7,6 +7,7 @@ Redirects are followed manually and revalidated at each hop.
 import ipaddress
 import socket
 import ssl
+from typing import Any, cast
 from urllib.parse import urljoin, urlsplit
 
 import certifi
@@ -22,7 +23,7 @@ def resolve_public_addresses(domain: str) -> tuple[str, list[str]]:
         answers = socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
     except OSError as exc:
         raise ValueError("Target domain could not be resolved") from exc
-    addresses = sorted({answer[4][0].split("%", 1)[0] for answer in answers})
+    addresses = sorted({cast(str, answer[4][0]).split("%", 1)[0] for answer in answers})
     if not addresses:
         raise ValueError("Target domain has no public address")
     for address in addresses:
@@ -101,7 +102,7 @@ def _pinned_https_get(
             response.close()
             pool.close()
             raise ValueError("Target response exceeded the permitted size")
-        response.data = body
+        cast(Any, response).data = body
         return SafeHTTPResponse(response, pool)
     except Exception:
         pool.close()

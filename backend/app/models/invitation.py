@@ -7,13 +7,15 @@ from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database.database import Base
 
 
 class Invitation(Base):
     __tablename__ = "invitations"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,

@@ -7,6 +7,8 @@ from sqlalchemy import Boolean
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database.database import Base
 
 
@@ -30,7 +32,7 @@ class FeatureFlag(Base):
         nullable=False,
     )
 
-    is_enabled = Column(
+    is_enabled: Mapped[bool | None] = mapped_column(
         Boolean,
         default=False,
     )

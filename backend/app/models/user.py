@@ -7,13 +7,15 @@ from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database.database import Base
 
 
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,
@@ -30,12 +32,12 @@ class User(Base):
         nullable=False,
     )
 
-    hashed_password = Column(
+    hashed_password: Mapped[str] = mapped_column(
         String,
         nullable=False,
     )
 
-    organization_id = Column(
+    organization_id: Mapped[int | None] = mapped_column(
         Integer,
         ForeignKey("organizations.id"),
         nullable=True,

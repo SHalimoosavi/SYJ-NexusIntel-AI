@@ -1,4 +1,5 @@
 import { API_BASE } from "./config";
+import { cancelPendingAuthRefresh, resumeAuthRefresh } from "./auth-refresh.mjs";
 
 /**
  * Browser authentication is held in an HttpOnly cookie scoped to the API.
@@ -9,6 +10,7 @@ export function authHeaders() {
 }
 
 export async function logout() {
+  cancelPendingAuthRefresh();
   try {
     await fetch(`${API_BASE}/auth/logout`, {
       method: "POST",
@@ -32,6 +34,7 @@ export async function login(email: string, password: string) {
   if (!response.ok) {
     throw new Error(data.detail || "Invalid credentials");
   }
+  resumeAuthRefresh();
   return data;
 }
 
@@ -56,5 +59,6 @@ export async function acceptInvitation(
   if (!response.ok) {
     throw new Error(data.detail || "Invitation acceptance failed");
   }
+  resumeAuthRefresh();
   return data;
 }

@@ -1,47 +1,50 @@
-import asyncio
+import pytest
 
-from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
-
-
-def _scope(peer_ip: str, forwarded_ip: str):
-    return {
-        "type": "http",
-        "asgi": {"version": "3.0"},
-        "http_version": "1.1",
-        "method": "GET",
-        "scheme": "http",
-        "path": "/health",
-        "raw_path": b"/health",
-        "query_string": b"",
-        "root_path": "",
-        "headers": [(b"x-forwarded-for", forwarded_ip.encode("ascii"))],
-        "client": (peer_ip, 12345),
-        "server": ("api", 8000),
-    }
+from app.core.client_ip import resolve_client_ip
 
 
-def _run(peer_ip: str, forwarded_ip: str):
-    seen = []
-
-    async def app(inner_scope, receive, send):
-        seen.append(inner_scope["client"])
-
-    async def receive():
-        return {"type": "http.request", "body": b"", "more_body": False}
-
-    async def send(_message):
-        pass
-
-    middleware = ProxyHeadersMiddleware(app, trusted_hosts="127.0.0.1")
-    asyncio.run(middleware(_scope(peer_ip, forwarded_ip), receive, send))
-    return seen[0]
+def test_untrusted_peer_cannot_spoof_forwarded_for():
+    assert resolve_client_ip(
+        "198.51.100.10",
+        "203.0.113.77",
+        ["172.30.0.2"],
+    ) == "198.51.100.10"
 
 
-def test_untrusted_peer_cannot_spoof_client_ip_with_forwarded_header():
-    client = _run("198.51.100.10", "203.0.113.77")
-    assert client[0] == "198.51.100.10"
+def test_trusted_proxy_uses_rightmost_untrusted_hop():
+    assert resolve_client_ip(
+        "172.30.0.2",
+        "198.51.100.25, 172.30.0.3",
+        ["172.30.0.0/24"],
+    ) == "198.51.100.25"
 
 
-def test_explicitly_trusted_proxy_can_supply_overwritten_client_ip():
-    client = _run("127.0.0.1", "203.0.113.77")
-    assert client[0] == "203.0.113.77"
+def test_ipv6_client_and_proxy_are_supported():
+    assert resolve_client_ip(
+        "2001:db8:ffff::1",
+        "2001:db8::42",
+        ["2001:db8:ffff::/48"],
+    ) == "2001:db8::42"
+
+
+@pytest.mark.parametrize(
+    "header",
+    [
+        "",
+        "not-an-ip",
+        "203.0.113.1, garbage",
+        "203.0.113.1:443",
+        "203.0.113.1,",
+    ],
+)
+def test_malformed_forwarded_for_is_ignored(header):
+    assert resolve_client_ip(
+        "172.30.0.2",
+        header,
+        ["172.30.0.2"],
+    ) == "172.30.0.2"
+
+
+def test_trusted_proxy_default_is_empty(monkeypatch):
+    monkeypatch.delenv("TRUSTED_PROXIES", raising=False)
+    assert resolve_client_ip("172.30.0.2", "203.0.113.9") == "172.30.0.2"
