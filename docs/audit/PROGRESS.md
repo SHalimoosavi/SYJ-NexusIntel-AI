@@ -279,3 +279,9 @@ Owner approved all four items as non-blocking and explicitly excluded them from 
 
 
 - CI revalidation trigger after annotation correction and deferred-warning bookkeeping: documentation-only empty-effect checkpoint; no application behavior change.
+
+## 2026-11-04 — Pre-runtime-revert backup
+
+- Created new ref `backup/2026-11-04/pr5-before-runtime-revert` at exact commit `1c4a4b53d97d5b91f0d562195128d04fd47db023` before any runtime revert or model import correction.
+- Ref creation succeeded as a new branch; no existing ref was moved or deleted.
+- Backup ref is immutable for this recovery sequence.
