@@ -280,3 +280,11 @@ Complete diagnostics grouped by file and error code (file:line — diagnostic):
 
 Repair policy: batches of 10–15 errors per commit, fix underlying types and runtime contracts, do not use blanket ignores, ignore_errors, module exclusions or relaxed mypy settings. A narrowly justified `# type: ignore[code]` is allowed only for a third-party library with no stubs. After each batch, wait for the existing backend-quality Mypy job and record the exact run URL and remaining error count. Stop after at most three fix attempts for any CI failure.
 
+
+
+### Step 2 — Mypy repair batch 1 submitted
+
+- Commit: `c88d751e3a05e7497c5e0c245cd89da0dedad59d` — `fix(typing): repair first batch of backend mypy errors`.
+- Scope: 10 baseline diagnostics across six files: `api_docs.py` (1), `safe_http.py` (2), `feature_flag.py` (2), `audit_dashboard_service.py` (1), `rate_limit.py` (3), and `subscription.py` (1).
+- Fixes narrow optional values before string operations, validate DNS sockaddr values before string processing, keep HTTP response bytes in the adapter rather than assigning to HTTPX/urllib3's read-only response property, apply SQLAlchemy 2 mapped typing to the two affected model attributes without changing nullable schema semantics, annotate the summary accumulator, and type the Redis client lifecycle.
+- This batch has **not yet been validated by Actions**. The Git ref update created commit `c88d751e`; the Actions event was not visible for that commit at inspection time. The following progress checkpoint will trigger the PR workflow against the batch. Do not count any error as fixed until the Mypy log confirms the new count.
