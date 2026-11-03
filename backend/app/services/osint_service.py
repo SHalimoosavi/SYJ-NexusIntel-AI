@@ -1,6 +1,9 @@
 import socket
 import ssl
+import time
 from collections.abc import Mapping
+from dataclasses import dataclass
+from typing import Protocol
 
 import dns.resolver
 from bs4 import BeautifulSoup
@@ -47,6 +50,64 @@ def get_ip(domain: str):
         return None
 
 
+class _PeerCertificateSource(Protocol):
+    def getpeercert(self, binary_form: bool = False) -> object: ...
+
+
+@dataclass(frozen=True)
+class _TLSCertificateInfo:
+    not_after: str
+    expires_at: float
+    subject_alt_names: tuple[tuple[str, str], ...]
+    issuer: str | None
+    expired: bool
+
+
+def _read_tls_certificate(
+    peer: _PeerCertificateSource,
+) -> _TLSCertificateInfo | None:
+    """Read and validate the decoded peer certificate without trusting stub unions."""
+    try:
+        certificate = peer.getpeercert(binary_form=False)
+    except (OSError, ssl.SSLError, ValueError):
+        return None
+
+    if certificate is None or not isinstance(certificate, dict) or not certificate:
+        return None
+
+    not_after_value = certificate.get("notAfter")
+    if not isinstance(not_after_value, str):
+        return None
+    try:
+        expires_at = ssl.cert_time_to_seconds(not_after_value)
+    except (OverflowError, TypeError, ValueError):
+        return None
+
+    san_value = certificate.get("subjectAltName", ())
+    if not isinstance(san_value, tuple):
+        return None
+    subject_alt_names: list[tuple[str, str]] = []
+    for entry in san_value:
+        if (
+            not isinstance(entry, tuple)
+            or len(entry) != 2
+            or not isinstance(entry[0], str)
+            or not isinstance(entry[1], str)
+        ):
+            return None
+        subject_alt_names.append((entry[0], entry[1]))
+
+    issuer_value = certificate.get("issuer")
+    issuer = repr(issuer_value) if isinstance(issuer_value, tuple) else None
+    return _TLSCertificateInfo(
+        not_after=not_after_value,
+        expires_at=expires_at,
+        subject_alt_names=tuple(subject_alt_names),
+        issuer=issuer,
+        expired=expires_at <= time.time(),
+    )
+
+
 def get_ssl_info(domain: str):
     try:
         host, addresses = resolve_public_addresses(domain)
@@ -54,8 +115,17 @@ def get_ssl_info(domain: str):
         with context.wrap_socket(socket.socket(), server_hostname=host) as sock:
             sock.settimeout(5)
             sock.connect((addresses[0], 443))
-            cert = sock.getpeercert()
-        return {"valid": True, "issuer": str(cert.get("issuer"))}
+            certificate = _read_tls_certificate(sock)
+        if certificate is None:
+            return {"valid": False, "error": "TLS certificate missing or unusable"}
+        if certificate.expired:
+            return {"valid": False, "error": "TLS certificate is expired"}
+        return {
+            "valid": True,
+            "issuer": certificate.issuer or "unknown",
+            "not_after": certificate.not_after,
+            "subject_alt_names": certificate.subject_alt_names,
+        }
     except Exception:
         return {"valid": False, "error": "TLS inspection failed for public domain"}
 
