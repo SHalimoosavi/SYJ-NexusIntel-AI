@@ -121,3 +121,31 @@ The Redis key names are SHA-256-derived from the JTI; the tests inspect the exac
 **Persistence risk:** `docker-compose.yml` enables AOF and RDB (`--appendonly yes --save 60 1000`) and persists `/data` in `redis_data`. A live result value can be written to AOF/RDB while it exists; expiration does not erase older persistence files or backups. Recorded for Phase 3 only; no persistence setting is changed here.
 
 **CI evidence:** characterization run [41735551017](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41735551017) was queued on head `5fcbff992bf9d1f8150343319aa2dceb6abcd609` when this note was drafted. It is not yet a finished result and must not be treated as passing evidence. The final coverage row and PR descriptions will be updated with the finished run URL after completion.
+
+
+
+## 2026-11-04 — Live Redis outage tests: controls, failure diagnosis and final-head CI
+
+The two 401 failures from run [41735551017](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41735551017) were caused by test isolation, not a production refresh defect. Each test's fresh SQLite database assigned its user ID 1, while the shared Redis DB 15 retained user-version:1=1 after the earlier reuse-detection case. The refresh route checks session version before the JTI claim, so the new token with session_version 0 was correctly rejected as "Refresh session expired". Existing refresh tests use a fresh in-memory manager and do not share Redis session-version state.
+
+Test-only corrections: each fixture now assigns a unique integer user ID; the dedicated Redis test DB is flushed in setup and teardown; healthy controls are included for outage cases b, c and e; and the paused-Redis test asserts the actual redis-py TimeoutError plus a 1.2–2.0 second bound. Case a already retries the same token successfully after recovery. Case f includes ten successful requests before asserting replay rejection. No production code changed.
+
+| Test | Healthy control | Rejection assertion | Result quality |
+|---|---|---|---|
+| a — Redis unreachable before request | Same token returns 200 after Redis restoration | Exact 503 detail, no cookies, no consumed claim or session-version change | Distinguishes backend outage from invalid-token 401 |
+| b — Redis lost after claim | Separate healthy token returns 200 before outage | Exact 503/no cookies; later exact reuse-detected 401 and session-version increment | Real Redis container stop/restart and claim/in-flight TTL assertions |
+| c — Redis paused | Separate healthy token returns 200 before pause | redis-py TimeoutError, exact 503, elapsed 1.2–2.0s | Verifies the configured 1.5s socket timeout rather than only status |
+| d — recovery and result TTL | Refresh itself returns 200 | Not a rejection case; checks claim/result/in-flight keys and TTLs | Positive recovery/expiry characterization |
+| e — production fallback | Healthy Redis refresh returns 200 | Production manager raises RateLimitBackendUnavailable; explicit local mode succeeds | Manager-level fallback test; no route-level outage assertion |
+| f — ten-way concurrency/replay | All ten concurrent refresh requests must return 200 | Post-grace replay returns exact reuse-detected 401 and increments session version | One consumed claim, one cached result, identical cookie pairs, no 5xx |
+
+The original failing tests asserted only the 401 status, so the body was not printed in run 41735551017. Route source establishes the response detail as "Refresh session expired"; there is no application log record for that version mismatch. The route checks this before JTI claim, explaining why all ten concurrent requests failed before any claim was consumed.
+
+Final code/CI validation head for this test set: 1010b150ce6817fb637f45eaedb8f0f894dad0ab.
+- [Security Tests 41738304955](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738304955): backend 132 passed, 0 failed, 0 skipped, 257 warnings; Ruff passed; Mypy 0 issues in 118 source files; frontend lint, tests and build passed.
+- [Dependency Audit 41738304835](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738304835): pip-audit and npm audit passed; 0 known vulnerabilities.
+- [Secret Scan 41738305269](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41738305269): diff scan passed; full-history scan failed on 705 commits with 3 findings. Two are generic-api-key false positives in historical documentation (schema wording and a commit SHA); one is a historical hardcoded SECRET_KEY assignment in backend/app/core/security.py. No value is reproduced here. No finding was baselined or suppressed and no history was rewritten.
+
+The 257 warnings are 14 above the 243-warning baseline. Pytest attributes all 14 additional warnings to this test module and they are SQLAlchemy datetime.utcnow() deprecations from fixture model defaults. Existing warning categories remain unsuppressed. CI masks the ephemeral test signing key before exporting it to the job environment.
+
+JWT signing-key rotation and PostgreSQL credential rotation remain UNVERIFIED. No production code or Redis persistence setting changed.
