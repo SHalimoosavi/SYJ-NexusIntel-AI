@@ -223,3 +223,15 @@ Docker self-hosted install remains gated. Do not start until owner confirms whet
 - Created `backup/2026-11-04/pr6-pre-sync` at exact PR #6 pre-sync head `86121487d509a302e60bcaf76d1c122d18a55f10`.
 - Both refs were read back from GitHub and their full SHAs verified. These are new refs; no existing ref was moved or deleted.
 - Step 1 of the approved typing port may proceed only after a file-by-file diff review. No typing changes have yet been ported.
+
+
+## 2026-11-04 — PR #6 typing-only port applied to PR #5
+
+- Ported only type-oriented changes to PR #5. New commits preserve existing SQLAlchemy `Column(...)` expressions; model attributes now use `Mapped[...] ` annotations for scalar instance typing.
+- Added a `TypedDict` for API docs configuration while preserving the prior environment-selection expression; typed the Redis client through a `Protocol` and `cast` while preserving Redis calls, arguments, keys, thresholds, grace periods and TTLs.
+- Used type-only narrowing for DNS getaddrinfo tuple values and preserved the existing HTTP response body assignment behavior through `setattr`; annotated numeric accumulators and audit summary dictionaries.
+- Narrowed the existing decoded certificate result with `cast` only. No SSL context, certificate verification, expiration behavior, output contract or socket call was changed in this port.
+- Files changed: `backend/app/models/{user,organization,activity,ai_usage,invitation,lead,lead_note,subscription,audit_log,feature_flag}.py`; `backend/app/core/{api_docs,safe_http,rate_limit}.py`; `backend/app/services/{audit_dashboard_service,revenue_forecast_service,crm_service,osint_service}.py`.
+- Explicitly excluded PR #6 workflow, hosting, dependency automation, Ruff-only cleanup, Redis argument coercion, HTTP response-body refactor, SQLAlchemy `mapped_column` substitutions, and the SSL helper runtime change.
+- PR #5 port head: `5aa15fdaf6e94dc3789ba766e9fc582a4635ab9d`. Actions were triggered for this head; do not mark the port green until its finished backend-quality, backend tests, and frontend jobs are inspected.
+- PR #5 and PR #6 remain sibling branches targeting `feat/security-hardening`; no merge/sync commit is applicable under the owner's conditional stacking rule.
