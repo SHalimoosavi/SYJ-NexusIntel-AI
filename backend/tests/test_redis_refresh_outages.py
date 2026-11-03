@@ -283,6 +283,7 @@ def test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused(
 
     timeout_errors = []
     original_get = manager._redis_client.get
+
     def observe_timeout(*args, **kwargs):
         try:
             return original_get(*args, **kwargs)
