@@ -398,3 +398,32 @@ No schema, Pydantic schema, API response model or serializer files are in the co
 - PR #4 remains open and unmerged. `main` was not touched. JWT and PostgreSQL credential rotation remain UNVERIFIED.
 - Docker Step 6 remains BLOCKED: full-history Gitleaks still has 3 findings (2 documentation findings not adjudicated and 1 historical JWT finding), and the explicit no-merge rule prevents the requested branch sync.
 
+## 2026-11-04 — Owner decision: Redis protocol retained; corrected provenance and fail-closed evidence
+
+### Redis protocol provenance and port diff
+- Correct first-add commit: [`cd8a21f1c18c0b89ff271ea47005b5e9787839d9`](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/commit/cd8a21f1c18c0b89ff271ea47005b5e9787839d9), message `fix(auth): make refresh rotation claims atomic and idempotent`. Its parent is `4f457e170256790cc51676e86eead73a21098054`; fetching `backend/app/core/rate_limit.py` from that parent confirms neither script nor `begin_refresh_rotation` exists there. The introducing commit adds both scripts and the first claim/complete/result implementation. A local `git log -S` could not be run because the environment could not resolve github.com for clone; GitHub commit patch + parent-file verification establishes the first-add commit without claiming the local command ran.
+- Refinements: `42f4219f4267ec393f94327972c0f3264710a030` adds the result key to the duplicate/grace test; `4bec95dca2719bb842b66d9d7658de33e10d9579` corrects the claim script key count to three.
+- Exact string comparisons show both Lua script bodies are identical between immutable pre-port backup `02b7379b3e04f484555bfb7e814ea238980789a8` and current PR #5 branch. `backend/app/routers/auth.py` and the three refresh tests (`test_rate_limit.py`, `test_auth_sessions.py`, `test_redis_refresh_rotation.py`) have identical blob SHAs at both refs. The refresh callers at auth.py lines 199, 223 and 239 are unchanged.
+- **Finding withdrawn:** the typing port did not change runtime behavior in `backend/app/core/rate_limit.py`. Its pre-port-to-current changes are typing declarations/casts only. Do not revert the scripts or callers.
+- Existing evidence is already recorded in `docs/audit/AUTH_SENSITIVE_CHANGES.md`, PR #5 description and PR #6 description, including the first-add commit, covering tests, finished CI run 41561425429 and `convention not followed: historical`. The design note `docs/audit/REFRESH_PROTOCOL.md` already documents KEYS/ARGV, key suffixes, TTLs, claim/complete flow, crash behavior, local fallback and multi-worker limitation, plus Redis Cluster hash-slot requirement.
+
+### Redis outage behavior and limitation
+- Production `_redis()` requires a configured URL and performs a ping on initial client creation. Missing URL or failed ping raises `RateLimitBackendUnavailable`; Redis operation exceptions in claim, completion and result lookup also raise it outside local mode. The auth refresh route catches it and returns HTTP 503 with `Retry-After: 5`; it does not issue replacement cookies.
+- Route-level test `backend/tests/test_auth_sessions.py::test_refresh_fails_closed_when_session_backend_is_unavailable` injects `RateLimitBackendUnavailable` from `begin_refresh_rotation` and asserts HTTP 503. The missing-result test also asserts HTTP 503. The live Redis integration test verifies atomic Redis claims, cached result and post-grace replay against a real isolated Redis service.
+- **UNVERIFIED / STOP:** no test currently forces an actual Redis TCP/socket outage against the refresh route. The code path handles the resulting connection exception as above, but live outage behavior is not end-to-end integration-tested. Per owner instruction, do not proceed past this gap until the owner accepts the code-path + injected-exception evidence or authorizes a dedicated outage test.
+- Local/development/desktop/test mode may fall back to process-local dictionaries protected by a thread lock. This coordinates threads in one process only; it does not coordinate separate backend worker processes and is unsafe for multi-worker refresh single-use guarantees. Production does not use the fallback.
+- Redis Lua multi-key scripts require the keys to share one cluster hash slot. Current independently SHA-256-derived key names do not guarantee that. Supported for the single Redis node in Compose; not Redis Cluster-ready.
+
+### Model typing: no casts used
+- The 12 earlier Mypy assignment diagnostics were caused by declaring `Mapped[T]` while assigning SQLAlchemy Core `Column(...)` objects. No cast was used. Root-cause correction is now present: all 12 declarations use SQLAlchemy 2.0 `Mapped[T] = mapped_column(...)` and restore `from sqlalchemy.orm import Mapped, mapped_column`.
+- Current locations: activity.py:17; ai_usage.py:17; audit_log.py:37; feature_flag.py:35; invitation.py:18; lead.py:17; lead_note.py:17; organization.py:16; subscription.py:17; user.py:18, 35, 40.
+- The prior exact Mypy errors are retained in the review report; current CI on PR #5 head `e1be03641e88e7215b475058467d040a9b5c8561` reports zero Mypy errors. No cast or security-sensitive field narrowing was introduced.
+
+### Current PR #5 checks
+- PR #5 reviewed head: `e1be03641e88e7215b475058467d040a9b5c8561`.
+- Security Tests run [41732798145](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732798145): frontend-checks, backend-security-tests and backend-quality all completed green. Ruff passed; Mypy reports zero issues in 118 files; backend tests 126 passed, 0 failed, 0 skipped, 243 warnings; frontend lint, regression tests and build passed.
+- Dependency Audit run [41732798154](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732798154): pip-audit and npm audit both completed green; no known vulnerabilities.
+- Gitleaks diff scan run [41732798096](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732798096): completed green, no leaks in the scanned diff range.
+- Full-history Gitleaks run [41732569955](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41732569955) was on the preceding code head `d8acd2b0519f2e8b082219e7acfc641bb4fca506`, not the current docs-only head. Do not represent it as a current-head run. Full-history status on current head remains to be verified.
+- PR #6 remains unchanged at `86121487d509a302e60bcaf76d1c122d18a55f10`. Both PRs are siblings targeting `feat/security-hardening`; no merge is applicable. The explicit rule “Never merge” also prohibits the requested PR #5-to-PR #6 merge, so no merge/sync will be performed.
+
