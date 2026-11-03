@@ -38,7 +38,9 @@ def redis_url() -> str:
         pytest.skip("REDIS_TEST_URL is not configured")
     client = redis.Redis.from_url(value, decode_responses=True)
     client.ping()
-    return value
+    client.flushdb()
+    yield value
+    client.flushdb()
 
 
 @pytest.fixture
@@ -67,6 +69,7 @@ def auth_world(tmp_path):
     db.refresh(organization)
     db.refresh(role)
     user = User(
+        id=(uuid.uuid4().int % (2**31 - 1)) + 1,
         full_name="Redis Integration User",
         email=f"redis-{uuid.uuid4().hex}@example.com",
         hashed_password=hash_password("IntegrationPassword123!"),
@@ -193,12 +196,19 @@ def test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_to
 def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
     monkeypatch, redis_url, auth_world, redis_key_cleanup
 ):
+    control_token = _new_token(auth_world)
     token = _new_token(auth_world)
     payload = verify_token(token)
     assert payload is not None
     jti = payload["jti"]
     client = redis.Redis.from_url(redis_url, decode_responses=True)
     manager = RateLimitManager(redis_url=redis_url, app_env="production")
+    monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
+    control_status, _control_body, control_response = _invoke(
+        control_token, auth_world["factory"]
+    )
+    assert control_status == 200
+    _cookie_pair(control_response)
     consumed, inflight, result = _keys(manager, jti)
     redis_key_cleanup(consumed, inflight, result)
     client.delete(consumed, inflight, result)
@@ -256,6 +266,7 @@ def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
 def test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused(
     monkeypatch, redis_url, auth_world
 ):
+    control_token = _new_token(auth_world)
     token = _new_token(auth_world)
     manager = RateLimitManager(redis_url=redis_url, app_env="production")
     manager.get_user_session_version(auth_world["user_id"])
@@ -263,10 +274,25 @@ def test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused(
     connection_options = manager._redis_client.connection_pool.connection_kwargs
     assert connection_options["socket_connect_timeout"] == 1.5
     assert connection_options["socket_timeout"] == 1.5
+    monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
+    control_status, _control_body, control_response = _invoke(
+        control_token, auth_world["factory"]
+    )
+    assert control_status == 200
+    _cookie_pair(control_response)
+
+    timeout_errors = []
+    original_get = manager._redis_client.get
+    def observe_timeout(*args, **kwargs):
+        try:
+            return original_get(*args, **kwargs)
+        except redis.exceptions.TimeoutError as exc:
+            timeout_errors.append(exc)
+            raise
+    monkeypatch.setattr(manager._redis_client, "get", observe_timeout)
 
     control = redis.Redis.from_url(redis_url, decode_responses=True)
     control.execute_command("CLIENT", "PAUSE", 2500, "ALL")
-    monkeypatch.setattr(auth_router, "rate_limit_manager", manager)
     started = time.monotonic()
     try:
         status, body, response = _invoke(token, auth_world["factory"])
@@ -276,7 +302,9 @@ def test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused(
     assert status == 503
     assert body == {"detail": "Session service temporarily unavailable"}
     assert elapsed < 2.5
-    assert elapsed >= 1.2
+    assert 1.2 <= elapsed <= 2.0
+    assert len(timeout_errors) == 1
+    assert isinstance(timeout_errors[0], redis.exceptions.TimeoutError)
     assert not any(name.lower() == b"set-cookie" for name, _ in response.raw_headers)
     _wait_until(lambda: _redis_ping(control), 4.0, "Redis to resume after CLIENT PAUSE")
 
@@ -328,7 +356,15 @@ def test_refresh_recovers_and_result_key_expires(monkeypatch, redis_url, auth_wo
     assert client.exists(consumed) == 1
 
 
-def test_production_mode_never_uses_in_memory_fallback():
+def test_production_mode_never_uses_in_memory_fallback(monkeypatch, redis_url, auth_world):
+    healthy = RateLimitManager(redis_url=redis_url, app_env="production")
+    monkeypatch.setattr(auth_router, "rate_limit_manager", healthy)
+    control_status, _control_body, control_response = _invoke(
+        _new_token(auth_world), auth_world["factory"]
+    )
+    assert control_status == 200
+    _cookie_pair(control_response)
+
     production = RateLimitManager(redis_url=_closed_port(), app_env="production")
     with pytest.raises(RateLimitBackendUnavailable):
         production.check("production-outage", 10, 60)
