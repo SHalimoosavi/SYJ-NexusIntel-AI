@@ -173,3 +173,35 @@ The requested negative behaviors have existing regression tests for refresh-toke
 - Backend warning count is 2 versus the earlier 209 baseline (207 fewer). This comparison is based on the current PR #6 backend test run.
 - SSL typing resolution uses the helper plus the one owner-authorized `arg-type` ignore at `osint_service.py:118`; Python 3.12.15 typeshed Protocol mismatch comment and runtime guard are recorded in code. Mypy reports 0 errors. TLS verification remains enabled.
 - JWT signing-key rotation and PostgreSQL credential rotation remain **UNVERIFIED**. No baseline/suppression was added. Docker Step 6 remains **NOT STARTED** pending Step 3 completion and formal Step 5 gate closure.
+
+
+## 2026-11-03 — Step 3 completed; Step 5 branch-scope decision required
+
+### Step 3 — COMPLETE on PR #5
+
+- PR #5 head at verification: f532646265bf6eb6ca843a5e607c658659d48421.
+- [Security Tests run 41562583720](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41562583720): backend **126 passed, 0 failed, 0 skipped, 243 warnings**; frontend Node tests **8 passed, 0 failed, 0 skipped**; frontend lint **0 errors, 2 warnings**; production build completed successfully.
+- The new Redis-backed atomic rotation/reuse test, independent browser-context refresh test, API replay characterization tests, middleware IP bucket integration, missing cached-result fail-closed test, trusted login IP-key test and proxy launch configuration test are all included in the passing backend/frontend runs.
+- Existing SUPER_ADMIN and cross-tenant tests are included in the 126 passing backend tests. Existing refresh-token single-flight, atomic rotation, reuse detection and proxy resolver unit tests remain in the same suite.
+- New tests that exercise already-existing behavior are explicitly characterization tests; no new auth policy behavior was introduced. Historical behavior commits remain documented as accepted, non-retroactively-fixable deviations.
+
+### Step 5 — PR #6 COMPLETE; PR #5 has a separate legacy Mypy baseline
+
+- PR #6 head: 86121487d509a302e60bcaf76d1c122d18a55f10. Its complete Step 5 suite is green on that exact head:
+  - [Security Tests / backend-quality 41557633460](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633460): Ruff passed; Mypy **0 errors** in 118 files; backend **118 passed, 0 failed, 0 skipped, 2 warnings**; frontend lint **0 errors, 2 warnings**; production build finished successfully.
+  - [Dependency audits 41557633335](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633335): npm and Python audits passed; 0 known vulnerabilities each.
+  - [Gitleaks diff 41557633307](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557633307): passed.
+  - [Gitleaks full history 41557626920](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557626920): 584 commits scanned; exactly one historical JWT finding remains visible and unsuppressed.
+- PR #5 received a separate quality job to verify its own head. Ruff now passes, but Mypy reports **60 pre-existing typing diagnostics across 18 files** on PR #5. This is the legacy typing baseline that PR #6's separate Phase 2 type-hardening work addressed. PR #5's backend tests and frontend checks are green, but the additional PR #5 quality job is red; do not represent PR #5 as fully green.
+- The PR #5 Mypy failure is not a new auth regression. Fixing it safely requires porting the Phase 2 typing remediation across 18 files, some of which overlap auth-sensitive code. No broad copy, permission change, type ignore, or config weakening has been applied.
+
+### Step 6 — NOT STARTED
+
+Docker self-hosted install remains gated. Do not start until owner confirms whether Step 5 is scoped to PR #6 (green) or the 60 PR #5 baseline typing errors must also be remediated on PR #5.
+
+### Still open
+
+- JWT signing-key rotation: **UNVERIFIED**.
+- PostgreSQL credential rotation: **UNVERIFIED**.
+- Historical Gitleaks JWT finding: visible, unsuppressed, unbaselined.
+- No merge, no main changes, no history rewrite, no branch/tag deletion.
