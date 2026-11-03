@@ -328,3 +328,12 @@ Repair policy: batches of 10–15 errors per commit, fix underlying types and ru
 - Commit: `4e1f3045f6e49bc10e201a7d4a8721ccc34c6ad4` — `fix(typing): map remaining entity primary keys`.
 - Converted only the six affected primary-key attributes (`Organization.id`, `Lead.id`, `Invitation.id`, `AIUsage.id`, `LeadNote.id`, `Activity.id`) to `Mapped[int]` / `mapped_column`, preserving primary-key and index configuration.
 - Baseline scope: 10 remaining `Column[int]` diagnostics across organization, lead, invitation, AI usage, lead-note, and activity services. Validation and the remaining Mypy count are pending; do not count these errors as fixed until the CI log confirms it.
+
+
+### 2026-11-03 — Attempt 4: typed BeautifulSoup attribute helper (test-first)
+
+- Reconfirmed PR #6 is open, draft, unmerged, targeting `feat/security-hardening`; current branch is `chore/phase2-ci-repo-hygiene`. The current `backend/app/core/security.py` file was inspected at the PR #6 head: line 6 is the `import os` statement, not a JWT key assignment. The legacy assignment is absent from the current-head file; the one Gitleaks finding remains historical only.
+- Test-first commits: `21d3ac6b02a8f58ff8e87f16730b93f8af76add9` added five helper-contract tests; `3fd3053d4a470f75dda9e87ff4a414759e0d5574` removed an unnecessary test-only typing suppression. The tests intentionally import the not-yet-existing helper, so they fail meaningfully against the old implementation. No auth-sensitive behavior is changed in this test-only step.
+- CI validation of the test-only state is pending. The implementation will be a separate commit after the test run is inspected.
+- Attempt 4 design: a single typed helper will accept a BeautifulSoup `Tag | None`, treat a missing `attrs` mapping as empty, normalize string and list-valued attributes to `str | None`, and route the module's tag-attribute extraction through that helper. No ignore, mypy configuration change, or third-party stub suppression is planned unless the user-authorized final fallback becomes necessary.
+- Prepared but intentionally **not committed** for a later owner-confirmed rotation checkpoint: “After the owner confirms JWT signing-key rotation and invalidation of outstanding sessions/tokens, generate a Gitleaks baseline with redaction enabled; verify the baseline contains no secret value; then configure future scans to fail only on new findings. Until rotation is confirmed, keep the historical finding visible and unsuppressed.”
