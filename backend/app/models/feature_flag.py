@@ -30,7 +30,7 @@ class FeatureFlag(Base):
         nullable=False,
     )
 
-    is_enabled: Mapped[bool | None] = Column(
+    is_enabled: Column[bool | None] = Column(
         Boolean,
         default=False,
     )
