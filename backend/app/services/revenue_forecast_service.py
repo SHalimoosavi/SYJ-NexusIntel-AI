@@ -62,7 +62,7 @@ def calculate_forecast(
             won_revenue += value
             won_count += 1
 
-    close_rate = 0
+    close_rate: float = 0.0
 
     if total_leads > 0:
         close_rate = round(
