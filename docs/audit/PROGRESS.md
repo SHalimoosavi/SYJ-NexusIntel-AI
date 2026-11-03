@@ -414,3 +414,16 @@ The following are the completed CI evidence for the latest code head. Formal Ste
 - Gitleaks diff/repository scan: [41557240582](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557240582) — passed, no leaks in the scanned change range.
 - Full-history Gitleaks: [41557234559](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41557234559) — audit workflow passed after scanning 583 commits and recorded **one historical JWT finding**. The finding remains unsuppressed and unbaselined; JWT rotation remains **UNVERIFIED**. PostgreSQL credential rotation remains **UNVERIFIED**.
 - Step 6 Docker self-hosted install remains **NOT STARTED** and must not begin until formal Step 5 is complete and green.
+
+
+## Stage 0 — provider decommission work (2026-11-04)
+
+- Created `chore/decommission-vercel-railway` from PR #6 head `86121487d509a302e60bcaf76d1c122d18a55f10`; no existing branch or tag was moved or deleted.
+- Active-branch changes: remove the hosted-backend URL from `frontend/.env.example` and set the same-origin `/api` path; remove the provider-specific paragraph from README; remove provider dashboard setup instructions from the JWT rotation runbook and retain historical notes only in `docs/legacy-hosting.md`.
+- Added a CI guard that rejects retired deployment file names, provider credential variable names and hosted-provider URL patterns outside `docs/legacy-hosting.md`. The guard does not baseline or suppress Gitleaks findings.
+- No CORS, CSP, cookie-domain, authentication, authorization, or runtime policy was changed. No auth-sensitive behavior change was made.
+- Historical branch scan: older refs still contain `backend/Procfile`, `backend/railway.json`, and `frontend/public/vercel.svg`; those refs are preserved and not rewritten. The PR #6 branch does not contain those files.
+- GitHub repository About website still points to the former hosted frontend. Provider status checks remain visible on PR #5 and PR #6 heads. Webhooks, deployments, environments, repository secrets and variables could not be inspected through the available GitHub read interface; owner dashboard state is UNVERIFIED.
+- Owner actions still required: disconnect provider Git integrations and remove the repository About website field. Do not delete secrets or deployment data before replacement verification and credential rotation.
+- Verification is pending CI on this branch. Stage 0 is NOT COMPLETE until CI passes, the owner confirms both providers are disconnected, and the docs-only follow-up push shows no provider check or deployment.
+- No GitHub PR was merged; `main`, PR #4 and all existing refs remain untouched.

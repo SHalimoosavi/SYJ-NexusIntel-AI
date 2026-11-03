@@ -19,3 +19,14 @@ The previous deployment split the Next.js frontend across Vercel and the FastAPI
 ## Historical note
 
 The former cloud-hosting arrangement is recorded here for audit traceability only. No provider credentials, deployment tokens, environment values or secrets are stored in this document.
+
+## Retired repository artifacts
+
+The following historical artifacts were present on older repository refs and are removed from the active deployment branch:
+
+- `backend/Procfile`
+- `backend/railway.json`
+- `frontend/public/vercel.svg`
+- The split frontend API example that pointed to a hosted backend.
+
+These names are retained here only to make the retirement auditable. Older backup and feature refs remain immutable under the repository's no-history-rewrite policy. Do not restore these artifacts to an active deployment branch.
