@@ -62,6 +62,31 @@ The route-level test `backend/tests/test_auth_sessions.py::test_refresh_fails_cl
 
 In local/development/desktop/test modes, the manager may fall back to in-memory dictionaries protected by a Python lock. That state is per process. It coordinates threads within one worker, but **does not coordinate multiple backend worker processes**. Multi-worker local mode is therefore not safe for refresh-token single-use guarantees. Production mode does not use this fallback.
 
+## Replay-window security and persistence implications
+
+The idempotency/replay-result window is **5 seconds** by default (`grace_seconds=5`). During this bounded window, any party holding the same stolen refresh token can receive the exact same replacement access/refresh pair as the legitimate client. This is an inherent residual risk of returning an idempotent result to concurrent retries; the result key expires after the configured grace TTL. The design avoids minting two different replacement pairs, but it does not distinguish the legitimate client from another holder of the bearer token during that window.
+
+The consumed-claim key has the refresh-token lifetime (default **7 days**, controlled by `REFRESH_TOKEN_EXPIRE_DAYS`). The in-flight marker and serialized result key each use the **5-second** grace TTL by default. The result key stores the serialized access and refresh JWTs in Redis while it exists. Its TTL bounds live Redis key visibility; it does not guarantee the token bytes never reach persistence files.
+
+### Docker Compose Redis persistence note — Phase 3
+
+The current `docker-compose.yml` starts Redis with `--appendonly yes --save 60 1000` and mounts the named `redis_data` volume at `/data`. Therefore AOF is enabled and RDB snapshots are configured (snapshot after 60 seconds when at least 1,000 key changes occur). A refresh-result value that exists during an AOF write or an RDB snapshot can be written to disk. Redis expiration metadata is persisted too, but expiry does not retroactively erase older AOF/RDB contents or backups. Treat Redis persistence files, volume backups and host access as sensitive authentication material. This is a Phase 3 design consideration only: persistence settings and Compose configuration are not changed in this test-only phase.
+
+## Live Redis outage characterization coverage
+
+The following tests are characterization of the current implementation, not claims that a behavior fix was introduced. They use the real Redis CI service and production-mode `RateLimitManager` instances; the outage cases isolate the client endpoint or pause Redis to exercise real socket behavior.
+
+| Case | Test (file::test name) | Coverage |
+|---|---|---|
+| a — Redis unreachable before refresh | `backend/tests/test_redis_refresh_outages.py::test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_token` | Exact 503 response, no replacement cookies, no consumed claim or session revocation; same token can refresh after Redis endpoint is restored. |
+| b — Redis endpoint lost after claim | `backend/tests/test_redis_refresh_outages.py::test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim` | Claim remains consumed; completion returns 503 without cookies; after the 5-second in-flight TTL expires, old-token retry is rejected and session-family revocation is asserted. |
+| c — Redis paused / socket timeout | `backend/tests/test_redis_refresh_outages.py::test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused` | Real Redis `CLIENT PAUSE`; request is bounded by the configured 1.5-second socket timeout and returns 503. |
+| d — Redis recovery and expiry | `backend/tests/test_redis_refresh_outages.py::test_refresh_recovers_and_result_key_expires` | Refresh succeeds after Redis is available; claim/result TTLs are inspected and the result is not served after expiry. |
+| e — production fallback disabled | `backend/tests/test_redis_refresh_outages.py::test_production_mode_never_uses_in_memory_fallback` | Production mode raises backend-unavailable without populating in-memory limiter/claim state; explicit local mode can use fallback. |
+| f — ten-way concurrency | `backend/tests/test_redis_refresh_outages.py::test_ten_parallel_refreshes_create_one_idempotent_rotation` | Ten barrier-released requests; identical successful cookie pairs, one Redis claim/result rotation, no 5xx, post-window replay rejection and family-revocation result. |
+
+**Coverage run URL:** pending the first finished CI run containing these characterization tests. No run is represented as complete until GitHub Actions reports completion.
+
 ## Redis Cluster constraint
 
 A Redis Lua script that accesses multiple keys requires every key to map to the same Redis Cluster hash slot. The current keys are independently SHA-256-derived and do not share a Redis hash tag, so they are not guaranteed to occupy one slot. This is compatible with the planned single Redis node in Docker Compose. It is **not Redis Cluster-ready**; any future cluster deployment must introduce a deliberate shared hash-tag/key-slot scheme and test it before use.
