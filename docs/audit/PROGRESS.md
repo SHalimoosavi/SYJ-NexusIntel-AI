@@ -215,3 +215,11 @@ Docker self-hosted install remains gated. Do not start until owner confirms whet
 - PR #5 dependency audit [41563015478](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41563015478) passed; Gitleaks diff [41563015482](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41563015482) passed; full-history audit [41563011717](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41563011717) completed with the single historical JWT finding.
 - Step 3 is complete for the requested refresh, proxy-IP, SUPER_ADMIN and cross-tenant coverage. Historical prefix/test-first deviations remain documented and accepted.
 - Step 5 is green on PR #6 head 86121487d509a302e60bcaf76d1c122d18a55f10; PR #5's additional Mypy gate remains red. Step 6 remains NOT STARTED pending owner decision on whether to port the 60 Phase 2 typing diagnostics' remediation into PR #5 or scope Step 5 strictly to PR #6.
+
+
+## 2026-11-04 — Pre-port immutable backup refs
+
+- Created `backup/2026-11-04/pr5-pre-typing-port` at exact PR #5 pre-port head `02b7379b3e04f484555bfb7e814ea238980789a8`.
+- Created `backup/2026-11-04/pr6-pre-sync` at exact PR #6 pre-sync head `86121487d509a302e60bcaf76d1c122d18a55f10`.
+- Both refs were read back from GitHub and their full SHAs verified. These are new refs; no existing ref was moved or deleted.
+- Step 1 of the approved typing port may proceed only after a file-by-file diff review. No typing changes have yet been ported.
