@@ -8,10 +8,10 @@ import logging
 import os
 import time
 import uuid
-
-from redis import Redis
 from collections import defaultdict, deque
 from threading import Lock
+
+from redis import Redis
 
 logger = logging.getLogger("security.rate_limit")
 
@@ -73,7 +73,7 @@ class RateLimitManager:
         self._memory_consumed_jti: dict[str, float] = {}
         self._lock = Lock()
 
-    def _redis(self) -> Redis[str] | None:
+    def _redis(self) -> Redis | None:
         if not self.redis_url:
             if self.local_mode:
                 return None
