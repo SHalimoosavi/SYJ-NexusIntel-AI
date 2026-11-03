@@ -5,8 +5,7 @@ from app.schemas.user import UserLogin
 import app.routers.auth as auth_router
 
 
-def test_login_rate_limit_key_uses_resolved_trusted_proxy_client_ip(monkeypatch, auth_session):
-    _db, _user = auth_session
+def test_login_rate_limit_key_uses_resolved_trusted_proxy_client_ip(monkeypatch):
     monkeypatch.setenv("TRUSTED_PROXIES", "172.30.0.0/24")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:3000")
     monkeypatch.setattr(auth_router, "authenticate_user", lambda *_args: None)
@@ -47,7 +46,7 @@ def test_login_rate_limit_key_uses_resolved_trusted_proxy_client_ip(monkeypatch,
             UserLogin(email="user@example.test", password="WrongPassword123!"),
             request,
             Response(),
-            _db,
+            None,
         )
     except HTTPException as error:
         assert error.status_code == 401
