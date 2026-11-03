@@ -191,7 +191,7 @@ def test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_to
 
 
 def test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim(
-    monkeypatch, redis_url, auth_world
+    monkeypatch, redis_url, auth_world, redis_key_cleanup
 ):
     token = _new_token(auth_world)
     payload = verify_token(token)
