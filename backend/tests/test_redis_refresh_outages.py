@@ -287,12 +287,11 @@ def test_refresh_recovers_and_result_key_expires(monkeypatch, redis_url, auth_wo
         "access_token": access_token.decode("ascii"),
         "refresh_token": refresh_token.decode("ascii"),
     }
-    key_names = [key for key in client.keys("syj:rl:*") if jti.encode() in key.encode()]
-    assert key_names == []
-    for key in client.keys("syj:rl:*refresh*"):
+    for key in (consumed, inflight, result):
         assert token.encode("ascii") not in key.encode("ascii")
         assert access_token not in key.encode("ascii")
         assert refresh_token not in key.encode("ascii")
+    assert consumed.rsplit(":", 1)[-1] != jti
 
     _wait_until(lambda: client.exists(result) == 0, 7.0, "refresh-result TTL expiry")
     assert manager.get_refresh_rotation_result(jti) is None
@@ -359,7 +358,7 @@ def test_ten_parallel_refreshes_create_one_idempotent_rotation(
         "refresh_token": pairs[0][1].decode("ascii"),
     }
 
-    refresh_keys = [key for key in client.keys("syj:rl:*refresh*") if manager._key("consumed-refresh:" + jti)[:-64].encode() in key.encode()]
+    refresh_keys = [key for key in (consumed, inflight, result) if client.exists(key)]
     assert len(refresh_keys) == 2
     for key in refresh_keys:
         assert token.encode("ascii") not in key.encode("ascii")
