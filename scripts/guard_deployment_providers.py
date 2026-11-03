@@ -21,16 +21,18 @@ RETIRED_DIRECTORIES = {
     "." + "ver" + "cel",
     "." + "rail" + "way",
 }
-ENV_PATTERN = re.compile(r"(?i)\\b(?:" + "VER" + "CEL" + "|" + "RAIL" + "WAY" + r")_[A-Z0-9_]+\\b")
+ENV_PATTERN = re.compile(
+    r"(?i)\b(?:" + "VER" + "CEL" + "|" + "RAIL" + "WAY" + r")_[A-Z0-9_]+\b"
+)
 HOST_PATTERN = re.compile(
-    r"(?i)(?:[a-z0-9-]+\\.)?(?:"
+    r"(?i)(?:[a-z0-9-]+\.)?(?:"
     + re.escape("ver" + "cel")
-    + r"\\.app|"
+    + r"\.app|"
     + re.escape("rail" + "way")
-    + r"\\.app)"
+    + r"\.app)"
 )
 UPSTREAM_HOST_PATTERN = re.compile(
-    r"(?i)(?:[a-z0-9-]+\\.)?" + re.escape("up." + "rail" + "way" + ".app")
+    r"(?i)(?:[a-z0-9-]+\.)?" + re.escape("up." + "rail" + "way" + ".app")
 )
 
 
@@ -40,7 +42,7 @@ def tracked_files() -> list[Path]:
         check=True,
         stdout=subprocess.PIPE,
     )
-    return [Path(item.decode("utf-8")) for item in result.stdout.split(b"\\0") if item]
+    return [Path(item.decode("utf-8")) for item in result.stdout.split(b"\0") if item]
 
 
 def main() -> int:
