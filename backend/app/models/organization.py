@@ -5,8 +5,6 @@ from sqlalchemy import Integer
 from sqlalchemy import String
 from sqlalchemy import DateTime
 
-from sqlalchemy.orm import Mapped
-
 from app.database.database import Base
 
 
