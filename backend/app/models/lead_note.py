@@ -6,13 +6,15 @@ from sqlalchemy import String
 from sqlalchemy import DateTime
 from sqlalchemy import ForeignKey
 
+from sqlalchemy.orm import Mapped, mapped_column
+
 from app.database.database import Base
 
 
 class LeadNote(Base):
     __tablename__ = "lead_notes"
 
-    id = Column(
+    id: Mapped[int] = mapped_column(
         Integer,
         primary_key=True,
         index=True,
