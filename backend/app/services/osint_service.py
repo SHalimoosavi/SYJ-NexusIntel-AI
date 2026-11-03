@@ -85,7 +85,8 @@ def _get_tag_attribute(tag: Tag | None, name: str) -> str | None:
     if not isinstance(attributes, Mapping):
         return None
 
-    value: object = attributes.get(name)
+    # BeautifulSoup 4.15.0 stubs retain Optional here; attrs fallback + Mapping guard ensure safety.
+    value: object = attributes.get(name)  # type: ignore[union-attr]
     if isinstance(value, str):
         return value
     if isinstance(value, list):
