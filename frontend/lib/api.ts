@@ -1,32 +1,13 @@
 import { authHeaders } from "./auth";
 import { API_BASE } from "./config";
 import { refreshAuthSession } from "./auth-refresh.mjs";
+import { apiFetchWithRefresh } from "./api-fetch.mjs";
 
 export { API_BASE };
 
 async function apiFetch(input: RequestInfo | URL, init: RequestInit = {}) {
-  const options: RequestInit = {
-    ...init,
-    credentials: "include",
-    cache: init.cache ?? "no-store",
-  };
-  const firstResponse = await fetch(input, options);
-  const requestUrl = String(input);
-  if (
-    firstResponse.status !== 401 ||
-    requestUrl.includes("/auth/login") ||
-    requestUrl.includes("/auth/refresh") ||
-    requestUrl.includes("/auth/logout") ||
-    requestUrl.includes("/invitations/accept")
-  ) {
-    return firstResponse;
-  }
-
-  const refreshed = await refreshAuthSession(API_BASE);
-  if (!refreshed) return firstResponse;
-  return fetch(input, options);
+  return apiFetchWithRefresh(input, init, API_BASE, fetch, refreshAuthSession);
 }
-
 /* =========================
    TYPES
 ========================= */
