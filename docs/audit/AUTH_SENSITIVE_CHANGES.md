@@ -101,3 +101,23 @@ The earlier report alleging that the typing port introduced the Redis refresh-cl
 
 Production Redis unavailability is rejected by the code path: the manager raises `RateLimitBackendUnavailable` and the refresh route returns HTTP 503. The route-level outage test injects this exception and asserts rejection. A live Redis socket-outage integration test remains **UNVERIFIED**. Local in-memory fallback is per process and does not provide cross-worker atomicity; multi-worker local mode is a known limitation. Redis Cluster is not supported by the current independently hashed key names because the Lua keys are not guaranteed to share one hash slot.
 
+
+
+## 2026-11-04 — Live Redis outage and ten-way refresh characterization
+
+**Classification:** characterization tests only. No production code, token policy, timeout, Redis key policy, or fallback behavior was changed.
+
+| Case | Test (file::test name) | Assertions |
+|---|---|---|
+| a — Redis unreachable before request | `backend/tests/test_redis_refresh_outages.py::test_refresh_rejects_when_redis_endpoint_is_unreachable_without_consuming_token` | Exact HTTP 503 and `{"detail":"Session service temporarily unavailable"}`; no replacement cookies; no consumed claim/session-version change; same old token succeeds after Redis is restored. |
+| b — Redis stopped after claim | `backend/tests/test_redis_refresh_outages.py::test_refresh_fails_closed_when_redis_endpoint_is_lost_after_claim` | Stops the actual CI Redis service between claim and completion; completion fails closed with 503/no cookies; claim remains until refresh-token TTL, in-flight key expires at 5 seconds; later old-token retry is 401 and increments session version (family revocation). Container is restarted in teardown. |
+| c — Redis paused | `backend/tests/test_redis_refresh_outages.py::test_refresh_is_bounded_by_redis_socket_timeout_when_service_is_paused` | Pauses real Redis; asserts 1.5-second `socket_timeout`, 1.5-second `socket_connect_timeout`, bounded request and 503; waits for service recovery by monotonic polling. |
+| d — recovery and TTL | `backend/tests/test_redis_refresh_outages.py::test_refresh_recovers_and_result_key_expires` | Successful refresh after Redis is available; consumed claim TTL (default 7 days), result TTL (5 seconds), and result absence after expiry. |
+| e — production fallback | `backend/tests/test_redis_refresh_outages.py::test_production_mode_never_uses_in_memory_fallback` | Production mode raises backend-unavailable without using in-memory state; explicit local mode uses the permitted fallback. |
+| f — ten parallel refreshes | `backend/tests/test_redis_refresh_outages.py::test_ten_parallel_refreshes_create_one_idempotent_rotation` | Ten barrier-released requests; exactly one Redis claim and one cached replacement pair; all successful cookie pairs byte-identical; no 5xx; old-token replay after result expiry returns 401 and revokes the session family. JWTs are stateless and this application has no per-token database row; Redis is the authoritative claim/result store. |
+
+The Redis key names are SHA-256-derived from the JTI; the tests inspect the exact keys to ensure no raw refresh token or JWT appears in key names. The result value itself contains the JWT pair and must expire. Default timeouts are `socket_connect_timeout=1.5` and `socket_timeout=1.5` in `backend/app/core/rate_limit.py`; consumed-claim TTL defaults to 7 days and in-flight/result TTLs default to 5 seconds.
+
+**Persistence risk:** `docker-compose.yml` enables AOF and RDB (`--appendonly yes --save 60 1000`) and persists `/data` in `redis_data`. A live result value can be written to AOF/RDB while it exists; expiration does not erase older persistence files or backups. Recorded for Phase 3 only; no persistence setting is changed here.
+
+**CI evidence:** characterization run [41735551017](https://github.com/SHalimoosavi/SYJ-NexusIntel-AI/actions/runs/41735551017) was queued on head `5fcbff992bf9d1f8150343319aa2dceb6abcd609` when this note was drafted. It is not yet a finished result and must not be treated as passing evidence. The final coverage row and PR descriptions will be updated with the finished run URL after completion.
